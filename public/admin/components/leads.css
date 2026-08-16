@@ -1,0 +1,52 @@
+/* ============ PRIME SUL — KANBAN DE LEADS (módulo admin) ============ */
+
+#dynamicModalBody:has(.kbx-root) { display: flex; flex-direction: column; min-height: 0; overflow: hidden !important; padding: 18px !important; }
+
+.kbx-root { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; font-family: var(--font-body); }
+
+/* --- toolbar --- */
+.kbx-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 3px solid var(--dark); border-radius: 13px; background: var(--card); box-shadow: var(--shadow-sm); }
+.kbx-search { position: relative; flex: 1; min-width: 180px; }
+.kbx-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: .8rem; }
+.kbx-search input { width: 100%; padding: 9px 12px 9px 34px; border: 2px solid var(--dark); border-radius: 9px; font: 700 .82rem var(--font-body); color: var(--text); background: #fff; outline: none; }
+.kbx-search input:focus { border-color: var(--primary); }
+.kbx-select { padding: 9px 28px 9px 12px; border: 2px solid var(--dark); border-radius: 9px; font: 700 .74rem var(--font-body); color: var(--text); background: #fff; cursor: pointer; }
+.kbx-count { margin-left: auto; font: 900 .7rem var(--font-body); color: var(--text-muted); letter-spacing: .5px; white-space: nowrap; }
+
+/* --- board --- */
+.kbx-board { flex: 1; display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; overflow-y: auto; min-height: 0; padding-bottom: 4px; }
+.kbx-col { flex: 0 0 248px; display: flex; flex-direction: column; max-height: 100%; border: 3px solid var(--dark); border-radius: 14px; background: #fbf6ee; box-shadow: 3px 3px 0 rgba(24,23,22,.15); }
+.kbx-col.drop-over { outline: 3px solid var(--primary); transform: translateY(-2px); box-shadow: 5px 5px 0 rgba(24,23,22,.18); }
+.kbx-col-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 3px solid var(--dark); border-radius: 11px 11px 0 0; background: var(--dark); color: #fff; }
+.kbx-col-dot { width: 12px; height: 12px; border: 2px solid #fff; border-radius: 4px; }
+.kbx-col-head h3 { font: 1.15rem/1 var(--font-title); letter-spacing: 1px; margin: 0; }
+.kbx-col-count { margin-left: auto; min-width: 24px; padding: 2px 8px; border-radius: 999px; background: var(--secondary); color: var(--dark); font: 900 .7rem var(--font-body); text-align: center; }
+.kbx-col-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; min-height: 64px; }
+.kbx-empty { margin: auto; padding: 16px 8px; text-align: center; color: #a89f95; font: 700 .68rem var(--font-body); line-height: 1.5; border: 2px dashed #d8cfc4; border-radius: 10px; }
+
+/* --- card --- */
+.kbx-card { padding: 10px 11px; border: 2.5px solid var(--dark); border-radius: 12px; background: #fff; box-shadow: 2px 2px 0 rgba(24,23,22,.22); cursor: grab; transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease; user-select: none; }
+.kbx-card:hover { transform: translateY(-2px); box-shadow: 4px 4px 0 rgba(24,23,22,.22); }
+.kbx-card.dragging { opacity: .45; transform: rotate(2deg) scale(.98); }
+.kbx-card.pri-alta { border-left: 8px solid var(--bad); }
+.kbx-card.pri-media { border-left: 8px solid var(--secondary); }
+.kbx-card.pri-baixa { border-left: 8px solid #b9b1a7; }
+.kbx-card-top { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.kbx-avatar { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border: 2px solid var(--dark); border-radius: 9px; background: var(--secondary); color: var(--dark); font-weight: 900; font-size: .68rem; }
+.kbx-idx { flex: 1; min-width: 0; }
+.kbx-idx strong { display: block; font-family: var(--font-title); font-size: 1rem; letter-spacing: .4px; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kbx-idx span { display: block; font-size: .6rem; font-weight: 700; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kbx-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 9px; }
+.kbx-chip { padding: 2px 7px; border: 1.5px solid var(--dark); border-radius: 6px; font: 800 .55rem var(--font-body); letter-spacing: .6px; }
+.kbx-chip.origem { background: var(--cream); color: var(--dark); }
+.kbx-chip.limite { background: var(--dark); color: var(--secondary); }
+.kbx-foot { display: flex; align-items: center; gap: 6px; }
+.kbx-date { color: #a89f95; font: 600 .6rem var(--font-body); }
+.kbx-actions { margin-left: auto; display: flex; gap: 5px; }
+.kbx-actions .ps-icon-btn { width: 28px; height: 28px; font-size: .7rem; }
+
+@media (max-width: 640px) {
+    .kbx-toolbar { flex-direction: column; align-items: stretch; }
+    .kbx-count { margin-left: 0; text-align: right; }
+    .kbx-col { flex-basis: 235px; }
+}
