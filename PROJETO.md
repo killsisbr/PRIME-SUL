@@ -32,6 +32,11 @@ Usar **números descartáveis** como porta de entrada:
 - Reduz o risco/impacto de banimento em ~70%.
 - Combinar com outras boas práticas reduz ainda mais a taxa.
 
+### Parâmetros dinâmicos
+- Limite diário de envios por número (`cfg_daily_limit`, configurável no painel).
+- Tamanho do lote e delay entre envios (`cfg_batch`, `cfg_delay`).
+- Estado por número: `ativo`, `resfriado` (cooldown) ou `banido` (retirado de circulação).
+
 ## Fluxo de Trabalho
 
 ```
@@ -51,6 +56,9 @@ Lead confirma ("sim") ──► Repasse para o bot do vendedor
         │
         ▼
 Bot do vendedor contata e finaliza a simulação
+        │
+        ▼
+Acompanhamento no funil (novo → contato → confirmado → concluído)
 ```
 
 ## Funcionalidades Principais
@@ -63,16 +71,30 @@ Bot do vendedor contata e finaliza a simulação
 ### Cadastro de Leads
 - Importação/entrada manual do contato.
 - Validação de duplicidade global (não permite mesmo lead em dois vendedores).
-- Status do lead: novo, em contato, confirmado, concluído.
+- Status do lead: novo, em contato, confirmado, concluído, bloqueado, duplicado.
 
 ### Disparo em Massa (Bot)
 - Números descartáveis por campanha/lote.
-- Mensagem de oferta padronizada.
+- Mensagem de oferta padronizada (template editável).
 - Detecção de confirmação (sim/ok/1 etc.).
 - Repasse automático ao bot do vendedor.
 
-### Painel
-- Visão por vendedor: leads, envios, respostas, taxas de conversão.
+### Painel do Vendedor (`/leads.html`)
+- Lista de leads com busca e filtro por status.
+- Cadastro e mudança de status.
+- Contadores: total, envios, conversão, confirmados.
+
+### Painel Admin (`/admin.html`)
+- App-grid com HUD (atalho **Ctrl+K**) e modais dinâmicos.
+- Módulos:
+  - **Hub de Disparo** — estratégia anti-ban e limites.
+  - **Funil de Vendas** — visualização da conversão por estágio, taxas entre etapas e gargalo.
+  - **Leads** — gestão completa com ações rápidas (confirmar/bloquear).
+  - **Campanhas** — criação, start/pause/cancel do disparo.
+  - **Números Anti-Ban** — cadastro e mudança de status (ativo/resfriado/banido).
+  - **Vendedores** — criação da equipe e limites.
+  - **Configuração** — crédito BB (cnpj/parceiro), template de mensagem e limites dinâmicos.
+- Design system Neo-Brutalista unificado (tokens em `public/css/tokens.css`).
 
 ## Stack Confirmada
 
@@ -83,7 +105,7 @@ Bot do vendedor contata e finaliza a simulação
 | Auth | JWT (bcrypt) |
 | WhatsApp | Baileys (multi-session) |
 | Fila | Em processo (delay entre envios) |
-| Frontend | HTML vanilla + Tailwind/CSS (tema Neo-Brutalista) |
+| Frontend | HTML vanilla + CSS puro (design system próprio, tokens) |
 
 ## Estrutura do Projeto
 
@@ -94,15 +116,17 @@ PRIME SUL/
 │   ├── routes/
 │   │   ├── auth.js                # POST /api/auth/login
 │   │   ├── sellers.js             # Vendedores (admin) + /me
-│   │   ├── leads.js               # CRUD leads + duplicidade
+│   │   ├── leads.js               # CRUD leads + duplicidade + funil
 │   │   ├── campaigns.js           # Campanhas + números descartáveis
+│   │   ├── config.js              # Settings dinâmicas (admin)
 │   │   └── whatsapp.js            # Status dos bots
 │   ├── services/
-│   │   ├── lead-service.js        # Regra de duplicidade global
+│   │   ├── lead-service.js        # Regra de duplicidade global + funil
 │   │   ├── anti-ban-service.js    # Números descartáveis, limites, cooldown
 │   │   ├── whatsapp-service.js    # Baileys multi-session
 │   │   ├── campaign-service.js    # Fila de disparo em lotes
-│   │   └── bot-flow-service.js    # Confirmação (sim/não) → repasse
+│   │   ├── bot-flow-service.js    # Confirmação (sim/não) → repasse
+│   │   └── settings-service.js    # Leitura de settings dinâmicas
 │   ├── middleware/auth.js         # JWT + adminOnly
 │   ├── database/
 │   │   ├── db.js                  # SQLite helper (promises)
@@ -110,10 +134,17 @@ PRIME SUL/
 │   │   └── seed.js                # Cria admin inicial
 │   └── utils/phone.js             # Normalização E.164
 ├── public/
-│   ├── css/design.css             # Design system Neo-Brutalista
-│   ├── components/                # Header, lead-card, modal, drawer
-│   ├── login.html                 # Login do vendedor (multi-tenant)
-│   └── leads.html                 # Grid de leads integrado à API
+│   ├── css/
+│   │   ├── tokens.css             # Design tokens (única fonte)
+│   │   └── design.css             # Base do design system
+│   ├── admin/
+│   │   ├── css/components.css     # Blocos ps-* compartilhados
+│   │   └── components/            # Módulos (html/css/js por módulo)
+│   │       ├── hub / funil / leads / campanhas
+│   │       ├── numeros / vendedores / config
+│   ├── login.html                 # Login (admin → admin.html, vendedor → leads.html)
+│   ├── leads.html                 # Painel do vendedor
+│   └── admin.html                 # Painel admin (app-grid + HUD Ctrl+K)
 ├── data/                          # SQLite + sessões Baileys (gitignored)
 ├── .env.example
 └── package.json
@@ -128,22 +159,34 @@ npm run seed                  # cria admin@primesul.com.br / admin123
 npm run dev                   # http://localhost:5000
 ```
 
+- Login de vendedor → `/leads.html`.
+- Login de admin → `/admin.html`.
+
 ## API
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | POST | `/api/auth/login` | Login → JWT |
-| GET | `/api/leads` | Lista leads do vendedor |
+| GET | `/api/leads` | Lista leads do vendedor (filtro por status/busca) |
 | POST | `/api/leads` | Cadastra lead (409 se duplicado por outro vendedor) |
 | GET | `/api/leads/counts` | Contadores do painel |
+| GET | `/api/leads/funnel` | Funil: contagens por estágio + conversões + gargalo |
 | PATCH | `/api/leads/:id/status` | Muda status do lead |
 | GET | `/api/campaigns` | Campanhas do vendedor |
 | POST | `/api/campaigns` | Cria campanha |
 | POST | `/api/campaigns/:id/start` | Inicia disparo |
+| POST | `/api/campaigns/:id/pause` | Pausa disparo |
+| POST | `/api/campaigns/:id/cancel` | Cancela disparo |
 | GET | `/api/campaigns/numbers` | Números descartáveis |
 | POST | `/api/campaigns/numbers` | Registra número |
-| GET | `/api/whatsapp/status` | Status dos bots |
+| PATCH | `/api/campaigns/numbers/:id` | Status do número (ativo/resfriado/banido) |
+| GET | `/api/config` | Settings dinâmicas (admin) |
+| PUT | `/api/config` | Salva settings (upsert parcial) |
+| GET | `/api/config/bot` | Settings do bot parceiro BB (cnpj/parceiro/template) |
+| GET | `/api/sellers` | Lista vendedores (admin) |
+| POST | `/api/sellers` | Cria vendedor (admin) |
 | GET | `/api/sellers/me` | Perfil do vendedor |
+| GET | `/api/whatsapp/status` | Status dos bots |
 
 ## Próximos Passos
 
@@ -152,7 +195,9 @@ npm run dev                   # http://localhost:5000
 - [x] Regras de negócio de duplicidade
 - [x] Fluxo anti-ban (número descartável → confirmação → repasse)
 - [x] Painel do vendedor (login + leads)
-- [ ] Painel admin (gestão de vendedores e números)
-- [ ] Tela de campanhas/disparo
+- [x] Painel admin (gestão de vendedores, números e configurações)
+- [x] Tela de campanhas/disparo
+- [x] Módulo funil de vendas
 - [ ] Ativar bots (BOT_ENABLED=true + QR code)
+- [ ] Integração automática de captura do site (webhook → `/api/leads`)
 - [ ] Fila robusta (BullMQ/Redis) para escala
