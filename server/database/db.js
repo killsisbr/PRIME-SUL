@@ -29,6 +29,25 @@ function init() {
     });
 }
 
+// Migração: adiciona colunas que não existem em bancos já criados
+const LEAD_MIGRATIONS = {
+    renda: 'TEXT',
+    valor_desejado: 'TEXT',
+    obs: 'TEXT',
+    prioridade: "TEXT NOT NULL DEFAULT 'media'"
+};
+
+async function migrate() {
+    const cols = await all(`PRAGMA table_info(leads)`);
+    const existing = new Set(cols.map(c => c.name));
+    for (const [name, def] of Object.entries(LEAD_MIGRATIONS)) {
+        if (!existing.has(name)) {
+            await run(`ALTER TABLE leads ADD COLUMN ${name} ${def}`);
+            console.log(`[db] migração: coluna leads.${name} adicionada`);
+        }
+    }
+}
+
 function run(sql, params = []) {
     return new Promise((resolve, reject) => {
         db.run(sql, params, function (err) {
@@ -56,4 +75,4 @@ function all(sql, params = []) {
     });
 }
 
-module.exports = { db, init, run, get, all };
+module.exports = { db, init, migrate, run, get, all };

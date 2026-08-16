@@ -34,6 +34,7 @@ app.use((err, req, res, next) => {
 
 async function bootstrap() {
     await db.init();
+    await db.migrate();
     console.log('[db] schema pronto');
 
     // Registra fluxo anti-ban de confirmação

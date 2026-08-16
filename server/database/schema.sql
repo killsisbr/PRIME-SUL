@@ -25,10 +25,25 @@ CREATE TABLE IF NOT EXISTS leads (
     city          TEXT,
     origem        TEXT NOT NULL DEFAULT 'SITE',
     limite_est    TEXT,
+    renda         TEXT,                          -- renda estimada
+    valor_desejado TEXT,                         -- valor desejado de crédito
+    obs           TEXT,                          -- observações do vendedor
+    prioridade    TEXT NOT NULL DEFAULT 'media'
+                  CHECK (prioridade IN ('alta','media','baixa')),
     status        TEXT NOT NULL DEFAULT 'novo'
                   CHECK (status IN ('novo','contato','confirmado','concluido','bloqueado','duplicado')),
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Histórico de mudanças de status dos leads (timeline)
+CREATE TABLE IF NOT EXISTS lead_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id     INTEGER NOT NULL REFERENCES leads(id),
+    seller_id   INTEGER NOT NULL REFERENCES sellers(id),
+    from_status TEXT,
+    to_status   TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Números (descartáveis) do bot principal anti-ban
@@ -72,6 +87,8 @@ CREATE TABLE IF NOT EXISTS sends (
 
 CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone);
 CREATE INDEX IF NOT EXISTS idx_leads_seller ON leads(seller_id);
+CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+CREATE INDEX IF NOT EXISTS idx_lead_history_lead ON lead_history(lead_id);
 CREATE INDEX IF NOT EXISTS idx_sends_campaign ON sends(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_sends_lead ON sends(lead_id);
 

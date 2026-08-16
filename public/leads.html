@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prime Sul — Leads</title>
+    <title>Prime Sul — Kanban de Leads</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23ff7417'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Arial' font-size='28' font-weight='bold'>PS</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,9 +17,92 @@
         .ps-toast.ok { border-left: 8px solid var(--v3-green); } .ps-toast.ok i { color: var(--v3-green); }
         .ps-toast.err { border-left: 8px solid var(--v3-coral); } .ps-toast.err i { color: var(--v3-coral); }
         @keyframes psToastIn { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+        /* ============ KANBAN DE LEADS ============ */
+        body.kb-body { background: #efe9e0; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        .kb-main { flex: 1; display: flex; flex-direction: column; min-height: 0; width: 100%; max-width: 1600px; margin: 0 auto; }
+
+        /* --- toolbar --- */
+        .kb-toolbar { position: sticky; top: 0; z-index: 900; background: var(--v3-ink); color: #fff; padding: 10px 18px; border-bottom: 4px solid var(--v3-orange); box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+        .kb-toolbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .kb-search { position: relative; flex: 1; min-width: 200px; }
+        .kb-search i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--v3-ink); font-size: .8rem; }
+        .kb-search input { width: 100%; padding: 10px 12px 10px 36px; border: 2px solid var(--v3-ink); border-radius: 10px; font: 700 .82rem var(--font-body); color: var(--v3-ink); background: #fff; outline: none; }
+        .kb-select { padding: 10px 30px 10px 12px; border: 2px solid var(--v3-ink); border-radius: 10px; font: 700 .78rem var(--font-body); color: var(--v3-ink); background: #fff; cursor: pointer; }
+        .kb-date { padding: 9px 10px; border: 2px solid var(--v3-ink); border-radius: 10px; font: 700 .72rem var(--font-body); color: var(--v3-ink); background: #fff; }
+        .kb-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border: 2px solid var(--v3-ink); border-radius: 10px; font: 900 .74rem var(--font-body); letter-spacing: .5px; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+        .kb-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+        .kb-btn.new { background: var(--v3-orange); color: #fff; box-shadow: 3px 3px 0 var(--v3-yellow); }
+        .kb-btn.ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
+        .kb-btn.ghost:hover { background: rgba(255,255,255,.12); }
+        .kb-filter-label { font: 800 .6rem var(--font-body); letter-spacing: 1.2px; color: var(--v3-yellow); text-transform: uppercase; }
+
+        .kb-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .kb-pill { padding: 6px 14px; border: 2px solid rgba(255,255,255,.35); border-radius: 999px; font: 800 .7rem var(--font-body); letter-spacing: .6px; color: #fff; background: transparent; cursor: pointer; transition: all .15s ease; }
+        .kb-pill.active { background: var(--v3-yellow); border-color: var(--v3-yellow); color: var(--v3-ink); }
+
+        /* --- board --- */
+        .kb-board-wrap { flex: 1; overflow-x: auto; overflow-y: auto; padding: 18px; min-height: 0; }
+        .kb-board { display: flex; gap: 16px; align-items: flex-start; min-width: min-content; height: 100%; }
+        .kb-col { flex: 0 0 290px; display: flex; flex-direction: column; max-height: 100%; border: 3px solid var(--v3-ink); border-radius: 16px; background: #fbf6ee; box-shadow: 5px 5px 0 rgba(24,23,22,.18); transition: box-shadow .15s ease, transform .15s ease; }
+        .kb-col.drop-over { box-shadow: 0 0 0 3px var(--v3-yellow), 5px 5px 0 rgba(24,23,22,.18); transform: translateY(-3px); }
+        .kb-col-head { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border-bottom: 3px solid var(--v3-ink); border-radius: 13px 13px 0 0; background: var(--v3-ink); color: #fff; }
+        .kb-col-dot { width: 13px; height: 13px; border: 2px solid #fff; border-radius: 4px; }
+        .kb-col-head h3 { font: 1.25rem/1 var(--font-title); letter-spacing: 1px; margin: 0; }
+        .kb-col-count { margin-left: auto; min-width: 26px; padding: 3px 8px; border-radius: 999px; background: var(--v3-yellow); color: var(--v3-ink); font: 900 .72rem var(--font-body); text-align: center; }
+        .kb-col-body { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; min-height: 80px; }
+        .kb-col-empty { margin: auto; padding: 18px 10px; text-align: center; color: #a89f95; font: 700 .72rem var(--font-body); line-height: 1.5; border: 2px dashed #d8cfc4; border-radius: 12px; }
+
+        /* --- card --- */
+        .kb-card { position: relative; padding: 12px 13px; border: 2.5px solid var(--v3-ink); border-radius: 13px; background: #fff; box-shadow: 3px 3px 0 rgba(24,23,22,.25); cursor: grab; transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease; user-select: none; }
+        .kb-card:hover { transform: translateY(-2px); box-shadow: 5px 5px 0 rgba(24,23,22,.25); }
+        .kb-card.dragging { opacity: .45; transform: rotate(2deg) scale(.98); }
+        .kb-card.pri-alta { border-left: 9px solid var(--v3-coral); }
+        .kb-card.pri-media { border-left: 9px solid var(--v3-yellow); }
+        .kb-card.pri-baixa { border-left: 9px solid #b9b1a7; }
+        .kb-card-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+        .kb-pri { font-size: .72rem; color: #c9c0b4; }
+        .kb-card.pri-alta .kb-pri { color: var(--v3-coral); }
+        .kb-card.pri-media .kb-pri { color: var(--v3-yellow); }
+        .kb-origem { margin-left: auto; padding: 2px 7px; border: 1.5px solid var(--v3-ink); border-radius: 6px; background: var(--v3-cream); font: 800 .56rem var(--font-body); letter-spacing: .8px; }
+        .kb-limit { padding: 2px 7px; border-radius: 6px; background: var(--v3-ink); color: var(--v3-yellow); font: 900 .62rem var(--font-body); }
+        .kb-card h4 { margin: 0 0 3px; font: 900 .86rem var(--font-body); color: var(--v3-ink); line-height: 1.2; }
+        .kb-phone { margin: 0 0 9px; color: var(--text-soft); font: 600 .68rem var(--font-body); }
+        .kb-card-foot { display: flex; align-items: center; gap: 8px; }
+        .kb-date { color: #a89f95; font: 600 .62rem var(--font-body); }
+        .kb-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 6px; font: 800 .6rem var(--font-body); }
+        .kb-chip.renda { background: #eef2ff; color: #3b5bd9; }
+        .kb-chip.valor { background: #e2fbea; color: #13883d; }
+        .kb-more { margin-left: auto; width: 24px; height: 24px; border: none; border-radius: 6px; background: transparent; color: #a89f95; cursor: pointer; font-size: .75rem; }
+        .kb-more:hover { background: #f1ece4; color: var(--v3-ink); }
+
+        /* --- modal / drawer --- */
+        .v3-modal-content { max-width: 520px; }
+        .kb-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .kb-m-field { padding: 9px 11px; border: 2px solid var(--v3-ink); border-radius: 10px; background: var(--v3-cream); }
+        .kb-m-field.full { grid-column: 1/-1; }
+        .kb-m-field label { display: block; font: 800 .56rem var(--font-body); letter-spacing: 1px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 3px; }
+        .kb-m-field b { font: 700 .78rem var(--font-body); color: var(--v3-ink); }
+        .kb-timeline { margin-top: 14px; }
+        .kb-tl-title { display: flex; align-items: center; gap: 8px; font: 900 .64rem var(--font-body); letter-spacing: 1.3px; color: var(--text-soft); text-transform: uppercase; margin-bottom: 8px; }
+        .kb-tl { position: relative; padding-left: 20px; }
+        .kb-tl::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: #ddd3c7; }
+        .kb-tl-item { position: relative; padding: 0 0 12px; }
+        .kb-tl-item::before { content: ''; position: absolute; left: -18px; top: 4px; width: 12px; height: 12px; border: 2.5px solid var(--v3-ink); border-radius: 50%; background: var(--v3-orange); }
+        .kb-tl-item:last-child { padding-bottom: 0; }
+        .kb-tl-txt { font: 800 .74rem var(--font-body); color: var(--v3-ink); }
+        .kb-tl-txt b { color: var(--v3-orange); }
+        .kb-tl-time { font: 600 .62rem var(--font-body); color: #a89f95; }
+
+        @media (max-width: 720px) {
+            .kb-toolbar { padding: 10px 12px; }
+            .kb-board { padding: 12px; }
+            .kb-col { flex-basis: 260px; }
+            .kb-modal-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
-<body class="v3-body">
+<body class="v3-body kb-body">
 
     <!-- HEADER -->
     <header class="v3-store-header">
@@ -28,7 +111,7 @@
                 <div class="v3-store-logo">🏦</div>
                 <div class="v3-brand-info">
                     <span class="v3-eyebrow"><i class="fas fa-bank"></i> CRM DE CRÉDITO PRIME SUL</span>
-                    <h1>Minha Lista de Leads</h1>
+                    <h1>Kanban de Leads</h1>
                     <p id="v3-seller-desc">Carregando vendedor...</p>
                 </div>
             </div>
@@ -37,6 +120,7 @@
                 <div class="v3-meta-pills">
                     <span><i class="fas fa-users"></i> <strong id="v3-meta-leads">0</strong> leads</span>
                     <span><i class="fas fa-paper-plane"></i> <strong id="v3-meta-envios">0</strong> envios</span>
+                    <span><i class="fas fa-percent"></i> <strong id="v3-meta-conv">0%</strong> conversão</span>
                 </div>
             </div>
         </div>
@@ -46,114 +130,157 @@
     <section class="v3-promo-banner">
         <div class="v3-banner-content">
             <i class="fas fa-shield-halved"></i>
-            <span>PROTEÇÃO ANTI-BAN ATIVA • <strong>NÚMEROS DESCARTÁVEIS</strong> EM OPERAÇÃO</span>
+            <span>PROTEÇÃO ANTI-BAN ATIVA • <strong>NÚMEROS DESCARTÁVEIS</strong> EM OPERAÇÃO • ARRASTE OS CARDS PARA MUDAR O STATUS</span>
         </div>
     </section>
 
-    <!-- NAV STICKY -->
-    <div class="v3-sticky-nav-bar">
-        <div class="v3-nav-container">
-            <div class="v3-search-wrapper">
+    <!-- TOOLBAR -->
+    <div class="kb-toolbar">
+        <div class="kb-toolbar-row">
+            <div class="kb-search">
                 <i class="fas fa-search"></i>
-                <input type="text" id="v3-search-input" class="v3-search-input" placeholder="Buscar por nome, telefone, cidade...">
+                <input type="text" id="kb-search" placeholder="Buscar por nome, telefone, cidade, obs...">
             </div>
-            <div class="v3-categories-scroll" id="v3-status-filter">
-                <button class="v3-cat-pill active" data-status="TODOS">TODOS</button>
-                <button class="v3-cat-pill" data-status="NOVO">NOVO</button>
-                <button class="v3-cat-pill" data-status="CONTATO">EM CONTATO</button>
-                <button class="v3-cat-pill" data-status="CONFIRMADO">CONFIRMADO</button>
-                <button class="v3-cat-pill" data-status="CONCLUIDO">CONCLUÍDO</button>
-            </div>
+            <span class="kb-filter-label">Origem</span>
+            <select id="kb-origem" class="kb-select">
+                <option value="">TODAS</option>
+                <option value="SITE">Site</option>
+                <option value="SIMULACAO">Simulação</option>
+                <option value="INDICACAO">Indicação</option>
+            </select>
+            <span class="kb-filter-label">Prioridade</span>
+            <select id="kb-prioridade" class="kb-select">
+                <option value="">TODAS</option>
+                <option value="alta">Alta</option>
+                <option value="media">Média</option>
+                <option value="baixa">Baixa</option>
+            </select>
+            <span class="kb-filter-label">Limite R$</span>
+            <input type="number" id="kb-lim-min" class="kb-date" placeholder="mín" style="width:90px;">
+            <input type="number" id="kb-lim-max" class="kb-date" placeholder="máx" style="width:90px;">
+            <span class="kb-filter-label">De</span>
+            <input type="date" id="kb-data-de" class="kb-date">
+            <span class="kb-filter-label">Até</span>
+            <input type="date" id="kb-data-ate" class="kb-date">
+            <button type="button" class="kb-btn ghost" id="kb-limpar"><i class="fas fa-broom"></i> LIMPAR</button>
+            <button type="button" class="kb-btn new" id="kb-btn-new" style="margin-left:auto;"><i class="fas fa-plus"></i> CADASTRAR LEAD</button>
+        </div>
+        <div class="kb-pills" id="kb-pills">
+            <button class="kb-pill active" data-status="TODOS">TODOS</button>
+            <button class="kb-pill" data-status="novo">NOVO</button>
+            <button class="kb-pill" data-status="contato">EM CONTATO</button>
+            <button class="kb-pill" data-status="confirmado">CONFIRMADO</button>
+            <button class="kb-pill" data-status="concluido">CONCLUÍDO</button>
+            <button class="kb-pill" data-status="bloqueado">BLOQUEADOS</button>
         </div>
     </div>
 
-    <!-- GRID DE LEADS -->
-    <main class="v3-catalog-wrapper">
-        <div class="v3-category-section">
-            <h2 class="v3-category-title"><i class="fas fa-users"></i> LEADS QUENTES</h2>
-            <div class="v3-products-grid" id="v3-leads-grid">
-                <div class="v3-loading-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando leads...</p></div>
+    <!-- BOARD -->
+    <main class="kb-main">
+        <div class="kb-board-wrap">
+            <div class="kb-board" id="kb-board">
+                <div class="kb-loading" style="grid-column:1/-1; padding:40px; text-align:center; color:var(--v3-ink); font-weight:800;">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando leads...
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- BOTÃO FLUTUANTE: NOVO LEAD -->
-    <button type="button" class="v3-floating-cart-btn" id="v3-btn-new-lead" style="width:min(320px,92vw); border:3.5px solid var(--v3-ink); border-radius:16px; background:var(--v3-orange); color:#fff; box-shadow:6px 6px 0 var(--v3-ink); position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:1000; padding:12px 18px; display:flex; align-items:center; justify-content:center; gap:10px; font-family:inherit; font-weight:900; font-size:0.9rem; cursor:pointer;">
-        <i class="fas fa-plus"></i> CADASTRAR NOVO LEAD
-    </button>
-
-    <!-- INCLUDE: MODAL DE DETALHE -->
-    <div class="v3-modal-overlay" id="v3-lead-modal" style="display:none;">
+    <!-- MODAL DE DETALHE -->
+    <div class="v3-modal-overlay" id="kb-modal" style="display:none;">
         <div class="v3-modal-content">
-            <button type="button" class="v3-modal-close-btn" id="v3-close-lead-modal"><i class="fas fa-times"></i></button>
+            <button type="button" class="v3-modal-close-btn" id="kb-close-modal"><i class="fas fa-times"></i></button>
             <div class="v3-modal-body">
-                <div class="v3-modal-media" style="border:2.5px solid var(--v3-ink); border-radius:14px; overflow:hidden; height:160px; display:grid; place-items:center; background:var(--v3-cream); margin-bottom:14px;">
-                    <span id="v3-modal-initials" style="font:4rem var(--v3-font-title); color:var(--v3-ink);">—</span>
-                </div>
-                <div>
-                    <span class="v3-eyebrow">LEAD <span id="v3-modal-origem">SITE</span></span>
-                    <h2 id="v3-modal-name" style="font:1.8rem/1.1 var(--v3-font-title);">—</h2>
-                    <p id="v3-modal-phone" style="color:#756d67; font-size:0.8rem; font-weight:600; margin-top:6px;">—</p>
-                    <div style="margin-top:10px;"><span class="v3-tag" id="v3-modal-status">NOVO</span></div>
-                    <div class="v3-modal-price-tag" id="v3-modal-limite">Limite: —</div>
-                    <div class="v3-pizza-builder-box" style="margin-top:14px; padding:14px; background:var(--v3-cream); border:2.5px dashed var(--v3-ink); border-radius:14px;">
-                        <div class="v3-builder-title" style="font:1.2rem/1 var(--v3-font-title); margin-bottom:10px;"><i class="fas fa-envelope-open-text"></i> CONFIRMAÇÃO DO LEAD</div>
-                        <p style="font-size:0.78rem; font-weight:600; color:#756d67;">O cliente confirmou interesse na simulação. Clique abaixo para o bot do vendedor iniciar o contato.</p>
+                <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+                    <div style="width:62px; height:62px; display:grid; place-items:center; border:2.5px solid var(--v3-ink); border-radius:14px; background:var(--v3-orange); color:#fff; font:1.7rem var(--font-title); box-shadow:3px 3px 0 var(--v3-ink);" id="kb-m-initials">—</div>
+                    <div>
+                        <span class="v3-eyebrow">LEAD <span id="kb-m-origem">SITE</span></span>
+                        <h2 id="kb-m-name" style="font:1.7rem/1.05 var(--v3-font-title); margin:2px 0;">—</h2>
+                        <div style="display:flex; gap:7px; margin-top:6px; flex-wrap:wrap;">
+                            <span class="v3-tag" id="kb-m-status">NOVO</span>
+                            <span class="kb-chip" id="kb-m-pri">★ MÉDIA</span>
+                        </div>
                     </div>
+                </div>
+                <div class="kb-modal-grid" id="kb-m-fields"></div>
+                <div class="kb-timeline">
+                    <div class="kb-tl-title"><i class="fas fa-clock-rotate-left"></i> Histórico de status</div>
+                    <div class="kb-tl" id="kb-m-tl"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
                 </div>
             </div>
             <footer class="v3-modal-footer">
-                <button type="button" class="v3-btn ghost" id="v3-btn-block-lead"><i class="fas fa-ban"></i> BLOQUEAR</button>
-                <button type="button" class="v3-btn whatsapp" style="flex:1;" id="v3-btn-simulate-lead">
-                    <span><i class="fab fa-whatsapp"></i> REPASSAR PARA BOT DO VENDEDOR</span>
+                <button type="button" class="v3-btn ghost" id="kb-m-edit"><i class="fas fa-pen"></i> EDITAR</button>
+                <button type="button" class="v3-btn ghost" id="kb-m-block"><i class="fas fa-ban"></i> BLOQUEAR</button>
+                <button type="button" class="v3-btn whatsapp" style="flex:1;" id="kb-m-whatsapp">
+                    <span><i class="fab fa-whatsapp"></i> CHAMAR NO WHATSAPP</span>
                 </button>
             </footer>
         </div>
     </div>
 
-    <!-- INCLUDE: DRAWER DE NOVO LEAD -->
-    <div class="v3-drawer-overlay" id="v3-new-lead-drawer" style="display:none;">
+    <!-- DRAWER: NOVO / EDITAR LEAD -->
+    <div class="v3-drawer-overlay" id="kb-drawer" style="display:none;">
         <div class="v3-cart-drawer">
             <header class="v3-drawer-header">
                 <div>
-                    <span class="v3-eyebrow">NOVO LEAD</span>
-                    <h3>CADASTRAR LEAD</h3>
+                    <span class="v3-eyebrow" id="kb-drawer-eyebrow">NOVO LEAD</span>
+                    <h3 id="kb-drawer-title">CADASTRAR LEAD</h3>
                 </div>
-                <button type="button" class="v3-modal-close-btn" id="v3-close-new-lead-drawer"><i class="fas fa-times"></i></button>
+                <button type="button" class="v3-modal-close-btn" id="kb-close-drawer"><i class="fas fa-times"></i></button>
             </header>
             <div class="v3-drawer-body">
-                <form id="v3-new-lead-form">
+                <form id="kb-form">
                     <div class="v3-form-group">
-                        <label for="v3-lead-name">Nome Completo</label>
-                        <input type="text" id="v3-lead-name" class="v3-input" required placeholder="Ex: Maria Oliveira">
+                        <label for="kb-name">Nome Completo</label>
+                        <input type="text" id="kb-name" class="v3-input" required placeholder="Ex: Maria Oliveira">
                     </div>
                     <div class="v3-form-group">
-                        <label for="v3-lead-phone">WhatsApp</label>
-                        <input type="tel" id="v3-lead-phone" class="v3-input" required placeholder="(00) 00000-0000">
+                        <label for="kb-phone">WhatsApp</label>
+                        <input type="tel" id="kb-phone" class="v3-input" required placeholder="(00) 00000-0000">
                     </div>
                     <div class="v3-form-group">
-                        <label for="v3-lead-city">Cidade</label>
-                        <input type="text" id="v3-lead-city" class="v3-input" placeholder="Ex: Porto Alegre">
+                        <label for="kb-city">Cidade</label>
+                        <input type="text" id="kb-city" class="v3-input" placeholder="Ex: Porto Alegre">
                     </div>
                     <div class="v3-form-group">
-                        <label for="v3-lead-origem">Origem</label>
-                        <select id="v3-lead-origem" class="v3-select">
+                        <label for="kb-origem">Origem</label>
+                        <select id="kb-origem-form" class="v3-select">
                             <option value="SITE">Site Banco do Brasil</option>
                             <option value="SIMULACAO">Pediu Simulação</option>
                             <option value="INDICACAO">Indicação</option>
                         </select>
                     </div>
                     <div class="v3-form-group">
-                        <label for="v3-lead-limite">Limite Estimado</label>
-                        <input type="text" id="v3-lead-limite" class="v3-input" placeholder="Ex: R$ 15.000,00">
+                        <label for="kb-prioridade">Prioridade</label>
+                        <select id="kb-prioridade-form" class="v3-select">
+                            <option value="alta">★ Alta</option>
+                            <option value="media" selected>★ Média</option>
+                            <option value="baixa">★ Baixa</option>
+                        </select>
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="kb-limite">Limite Estimado</label>
+                        <input type="text" id="kb-limite" class="v3-input" placeholder="Ex: R$ 15.000,00">
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="kb-renda">Renda Estimada</label>
+                        <input type="text" id="kb-renda" class="v3-input" placeholder="Ex: R$ 4.500,00">
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="kb-valor">Valor Desejado</label>
+                        <input type="text" id="kb-valor" class="v3-input" placeholder="Ex: R$ 20.000,00">
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="kb-obs">Observações</label>
+                        <textarea id="kb-obs" class="v3-input" rows="3" placeholder="Anotações sobre o lead..."></textarea>
                     </div>
                 </form>
             </div>
             <footer class="v3-drawer-footer">
-                <button type="button" class="v3-btn primary" style="width:100%; justify-content:center;" id="v3-btn-save-lead">
+                <button type="button" class="v3-btn primary" style="width:100%; justify-content:center;" id="kb-save">
                     <i class="fas fa-save"></i> SALVAR LEAD
                 </button>
-                <p id="v3-duplicate-warning" style="display:none; margin-top:10px; text-align:center; color:var(--v3-coral); font-size:0.75rem; font-weight:900;">
+                <p id="kb-duplicate-warning" style="display:none; margin-top:10px; text-align:center; color:var(--v3-coral); font-size:0.75rem; font-weight:900;">
                     <i class="fas fa-exclamation-triangle"></i> LEAD JÁ CADASTRADO POR OUTRO VENDEDOR
                 </p>
             </footer>
@@ -169,13 +296,23 @@
             bloqueado: { label: 'BLOQUEADO', cls: 'bloqueado' },
             duplicado: { label: 'DUPLICADO', cls: 'bloqueado' }
         };
+        const COLUMNS = [
+            { status: 'novo', label: 'NOVO', color: 'var(--v3-blue)' },
+            { status: 'contato', label: 'EM CONTATO', color: 'var(--v3-yellow)' },
+            { status: 'confirmado', label: 'CONFIRMADO', color: 'var(--v3-orange)' },
+            { status: 'concluido', label: 'CONCLUÍDO', color: 'var(--v3-green)' },
+            { status: 'bloqueado', label: 'BLOQUEADOS', color: 'var(--v3-coral)' }
+        ];
+        const PRI_LABEL = { alta: 'ALTA', media: 'MÉDIA', baixa: 'BAIXA' };
 
         const token = localStorage.getItem('prime_sul_token');
         const me = JSON.parse(localStorage.getItem('prime_sul_user') || 'null');
         if (!token || !me) { window.location.href = '/login.html'; }
 
         let LEADS = [];
-        let currentLeadId = null;
+        let currentId = null;
+        let editMode = false;
+        let activeFilter = 'TODOS';
 
         async function api(path, opts = {}) {
             const res = await fetch('/api' + path, {
@@ -190,9 +327,7 @@
             return data;
         }
 
-        function initials(nome) {
-            return nome.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
-        }
+        const initials = n => n.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 
         function toast(msg, type = 'ok') {
             let wrap = document.getElementById('psToastWrap');
@@ -205,128 +340,342 @@
             setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(() => el.remove(), 220); }, 3000);
         }
 
-        function statusBadge(status) {
-            const st = STATUS_MAP[status] || { label: status, cls: 'novo' };
-            return `<span class="v3-tag ${st.cls}">${st.label}</span>`;
+        function moneyNum(v) {
+            if (!v) return null;
+            const d = String(v).replace(/[^\d]/g, '');
+            if (!d) return null;
+            return /,\d{2}/.test(v) ? parseFloat(d) / 100 : parseFloat(d);
         }
 
-        function renderLeads(filter = 'TODOS', search = '') {
-            const grid = document.getElementById('v3-leads-grid');
-            const list = LEADS.filter(l =>
-                (filter === 'TODOS' || l.status === filter.toLowerCase()) &&
-                (!search || (l.name + l.phone + (l.city || '')).toLowerCase().includes(search.toLowerCase()))
-            );
-            if (!list.length) {
-                grid.innerHTML = '<div class="v3-loading-state"><i class="fas fa-inbox"></i><p>Nenhum lead encontrado.</p></div>';
-                return;
+        function relTime(utc) {
+            const d = new Date((utc || '').replace(' ', 'T') + 'Z');
+            if (isNaN(d)) return '';
+            const s = (Date.now() - d) / 1000;
+            if (s < 60) return 'agora';
+            const m = s / 60;
+            if (m < 60) return Math.floor(m) + 'min';
+            const h = m / 60;
+            if (h < 24) return Math.floor(h) + 'h';
+            const days = h / 24;
+            if (days < 7) return Math.floor(days) + 'd';
+            return d.toLocaleDateString('pt-BR');
+        }
+
+        function fmtDateTime(utc) {
+            const d = new Date((utc || '').replace(' ', 'T') + 'Z');
+            if (isNaN(d)) return '';
+            return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function statusBadge(st) {
+            const s = STATUS_MAP[st] || { label: st, cls: 'novo' };
+            return `<span class="v3-tag ${s.cls}">${s.label}</span>`;
+        }
+
+        function colOf(st) { return (st === 'duplicado') ? 'bloqueado' : st; }
+
+        // ---------- filtros ----------
+        function applyFilters() {
+            const search = document.getElementById('kb-search').value.trim().toLowerCase();
+            const origem = document.getElementById('kb-origem').value;
+            const prio = document.getElementById('kb-prioridade').value;
+            const limMin = document.getElementById('kb-lim-min').value ? Number(document.getElementById('kb-lim-min').value) : null;
+            const limMax = document.getElementById('kb-lim-max').value ? Number(document.getElementById('kb-lim-max').value) : null;
+            const dataDe = document.getElementById('kb-data-de').value;
+            const dataAte = document.getElementById('kb-data-ate').value;
+
+            return LEADS.filter(l => {
+                if (activeFilter !== 'TODOS' && colOf(l.status) !== activeFilter) return false;
+                if (origem && l.origem !== origem) return false;
+                if (prio && l.prioridade !== prio) return false;
+                if (search && !(l.name + ' ' + l.phone + ' ' + (l.city || '') + ' ' + (l.obs || '')).toLowerCase().includes(search)) return false;
+                const m = moneyNum(l.limite_est);
+                if (limMin !== null && (m === null || m < limMin)) return false;
+                if (limMax !== null && (m === null || m > limMax)) return false;
+                const created = (l.created_at || '').slice(0, 10);
+                if (dataDe && created < dataDe) return false;
+                if (dataAte && created > dataAte) return false;
+                return true;
+            });
+        }
+
+        // ---------- render ----------
+        function render() {
+            const list = applyFilters();
+            const board = document.getElementById('kb-board');
+
+            board.innerHTML = COLUMNS.map(col => {
+                const cards = list.filter(l => colOf(l.status) === col.status);
+                return `
+                <section class="kb-col" data-status="${col.status}">
+                    <header class="kb-col-head">
+                        <span class="kb-col-dot" style="background:${col.color};"></span>
+                        <h3>${col.label}</h3>
+                        <span class="kb-col-count">${cards.length}</span>
+                    </header>
+                    <div class="kb-col-body">
+                        ${cards.length ? cards.map(cardHtml).join('') : `<div class="kb-col-empty"><i class="fas fa-inbox"></i><br>${col.status === 'bloqueado' ? 'Sem bloqueados' : 'Arraste um lead para cá'}</div>`}
+                    </div>
+                </section>`;
+            }).join('');
+
+            bindDrag();
+            document.getElementById('kb-board').querySelectorAll('.kb-col').forEach(bindColumn);
+        }
+
+        function cardHtml(l) {
+            return `
+            <article class="kb-card pri-${l.prioridade || 'media'}" draggable="true" data-id="${l.id}">
+                <div class="kb-card-top">
+                    <span class="kb-pri"><i class="fas fa-star"></i></span>
+                    <span class="kb-origem">${l.origem}</span>
+                    ${l.limite_est ? `<span class="kb-limit">${l.limite_est}</span>` : ''}
+                </div>
+                <h4>${l.name}</h4>
+                <p class="kb-phone"><i class="fas fa-phone" style="margin-right:4px;"></i>${l.phone}${l.city ? ' • ' + l.city : ''}</p>
+                <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:9px;">
+                    ${l.renda ? `<span class="kb-chip renda"><i class="fas fa-wallet"></i> ${l.renda}</span>` : ''}
+                    ${l.valor_desejado ? `<span class="kb-chip valor"><i class="fas fa-coins"></i> ${l.valor_desejado}</span>` : ''}
+                </div>
+                <div class="kb-card-foot">
+                    <span class="kb-date"><i class="far fa-clock"></i> ${relTime(l.created_at)}</span>
+                    <button type="button" class="kb-more" title="Detalhes"><i class="fas fa-ellipsis"></i></button>
+                </div>
+            </article>`;
+        }
+
+        // ---------- drag & drop ----------
+        function bindDrag() {
+            document.querySelectorAll('.kb-card').forEach(card => {
+                card.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', card.dataset.id);
+                    card.classList.add('dragging');
+                });
+                card.addEventListener('dragend', () => card.classList.remove('dragging'));
+                card.addEventListener('click', e => {
+                    if (e.target.closest('.kb-more')) { openModal(Number(card.dataset.id)); }
+                });
+                card.addEventListener('dblclick', () => openModal(Number(card.dataset.id)));
+            });
+        }
+
+        function bindColumn(col) {
+            const body = col.querySelector('.kb-col-body');
+            body.addEventListener('dragover', e => { e.preventDefault(); body.classList.add('drop-over'); });
+            body.addEventListener('dragleave', () => body.classList.remove('drop-over'));
+            body.addEventListener('drop', async e => {
+                e.preventDefault();
+                body.classList.remove('drop-over');
+                const id = Number(e.dataTransfer.getData('text/plain'));
+                const status = col.dataset.status;
+                const lead = LEADS.find(l => l.id === id);
+                if (!lead || colOf(lead.status) === status) return;
+
+                const target = e.target.closest('.kb-card');
+                const oldStatus = lead.status;
+                lead.status = (status === 'bloqueado') ? 'bloqueado' : status;
+
+                const card = document.querySelector(`.kb-card[data-id="${id}"]`);
+                if (card) card.remove();
+                const empty = body.querySelector('.kb-col-empty');
+                if (empty) empty.remove();
+                body.insertBefore(cardElement(lead), target);
+                if (!body.children.length) body.innerHTML = `<div class="kb-col-empty"><i class="fas fa-inbox"></i><br>Arraste um lead para cá</div>`;
+                updateCounts();
+
+                try {
+                    await api(`/leads/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+                    if (status === 'bloqueado') toast('Lead bloqueado');
+                    else toast(`Movido para ${STATUS_MAP[status].label}`);
+                    await refreshCounts();
+                } catch (err) {
+                    lead.status = oldStatus;
+                    toast(err.message, 'err');
+                    render();
+                }
+            });
+        }
+
+        function cardElement(l) {
+            const el = document.createElement('div');
+            el.innerHTML = cardHtml(l).trim();
+            return el.firstChild;
+        }
+
+        function updateCounts() {
+            document.querySelectorAll('.kb-col').forEach(col => {
+                const body = col.querySelector('.kb-col-body');
+                const n = body.querySelectorAll('.kb-card').length;
+                col.querySelector('.kb-col-count').textContent = n;
+            });
+        }
+
+        // ---------- modal ----------
+        async function openModal(id) {
+            currentId = id;
+            const l = LEADS.find(x => x.id === id);
+            if (!l) return;
+            document.getElementById('kb-m-initials').textContent = initials(l.name);
+            document.getElementById('kb-m-origem').textContent = l.origem;
+            document.getElementById('kb-m-name').textContent = l.name;
+            document.getElementById('kb-m-status').textContent = STATUS_MAP[l.status].label;
+            document.getElementById('kb-m-status').className = 'v3-tag ' + STATUS_MAP[l.status].cls;
+            const pri = document.getElementById('kb-m-pri');
+            pri.textContent = '★ ' + (PRI_LABEL[l.prioridade] || 'MÉDIA');
+            pri.style.background = l.prioridade === 'alta' ? '#ffe5e0' : (l.prioridade === 'baixa' ? '#f1ece4' : '#fff3d6');
+
+            const fields = [
+                ['Telefone / WhatsApp', l.phone, 'fa-phone'],
+                ['Cidade', l.city || '—', 'fa-location-dot'],
+                ['Limite estimado', l.limite_est || '—', 'fa-sack-dollar'],
+                ['Renda estimada', l.renda || '—', 'fa-wallet'],
+                ['Valor desejado', l.valor_desejado || '—', 'fa-coins'],
+                ['Cadastrado', fmtDateTime(l.created_at), 'fa-calendar-days'],
+                ['Observações', l.obs || '—', 'fa-note-sticky', true]
+            ];
+            document.getElementById('kb-m-fields').innerHTML = fields.map(f =>
+                `<div class="kb-m-field ${f[3] ? 'full' : ''}"><label><i class="fas ${f[2]}"></i> ${f[0]}</label><b>${f[1]}</b></div>`
+            ).join('');
+
+            document.getElementById('kb-m-tl').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+            try {
+                const hist = await api(`/leads/${id}/history`);
+                document.getElementById('kb-m-tl').innerHTML = hist.length
+                    ? hist.map(h => `
+                        <div class="kb-tl-item">
+                            <div class="kb-tl-txt">${h.from_status
+                                ? `${STATUS_MAP[h.from_status]?.label || h.from_status} <i class="fas fa-arrow-right" style="font-size:.6rem;"></i> <b>${STATUS_MAP[h.to_status]?.label || h.to_status}</b>`
+                                : `Lead <b>cadastrado</b>`}</div>
+                            <div class="kb-tl-time">${fmtDateTime(h.created_at)}</div>
+                        </div>`).join('')
+                    : '<div class="kb-tl-item"><div class="kb-tl-txt">Sem histórico</div></div>';
+            } catch (e) {
+                document.getElementById('kb-m-tl').innerHTML = '<div class="kb-tl-item"><div class="kb-tl-txt">Erro ao carregar histórico</div></div>';
             }
-            grid.innerHTML = list.map(l => `
-                <article class="v3-product-card" data-id="${l.id}" onclick="openLeadModal(${l.id})">
-                    <div style="position:relative;">
-                        <div class="v3-lead-avatar">${initials(l.name)}</div>
-                        <span class="v3-product-badge"><i class="fas fa-fire"></i> ${l.origem}</span>
-                    </div>
-                    <div>
-                        <h3 class="v3-product-name">${l.name}</h3>
-                        <p class="v3-product-desc">${l.phone} • ${l.city || '—'}</p>
-                        <div style="margin-top:8px;">${statusBadge(l.status)}</div>
-                    </div>
-                    <div class="v3-product-footer">
-                        <span class="v3-product-price">${l.limite_est || 'R$ —'}</span>
-                        <div style="display:flex; gap:8px;">
-                            <button type="button" class="v3-btn ghost" onclick="event.stopPropagation(); openLeadModal(${l.id})"><i class="fas fa-eye"></i></button>
-                            <button type="button" class="v3-btn whatsapp" onclick="event.stopPropagation(); repassarLead(${l.id})"><i class="fab fa-whatsapp"></i> SIMULAR</button>
-                        </div>
-                    </div>
-                </article>`).join('');
+
+            document.getElementById('kb-modal').style.display = 'flex';
+        }
+
+        // ---------- drawer (novo / editar) ----------
+        function openDrawer(mode, lead) {
+            editMode = mode === 'edit';
+            document.getElementById('kb-drawer-eyebrow').textContent = editMode ? 'EDITAR LEAD' : 'NOVO LEAD';
+            document.getElementById('kb-drawer-title').textContent = editMode ? 'EDITAR LEAD' : 'CADASTRAR LEAD';
+            document.getElementById('kb-duplicate-warning').style.display = 'none';
+            const f = lead || {};
+            document.getElementById('kb-name').value = f.name || '';
+            document.getElementById('kb-phone').value = f.phone || '';
+            document.getElementById('kb-city').value = f.city || '';
+            document.getElementById('kb-origem-form').value = f.origem || 'SITE';
+            document.getElementById('kb-prioridade-form').value = f.prioridade || 'media';
+            document.getElementById('kb-limite').value = f.limite_est || '';
+            document.getElementById('kb-renda').value = f.renda || '';
+            document.getElementById('kb-valor').value = f.valor_desejado || '';
+            document.getElementById('kb-obs').value = f.obs || '';
+            document.getElementById('kb-drawer').style.display = 'flex';
+            if (editMode) currentId = f.id;
+        }
+
+        // ---------- load ----------
+        async function refreshCounts() {
+            try {
+                const c = await api('/leads/counts');
+                document.getElementById('v3-meta-leads').textContent = c.leads;
+                document.getElementById('v3-meta-envios').textContent = c.envios;
+                document.getElementById('v3-meta-conv').textContent = c.conversao + '%';
+            } catch (e) {}
         }
 
         async function loadAll() {
             try {
-                const [leads, counts] = await Promise.all([api('/leads'), api('/leads/counts')]);
+                const leads = await api('/leads');
                 LEADS = leads;
                 document.getElementById('v3-seller-desc').textContent = me.name;
-                document.getElementById('v3-meta-leads').textContent = counts.leads;
-                document.getElementById('v3-meta-envios').textContent = counts.envios;
-                renderLeads();
+                render();
+                await refreshCounts();
             } catch (e) {
-                document.getElementById('v3-leads-grid').innerHTML =
-                    '<div class="v3-loading-state"><i class="fas fa-exclamation-triangle"></i><p>' + e.message + '</p></div>';
+                document.getElementById('kb-board').innerHTML = `<div class="kb-loading" style="padding:40px; text-align:center; color:var(--v3-coral); font-weight:800;"><i class="fas fa-exclamation-triangle"></i> ${e.message}</div>`;
             }
         }
 
-        function openLeadModal(id) {
-            const l = LEADS.find(x => x.id === id);
-            if (!l) return;
-            currentLeadId = id;
-            const st = STATUS_MAP[l.status];
-            document.getElementById('v3-modal-initials').textContent = initials(l.name);
-            document.getElementById('v3-modal-origem').textContent = l.origem;
-            document.getElementById('v3-modal-name').textContent = l.name;
-            document.getElementById('v3-modal-phone').textContent = l.phone + ' • ' + (l.city || '—');
-            document.getElementById('v3-modal-status').textContent = st.label;
-            document.getElementById('v3-modal-status').className = 'v3-tag ' + st.cls;
-            document.getElementById('v3-modal-limite').textContent = 'Limite: ' + (l.limite_est || 'R$ —');
-            document.getElementById('v3-lead-modal').style.display = 'flex';
-        }
+        // ---------- eventos ----------
+        document.getElementById('kb-close-modal').onclick = () => document.getElementById('kb-modal').style.display = 'none';
+        document.getElementById('kb-modal').addEventListener('click', e => { if (e.target.id === 'kb-modal') e.target.style.display = 'none'; });
+        document.getElementById('kb-close-drawer').onclick = () => document.getElementById('kb-drawer').style.display = 'none';
+        document.getElementById('kb-drawer').addEventListener('click', e => { if (e.target.id === 'kb-drawer') e.target.style.display = 'none'; });
 
-        function repassarLead(id) {
-            const l = LEADS.find(x => x.id === id);
-            const msg = encodeURIComponent(`Olá ${l.name}! Aqui é o vendedor Prime Sul. Você pediu uma simulação de crédito. Posso encaminhar?`);
-            window.open(`https://wa.me/${l.phone}?text=${msg}`, '_blank');
-        }
-
-        document.getElementById('v3-close-lead-modal').onclick = () => document.getElementById('v3-lead-modal').style.display = 'none';
-        document.getElementById('v3-lead-modal').addEventListener('click', e => { if (e.target.id === 'v3-lead-modal') e.target.style.display = 'none'; });
-        document.getElementById('v3-btn-block-lead').onclick = async () => {
-            try { await api(`/leads/${currentLeadId}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'bloqueado' }) }); toast('Lead bloqueado'); } catch (e) { toast(e.message, 'err'); }
-            document.getElementById('v3-lead-modal').style.display = 'none';
+        document.getElementById('kb-btn-new').onclick = () => openDrawer('new');
+        document.getElementById('kb-m-edit').onclick = () => {
+            const l = LEADS.find(x => x.id === currentId);
+            document.getElementById('kb-modal').style.display = 'none';
+            if (l) openDrawer('edit', l);
+        };
+        document.getElementById('kb-m-block').onclick = async () => {
+            try {
+                await api(`/leads/${currentId}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'bloqueado' }) });
+                toast('Lead bloqueado');
+            } catch (e) { toast(e.message, 'err'); }
+            document.getElementById('kb-modal').style.display = 'none';
             await loadAll();
         };
-        document.getElementById('v3-btn-simulate-lead').onclick = async () => {
-            const name = document.getElementById('v3-modal-name').textContent;
-            const lead = LEADS.find(x => x.name === name);
-            if (lead) repassarLead(lead.id);
-            document.getElementById('v3-lead-modal').style.display = 'none';
+        document.getElementById('kb-m-whatsapp').onclick = () => {
+            const l = LEADS.find(x => x.id === currentId);
+            const msg = encodeURIComponent(`Olá ${l.name}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso encaminhar?`);
+            window.open(`https://wa.me/${l.phone}?text=${msg}`, '_blank');
         };
 
-        document.getElementById('v3-search-input').addEventListener('input', e => {
-            renderLeads(document.querySelector('.v3-cat-pill.active').dataset.status, e.target.value);
-        });
-        document.querySelectorAll('#v3-status-filter .v3-cat-pill').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('#v3-status-filter .v3-cat-pill').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                renderLeads(btn.dataset.status, document.getElementById('v3-search-input').value);
-            });
-        });
-
-        const drawer = document.getElementById('v3-new-lead-drawer');
-        document.getElementById('v3-btn-new-lead').onclick = () => { drawer.style.display = 'flex'; document.getElementById('v3-duplicate-warning').style.display = 'none'; };
-        document.getElementById('v3-close-new-lead-drawer').onclick = () => { drawer.style.display = 'none'; };
-        document.getElementById('v3-btn-save-lead').onclick = async () => {
-            const warn = document.getElementById('v3-duplicate-warning');
+        document.getElementById('kb-save').onclick = async () => {
+            const warn = document.getElementById('kb-duplicate-warning');
             warn.style.display = 'none';
+            const body = {
+                name: document.getElementById('kb-name').value.trim(),
+                phone: document.getElementById('kb-phone').value,
+                city: document.getElementById('kb-city').value.trim(),
+                origem: document.getElementById('kb-origem-form').value,
+                prioridade: document.getElementById('kb-prioridade-form').value,
+                limite_est: document.getElementById('kb-limite').value.trim(),
+                renda: document.getElementById('kb-renda').value.trim(),
+                valor_desejado: document.getElementById('kb-valor').value.trim(),
+                obs: document.getElementById('kb-obs').value.trim()
+            };
+            if (!body.name || !body.phone) { toast('Nome e telefone obrigatórios', 'err'); return; }
             try {
-                await api('/leads', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        name: document.getElementById('v3-lead-name').value.trim(),
-                        phone: document.getElementById('v3-lead-phone').value,
-                        city: document.getElementById('v3-lead-city').value.trim(),
-                        origem: document.getElementById('v3-lead-origem').value,
-                        limite_est: document.getElementById('v3-lead-limite').value.trim()
-                    })
-                });
-                drawer.style.display = 'none';
-                document.getElementById('v3-new-lead-form').reset();
-                toast('Lead salvo!');
+                if (editMode) {
+                    await api(`/leads/${currentId}`, { method: 'PATCH', body: JSON.stringify(body) });
+                    toast('Lead atualizado!');
+                } else {
+                    await api('/leads', { method: 'POST', body: JSON.stringify(body) });
+                    toast('Lead salvo!');
+                }
+                document.getElementById('kb-drawer').style.display = 'none';
+                document.getElementById('kb-form').reset();
                 await loadAll();
             } catch (e) {
                 if (e.status === 409) warn.style.display = 'block';
                 else toast(e.message, 'err');
             }
         };
+
+        ['kb-search', 'kb-origem', 'kb-prioridade', 'kb-lim-min', 'kb-lim-max', 'kb-data-de', 'kb-data-ate'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => render());
+            document.getElementById(id).addEventListener('change', () => render());
+        });
+
+        document.getElementById('kb-limpar').onclick = () => {
+            ['kb-search', 'kb-origem', 'kb-prioridade', 'kb-lim-min', 'kb-lim-max', 'kb-data-de', 'kb-data-ate'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            render();
+        };
+
+        document.querySelectorAll('#kb-pills .kb-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#kb-pills .kb-pill').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeFilter = btn.dataset.status;
+                render();
+            });
+        });
 
         loadAll();
     </script>
