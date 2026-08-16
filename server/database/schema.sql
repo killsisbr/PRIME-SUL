@@ -74,3 +74,9 @@ CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone);
 CREATE INDEX IF NOT EXISTS idx_leads_seller ON leads(seller_id);
 CREATE INDEX IF NOT EXISTS idx_sends_campaign ON sends(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_sends_lead ON sends(lead_id);
+
+-- Configurações do sistema (parceira BB, templates, limites anti-ban)
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+);

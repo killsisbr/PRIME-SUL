@@ -1,0 +1,129 @@
+/* --- PRIME SUL HUB de Disparo (estilo Hub de Promoções do SAAS-WEB) --- */
+
+#dynamicModalBody:has(.hub-v2) { display: flex; min-height: 0; overflow: hidden !important; padding: 18px !important; }
+
+.hub-v2 {
+    --hub-ink: #181716;
+    --hub-dark: #211c18;
+    --hub-cream: #fff8ed;
+    --hub-orange: #ff7417;
+    --hub-yellow: #ffbd16;
+    --hub-coral: #df4632;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 14px;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.hub-shell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 12px 16px;
+    color: var(--hub-ink);
+    border: 3px solid var(--hub-ink);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 5px 5px 0 var(--hub-ink);
+}
+.hub-brand-lockup { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.hub-brand-icon { display: grid; place-items: center; flex: 0 0 46px; height: 46px; color: #fff; border: 3px solid var(--hub-ink); border-radius: 12px; background: var(--hub-orange); box-shadow: 3px 3px 0 var(--hub-yellow); font-size: 1.15rem; }
+.hub-brand-lockup h1 { margin: 1px 0 0; font: 2rem/.9 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+.hub-brand-lockup p { margin: 3px 0 0; color: #756d67; font-size: .72rem; font-weight: 700; }
+.hub-eyebrow, .hub-modal-step { color: var(--hub-coral); font-size: .61rem; font-weight: 900; letter-spacing: 1.6px; }
+.hub-live-badge { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; padding: 7px 10px; color: #13883d; border: 2px solid var(--hub-ink); border-radius: 999px; background: #e2fbea; font-size: .61rem; font-weight: 900; }
+.hub-live-badge i { font-size: .43rem; }
+
+.hub-console { display: grid; grid-template-columns: minmax(390px, .86fr) minmax(540px, 1.14fr); gap: 16px; min-height: 0; overflow: hidden; }
+.hub-command-stage { position: relative; display: flex; flex-direction: column; min-height: 0; padding: clamp(22px, 3vh, 34px); overflow: hidden; color: #fff; border: 3px solid var(--hub-ink); border-radius: 22px; background: radial-gradient(circle at 88% 14%, rgba(255,116,23,.42), transparent 29%), linear-gradient(145deg, #211c18 0%, #171513 100%); box-shadow: 7px 7px 0 var(--hub-ink); }
+.hub-command-stage::after { content: 'R$'; position: absolute; right: -12px; bottom: -65px; color: rgba(255,255,255,.035); font: 19rem/1 'Bebas Neue', sans-serif; pointer-events: none; }
+.hub-stage-top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; color: var(--hub-yellow); font-size: .63rem; font-weight: 900; letter-spacing: 1.4px; }
+.hub-stage-top i { display: grid; place-items: center; width: 32px; height: 32px; color: var(--hub-ink); border-radius: 50%; background: var(--hub-yellow); }
+.hub-stage-copy { position: relative; z-index: 1; margin: auto 0; }
+.hub-stage-copy small { color: #cbbcb1; font-size: .59rem; font-weight: 900; letter-spacing: 1px; }
+.hub-stage-copy h2 { margin: 10px 0 12px; font: clamp(2.6rem, 4vw, 4.5rem)/.83 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+.hub-stage-copy h2 strong { color: var(--hub-yellow); }
+.hub-stage-copy p { max-width: 460px; margin: 0; color: #cbbcb1; font-size: .78rem; font-weight: 650; line-height: 1.5; }
+.hub-stage-actions { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr auto; gap: 9px; margin: 20px 0; }
+.hub-stage-actions button { padding: 11px 13px; border: 3px solid #fff; border-radius: 10px; font-size: .68rem; font-weight: 900; cursor: pointer; font-family: 'Outfit', sans-serif; }
+.hub-primary-action { color: var(--hub-ink); background: var(--hub-yellow); box-shadow: 3px 3px 0 var(--hub-coral); }
+.hub-ghost-action { color: #fff; background: transparent; }
+.hub-stage-actions button:hover { transform: translateY(-2px); }
+.hub-impact-strip { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #584b42; border-radius: 13px; background: rgba(54,45,39,.78); }
+.hub-impact-strip > div { padding: 11px 8px; text-align: center; border-right: 1px solid #584b42; }
+.hub-impact-strip > div:last-child { border: 0; }
+.hub-impact-strip b, .hub-impact-strip span { display: block; }
+.hub-impact-strip b { color: var(--hub-yellow); font: 1.4rem/1 'Bebas Neue', sans-serif; }
+.hub-impact-strip span { margin-top: 3px; color: #aa9d93; font-size: .48rem; font-weight: 900; }
+
+.hub-launchpad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)) auto; gap: 12px; min-height: 0; }
+.hub-tool-card { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; gap: 8px 12px; min-height: 0; padding: 16px; overflow: hidden; color: var(--hub-ink); text-align: left; border: 3px solid var(--hub-ink); border-radius: 17px; background: #fff; box-shadow: 5px 5px 0 var(--hub-ink); cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; font-family: 'Outfit', sans-serif; }
+.hub-tool-card:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--hub-ink); }
+.hub-card-index { position: absolute; right: 12px; top: 7px; color: rgba(24,23,22,.09); font: 2.8rem 'Bebas Neue', sans-serif; }
+.hub-tool-icon { display: grid; place-items: center; align-self: start; width: 44px; height: 44px; border: 2px solid var(--hub-ink); border-radius: 12px; }
+.hub-tool-icon.orange { color: #fff; background: var(--hub-orange); }.hub-tool-icon.red { color: #fff; background: var(--hub-coral); }.hub-tool-icon.blue { color: #fff; background: #3b82f6; }.hub-tool-icon.dark { color: #fff; background: var(--hub-dark); }
+.hub-tool-copy { align-self: center; display: grid; gap: 4px; }
+.hub-tool-copy small { color: #857b73; font-size: .54rem; font-weight: 900; letter-spacing: .8px; }
+.hub-tool-copy strong { font: 1.45rem/1 'Bebas Neue', sans-serif; letter-spacing: .6px; }
+.hub-tool-copy em { color: #716861; font-size: .66rem; font-style: normal; font-weight: 700; line-height: 1.35; }
+.hub-tool-card > b { grid-column: 1 / -1; display: flex; justify-content: space-between; padding-top: 8px; border-top: 2px dashed currentColor; font-size: .61rem; }
+.campaign-tool { background: #fff0e3; }.numbers-tool { background: #ffe6e1; }
+.leads-tool { color: #fff; background: var(--hub-dark); }.leads-tool .hub-tool-copy small, .leads-tool .hub-tool-copy em { color: #c6b8ad; }.leads-tool .hub-card-index { color: rgba(255,255,255,.09); }
+.config-tool { background: #fff5c9; }
+.hub-utility-strip { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 10px; border: 2px dashed #c4b7ac; border-radius: 11px; }
+.hub-utility-strip > span { flex: 1; min-width: 0; color: #796f67; font-size: .58rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hub-utility-strip > span i { color: var(--hub-orange); }
+.hub-utility-strip button { padding: 6px 8px; color: var(--hub-ink); border: 2px solid var(--hub-ink); border-radius: 7px; background: #fff; font-size: .53rem; font-weight: 900; cursor: pointer; font-family: 'Outfit', sans-serif; }
+
+.hub-workspace-modal { z-index: 13050; }
+.hub-submodal { width: min(1050px, 94vw); max-width: none; max-height: min(730px, 88vh); border-radius: 22px; box-shadow: 12px 12px 0 var(--hub-coral); }
+.hub-submodal .v2-submodal-header { flex: 0 0 auto; padding: 15px 22px; background: var(--hub-cream); }
+.hub-submodal .v2-submodal-header h3 { margin: 2px 0 0; font-size: 1.85rem; line-height: 1; }
+.hub-submodal .v2-submodal-header p { margin: 4px 0 0; color: #756d67; font-size: .68rem; font-weight: 700; }
+.hub-submodal .btn-close-submodal { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 2px solid var(--hub-ink); border-radius: 50%; background: #fff; }
+.hub-coupon-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 22px; border-bottom: 2px solid #ddd1c6; background: #fff; }
+.hub-coupon-toolbar > div { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 6px; min-width: 110px; }
+.hub-coupon-toolbar b { color: var(--hub-coral); font: 1.35rem 'Bebas Neue', sans-serif; }
+.hub-coupon-toolbar span { color: #7d746d; font-size: .55rem; font-weight: 900; }
+.hub-coupon-toolbar .btn-retro { margin-left: auto; }
+.hub-campaign-list { display: grid; align-content: start; gap: 10px; min-height: 260px; padding: 18px 22px !important; }
+.hub-loading, .hub-empty { display: grid; place-items: center; gap: 8px; min-height: 230px; color: #786f68; border: 2px dashed #bcaea2; border-radius: 14px; font-weight: 800; }
+.hub-empty i { color: var(--hub-orange); font-size: 1.8rem; }
+.hub-campaign-row { display: grid; grid-template-columns: minmax(125px, auto) 1fr auto auto; align-items: center; gap: 14px; padding: 12px 14px; border: 3px solid var(--hub-ink); border-radius: 13px; background: #fff; box-shadow: 3px 3px 0 var(--hub-ink); }
+.hub-campaign-code { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; color: #fff; border-radius: 7px; background: var(--hub-dark); font: 1rem 'Bebas Neue', sans-serif; letter-spacing: 1.4px; }
+.hub-campaign-detail strong, .hub-campaign-detail span { display: block; }
+.hub-campaign-detail strong { font-size: .76rem; }.hub-campaign-detail span { margin-top: 2px; color: #7b7169; font-size: .62rem; font-weight: 700; }
+.hub-campaign-status { padding: 5px 8px; border: 2px solid; border-radius: 999px; font-size: .55rem; font-weight: 900; }
+.hub-campaign-status.running { color: #12813b; border-color: #12813b; background: #e3faea; }.hub-campaign-status.paused { color: #9c3024; border-color: #c74838; background: #ffe5e0; }.hub-campaign-status.done { color: #181716; border-color: #181716; background: #e8e4df; }.hub-campaign-status.draft { color: #7c5c10; border-color: #b7892c; background: #fff5c9; }
+.hub-campaign-actions { display: flex; gap: 6px; }
+.hub-icon-btn { display: grid; place-items: center; width: 32px; height: 32px; color: var(--hub-ink); border: 2px solid var(--hub-ink); border-radius: 7px; background: #fff; cursor: pointer; }
+.hub-icon-btn.start { color: #fff; background: #25d366; }.hub-icon-btn.toggle { background: var(--hub-yellow); }
+.hub-submodal-footer { display: flex; flex: 0 0 auto; justify-content: flex-end; gap: 10px; padding: 12px 22px; border-top: 3px solid var(--hub-ink); background: var(--hub-cream); }
+
+.hub-editor-overlay { z-index: 13100; }
+.hub-editor-submodal { width: min(760px, 94vw); }
+.hub-campaign-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 14px; padding: 18px 22px !important; }
+.hub-wide { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+    #dynamicModalBody:has(.hub-v2) { padding: 10px !important; }
+    .hub-shell-header { display: none; }
+    .hub-v2 { grid-template-rows: minmax(0, 1fr); }
+    .hub-console { grid-template-columns: 1fr; grid-template-rows: minmax(230px, .85fr) minmax(280px, 1.15fr); }
+    .hub-command-stage { padding: 18px; }
+    .hub-stage-copy h2 { margin: 7px 0; font-size: 2.5rem; }
+    .hub-stage-copy p { display: none; }
+    .hub-tool-card { padding: 12px; }
+}
+
+@media (max-width: 640px) {
+    .hub-impact-strip span, .hub-card-index, .hub-tool-copy small, .hub-tool-copy em, .hub-utility-strip > span { display: none; }
+    .hub-tool-icon { width: 35px; height: 35px; }
+    .hub-submodal { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; box-shadow: none; }
+    .hub-campaign-form-grid { grid-template-columns: 1fr; }
+    .hub-campaign-row { grid-template-columns: 1fr auto; }
+}

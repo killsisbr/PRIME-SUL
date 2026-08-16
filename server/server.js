@@ -16,10 +16,15 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/sellers', require('./routes/sellers'));
 app.use('/api/leads', require('./routes/leads'));
 app.use('/api/campaigns', require('./routes/campaigns'));
+app.use('/api/config', require('./routes/config'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
 
 // Front estático
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+app.get('/', (req, res) => {
+    res.redirect('/login.html');
+});
 
 // Error handler
 app.use((err, req, res, next) => {
