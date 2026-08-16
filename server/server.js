@@ -41,15 +41,24 @@ async function bootstrap() {
     botFlow.register();
 
     if (whatsapp.enabled()) {
+        const antiBan = require('./services/anti-ban-service');
         const mainNumber = process.env.BOT_MAIN_NUMBER;
-        if (mainNumber) {
-            const antiBan = require('./services/anti-ban-service');
+        const active = await db.all("SELECT * FROM bot_numbers WHERE status = 'ativo'");
+        for (const n of active) {
+            await whatsapp.connect(n.number, n.label);
+        }
+        if (mainNumber && !active.some(n => n.number === mainNumber)) {
             await antiBan.registerNumber(mainNumber, 'bot-principal');
             await whatsapp.connect(mainNumber, 'bot-principal');
         }
     } else {
         console.log('[whatsapp] BOT_ENABLED=false — bots desligados (dry-run).');
     }
+
+    // Reativa números resfriados cujo cooldown expirou (a cada 60s)
+    const antiBan = require('./services/anti-ban-service');
+    setInterval(() => antiBan.ensureFresh().catch(e => console.error('[anti-ban] refresh:', e.message)), 60 * 1000);
+    await antiBan.ensureFresh();
 
     app.listen(PORT, process.env.HOST || '0.0.0.0', () => {
         console.log(`[prime-sul] rodando em http://localhost:${PORT}`);

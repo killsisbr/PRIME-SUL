@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS bot_numbers (
     label        TEXT,
     status       TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo','resfriado','banido')),
     messages_sent INTEGER NOT NULL DEFAULT 0,
+    cooled_until TEXT,                           -- reativação automática (ISO UTC) quando resfriado
     created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
