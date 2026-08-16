@@ -1,0 +1,23 @@
+<!-- ============ CARD DE LEAD (PRIME SUL CRM) ============ -->
+<article class="v3-product-card" data-lead-id="{id}" data-lead-phone="{phone}" onclick="openLeadModal('{id}')">
+    <div style="position:relative;">
+        <div class="v3-lead-avatar">{initials}</div>
+        <span class="v3-product-badge"><i class="fas fa-fire"></i> {origem}</span>
+    </div>
+    <div>
+        <h3 class="v3-product-name">{nome}</h3>
+        <p class="v3-product-desc">{telefone} • {cidade}</p>
+        <div style="margin-top:8px;"><span class="v3-tag {status_class}">{status}</span></div>
+    </div>
+    <div class="v3-product-footer">
+        <span class="v3-product-price">{valor_limite}</span>
+        <div style="display:flex; gap:8px;">
+            <button type="button" class="v3-btn ghost" onclick="event.stopPropagation(); openLeadModal('{id}')">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button type="button" class="v3-btn whatsapp" onclick="event.stopPropagation(); repassarLead('{id}')">
+                <i class="fab fa-whatsapp"></i> SIMULAR
+            </button>
+        </div>
+    </div>
+</article>

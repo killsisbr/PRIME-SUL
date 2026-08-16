@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Sul — Login do Vendedor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/design.css">
+    <style>
+        .v3-login-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .v3-login-card { width: min(420px, 100%); display: flex; flex-direction: column; gap: 18px; }
+        .v3-login-hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .v3-login-hero .v3-store-logo { width: 84px; height: 84px; font-size: 2.4rem; }
+    </style>
+</head>
+<body class="v3-body">
+    <div class="v3-login-shell">
+        <div class="v3-product-card v3-login-card">
+            <div class="v3-login-hero">
+                <div class="v3-store-logo">🏦</div>
+                <span class="v3-eyebrow"><i class="fas fa-bank"></i> CRM PRIME SUL</span>
+                <h1 style="font:2.4rem/1 var(--v3-font-title); letter-spacing:1px;">ACESSO VENDEDOR</h1>
+                <p style="color:#756d67; font-size:0.76rem; font-weight:600;">Entre para gerenciar seus leads de crédito</p>
+            </div>
+
+            <form id="v3-login-form" style="display:flex; flex-direction:column; gap:12px;">
+                <div class="v3-form-group">
+                    <label for="v3-login-email">E-mail</label>
+                    <input type="email" id="v3-login-email" class="v3-input" required placeholder="vendedor@primesul.com.br" autocomplete="username">
+                </div>
+                <div class="v3-form-group">
+                    <label for="v3-login-pass">Senha</label>
+                    <input type="password" id="v3-login-pass" class="v3-input" required placeholder="••••••••" autocomplete="current-password">
+                </div>
+                <button type="submit" class="v3-btn primary" style="width:100%; justify-content:center; font-size:0.9rem;">
+                    <i class="fas fa-sign-in-alt"></i> ENTRAR
+                </button>
+            </form>
+
+            <div class="v3-cart-summary-box" style="margin-top:0;">
+                <div class="v3-summary-line"><span><i class="fas fa-users"></i> Multi-tenant</span><strong>Lista exclusiva</strong></div>
+                <div class="v3-summary-line"><span><i class="fas fa-ban"></i> Anti-ban</span><strong>Números descartáveis</strong></div>
+                <div class="v3-summary-line total-line"><span>Bots ativos</span><strong id="v3-login-bots">—</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('v3-login-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const email = document.getElementById('v3-login-email').value.trim();
+            if (email) {
+                window.location.href = '/leads.html?vendedor=' + encodeURIComponent(email);
+            }
+        });
+    </script>
+</body>
+</html>

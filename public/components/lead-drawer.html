@@ -1,0 +1,52 @@
+<!-- ============ DRAWER DE NOVO LEAD / CADASTRO ============ -->
+<div class="v3-drawer-overlay" id="v3-new-lead-drawer" style="display:none;">
+    <div class="v3-cart-drawer">
+        <header class="v3-drawer-header">
+            <div>
+                <span class="v3-eyebrow">NOVO LEAD</span>
+                <h3>CADASTRAR LEAD</h3>
+            </div>
+            <button type="button" class="v3-modal-close-btn" id="v3-close-new-lead-drawer"><i class="fas fa-times"></i></button>
+        </header>
+        <div class="v3-drawer-body">
+            <form id="v3-new-lead-form">
+                <div class="v3-form-group">
+                    <label for="v3-lead-name">Nome Completo</label>
+                    <input type="text" id="v3-lead-name" class="v3-input" required placeholder="Ex: Maria Oliveira">
+                </div>
+                <div class="v3-form-group">
+                    <label for="v3-lead-phone">WhatsApp</label>
+                    <input type="tel" id="v3-lead-phone" class="v3-input" required placeholder="(00) 00000-0000">
+                </div>
+                <div class="v3-form-group">
+                    <label for="v3-lead-city">Cidade</label>
+                    <input type="text" id="v3-lead-city" class="v3-input" placeholder="Ex: Porto Alegre">
+                </div>
+                <div class="v3-form-group">
+                    <label for="v3-lead-origem">Origem</label>
+                    <select id="v3-lead-origem" class="v3-select">
+                        <option value="SITE">Site Banco do Brasil</option>
+                        <option value="SIMULACAO">Pediu Simulação</option>
+                        <option value="INDICACAO">Indicação</option>
+                    </select>
+                </div>
+                <div class="v3-form-group">
+                    <label for="v3-lead-limite">Limite Estimado</label>
+                    <input type="text" id="v3-lead-limite" class="v3-input" placeholder="Ex: R$ 15.000,00">
+                </div>
+                <div class="v3-form-group">
+                    <label for="v3-lead-obs">Observações</label>
+                    <textarea id="v3-lead-obs" class="v3-textarea" placeholder="Ex: Pediu simulação de crédito consignado..."></textarea>
+                </div>
+            </form>
+        </div>
+        <footer class="v3-drawer-footer">
+            <button type="button" class="v3-btn primary" style="width:100%; justify-content:center;" id="v3-btn-save-lead">
+                <i class="fas fa-save"></i> SALVAR LEAD
+            </button>
+            <p id="v3-duplicate-warning" style="display:none; margin-top:10px; text-align:center; color:var(--v3-coral); font-size:0.75rem; font-weight:900;">
+                <i class="fas fa-exclamation-triangle"></i> LEAD JÁ CADASTRADO POR OUTRO VENDEDOR
+            </p>
+        </footer>
+    </div>
+</div>

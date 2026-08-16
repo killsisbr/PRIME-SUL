@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Sul — Leads</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/design.css">
+</head>
+<body class="v3-body">
+
+    <!-- HEADER -->
+    <header class="v3-store-header">
+        <div class="v3-header-container">
+            <div class="v3-brand-box">
+                <div class="v3-store-logo">🏦</div>
+                <div class="v3-brand-info">
+                    <span class="v3-eyebrow"><i class="fas fa-bank"></i> CRM DE CRÉDITO PRIME SUL</span>
+                    <h1>Minha Lista de Leads</h1>
+                    <p id="v3-seller-desc">Carregando vendedor...</p>
+                </div>
+            </div>
+            <div class="v3-store-meta">
+                <span class="v3-status-badge open"><i class="fas fa-circle"></i> BOTS ATIVOS</span>
+                <div class="v3-meta-pills">
+                    <span><i class="fas fa-users"></i> <strong id="v3-meta-leads">0</strong> leads</span>
+                    <span><i class="fas fa-paper-plane"></i> <strong id="v3-meta-envios">0</strong> envios</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BANNER -->
+    <section class="v3-promo-banner">
+        <div class="v3-banner-content">
+            <i class="fas fa-shield-halved"></i>
+            <span>PROTEÇÃO ANTI-BAN ATIVA • <strong>NÚMEROS DESCARTÁVEIS</strong> EM OPERAÇÃO</span>
+        </div>
+    </section>
+
+    <!-- NAV STICKY -->
+    <div class="v3-sticky-nav-bar">
+        <div class="v3-nav-container">
+            <div class="v3-search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="v3-search-input" class="v3-search-input" placeholder="Buscar por nome, telefone, cidade...">
+            </div>
+            <div class="v3-categories-scroll" id="v3-status-filter">
+                <button class="v3-cat-pill active" data-status="TODOS">TODOS</button>
+                <button class="v3-cat-pill" data-status="NOVO">NOVO</button>
+                <button class="v3-cat-pill" data-status="CONTATO">EM CONTATO</button>
+                <button class="v3-cat-pill" data-status="CONFIRMADO">CONFIRMADO</button>
+                <button class="v3-cat-pill" data-status="CONCLUIDO">CONCLUÍDO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRID DE LEADS -->
+    <main class="v3-catalog-wrapper">
+        <div class="v3-category-section">
+            <h2 class="v3-category-title"><i class="fas fa-users"></i> LEADS QUENTES</h2>
+            <div class="v3-products-grid" id="v3-leads-grid">
+                <div class="v3-loading-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando leads...</p></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- BOTÃO FLUTUANTE: NOVO LEAD -->
+    <button type="button" class="v3-floating-cart-btn" id="v3-btn-new-lead" style="width:min(320px,92vw); border:3.5px solid var(--v3-ink); border-radius:16px; background:var(--v3-orange); color:#fff; box-shadow:6px 6px 0 var(--v3-ink); position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:1000; padding:12px 18px; display:flex; align-items:center; justify-content:center; gap:10px; font-family:inherit; font-weight:900; font-size:0.9rem; cursor:pointer;">
+        <i class="fas fa-plus"></i> CADASTRAR NOVO LEAD
+    </button>
+
+    <!-- INCLUDE: MODAL DE DETALHE -->
+    <div class="v3-modal-overlay" id="v3-lead-modal" style="display:none;">
+        <div class="v3-modal-content">
+            <button type="button" class="v3-modal-close-btn" id="v3-close-lead-modal"><i class="fas fa-times"></i></button>
+            <div class="v3-modal-body">
+                <div class="v3-modal-media" style="border:2.5px solid var(--v3-ink); border-radius:14px; overflow:hidden; height:160px; display:grid; place-items:center; background:var(--v3-cream); margin-bottom:14px;">
+                    <span id="v3-modal-initials" style="font:4rem var(--v3-font-title); color:var(--v3-ink);">—</span>
+                </div>
+                <div>
+                    <span class="v3-eyebrow">LEAD <span id="v3-modal-origem">SITE</span></span>
+                    <h2 id="v3-modal-name" style="font:1.8rem/1.1 var(--v3-font-title);">—</h2>
+                    <p id="v3-modal-phone" style="color:#756d67; font-size:0.8rem; font-weight:600; margin-top:6px;">—</p>
+                    <div style="margin-top:10px;"><span class="v3-tag" id="v3-modal-status">NOVO</span></div>
+                    <div class="v3-modal-price-tag" id="v3-modal-limite">Limite: —</div>
+                    <div class="v3-pizza-builder-box" style="margin-top:14px; padding:14px; background:var(--v3-cream); border:2.5px dashed var(--v3-ink); border-radius:14px;">
+                        <div class="v3-builder-title" style="font:1.2rem/1 var(--v3-font-title); margin-bottom:10px;"><i class="fas fa-envelope-open-text"></i> CONFIRMAÇÃO DO LEAD</div>
+                        <p style="font-size:0.78rem; font-weight:600; color:#756d67;">O cliente confirmou interesse na simulação. Clique abaixo para o bot do vendedor iniciar o contato.</p>
+                    </div>
+                </div>
+            </div>
+            <footer class="v3-modal-footer">
+                <button type="button" class="v3-btn ghost" id="v3-btn-block-lead"><i class="fas fa-ban"></i> BLOQUEAR</button>
+                <button type="button" class="v3-btn whatsapp" style="flex:1;" id="v3-btn-simulate-lead">
+                    <span><i class="fab fa-whatsapp"></i> REPASSAR PARA BOT DO VENDEDOR</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- INCLUDE: DRAWER DE NOVO LEAD -->
+    <div class="v3-drawer-overlay" id="v3-new-lead-drawer" style="display:none;">
+        <div class="v3-cart-drawer">
+            <header class="v3-drawer-header">
+                <div>
+                    <span class="v3-eyebrow">NOVO LEAD</span>
+                    <h3>CADASTRAR LEAD</h3>
+                </div>
+                <button type="button" class="v3-modal-close-btn" id="v3-close-new-lead-drawer"><i class="fas fa-times"></i></button>
+            </header>
+            <div class="v3-drawer-body">
+                <form id="v3-new-lead-form">
+                    <div class="v3-form-group">
+                        <label for="v3-lead-name">Nome Completo</label>
+                        <input type="text" id="v3-lead-name" class="v3-input" required placeholder="Ex: Maria Oliveira">
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="v3-lead-phone">WhatsApp</label>
+                        <input type="tel" id="v3-lead-phone" class="v3-input" required placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="v3-lead-city">Cidade</label>
+                        <input type="text" id="v3-lead-city" class="v3-input" placeholder="Ex: Porto Alegre">
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="v3-lead-origem">Origem</label>
+                        <select id="v3-lead-origem" class="v3-select">
+                            <option value="SITE">Site Banco do Brasil</option>
+                            <option value="SIMULACAO">Pediu Simulação</option>
+                            <option value="INDICACAO">Indicação</option>
+                        </select>
+                    </div>
+                    <div class="v3-form-group">
+                        <label for="v3-lead-limite">Limite Estimado</label>
+                        <input type="text" id="v3-lead-limite" class="v3-input" placeholder="Ex: R$ 15.000,00">
+                    </div>
+                </form>
+            </div>
+            <footer class="v3-drawer-footer">
+                <button type="button" class="v3-btn primary" style="width:100%; justify-content:center;" id="v3-btn-save-lead">
+                    <i class="fas fa-save"></i> SALVAR LEAD
+                </button>
+                <p id="v3-duplicate-warning" style="display:none; margin-top:10px; text-align:center; color:var(--v3-coral); font-size:0.75rem; font-weight:900;">
+                    <i class="fas fa-exclamation-triangle"></i> LEAD JÁ CADASTRADO POR OUTRO VENDEDOR
+                </p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        const STATUS_MAP = {
+            NOVO: { label: 'NOVO', cls: 'novo' },
+            CONTATO: { label: 'EM CONTATO', cls: 'contato' },
+            CONFIRMADO: { label: 'CONFIRMADO', cls: 'confirmado' },
+            CONCLUIDO: { label: 'CONCLUÍDO', cls: 'concluido' },
+            BLOQUEADO: { label: 'BLOQUEADO', cls: 'bloqueado' }
+        };
+
+        const LEADS = [
+            { id: 'L001', nome: 'Maria Oliveira', telefone: '(51) 99999-1001', cidade: 'Porto Alegre', origem: 'SIMULAÇÃO', limite: 'R$ 18.000', status: 'NOVO' },
+            { id: 'L002', nome: 'João Pereira', telefone: '(51) 99999-1002', cidade: 'Canoas', origem: 'SITE', limite: 'R$ 12.500', status: 'CONFIRMADO' },
+            { id: 'L003', nome: 'Ana Souza', telefone: '(51) 99999-1003', cidade: 'Gravataí', origem: 'SIMULAÇÃO', limite: 'R$ 25.000', status: 'CONTATO' },
+            { id: 'L004', nome: 'Carlos Lima', telefone: '(51) 99999-1004', cidade: 'Viamão', origem: 'SITE', limite: 'R$ 9.800', status: 'CONCLUIDO' },
+            { id: 'L005', nome: 'Beatriz Rocha', telefone: '(51) 99999-1005', cidade: 'Alvorada', origem: 'INDICAÇÃO', limite: 'R$ 30.000', status: 'NOVO' }
+        ];
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const vendedor = urlParams.get('vendedor') || 'Vendedor';
+        document.getElementById('v3-seller-desc').textContent = vendedor;
+
+        function renderLeads(filter = 'TODOS', search = '') {
+            const grid = document.getElementById('v3-leads-grid');
+            const list = LEADS.filter(l =>
+                (filter === 'TODOS' || l.status === filter) &&
+                (!search || (l.nome + l.telefone + l.cidade).toLowerCase().includes(search.toLowerCase()))
+            );
+            if (!list.length) {
+                grid.innerHTML = '<div class="v3-loading-state"><i class="fas fa-inbox"></i><p>Nenhum lead encontrado.</p></div>';
+                return;
+            }
+            grid.innerHTML = list.map(l => {
+                const st = STATUS_MAP[l.status];
+                const ini = l.nome.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+                return `
+                    <article class="v3-product-card" data-id="${l.id}" onclick="openLeadModal('${l.id}')">
+                        <div style="position:relative;">
+                            <div class="v3-lead-avatar">${ini}</div>
+                            <span class="v3-product-badge"><i class="fas fa-fire"></i> ${l.origem}</span>
+                        </div>
+                        <div>
+                            <h3 class="v3-product-name">${l.nome}</h3>
+                            <p class="v3-product-desc">${l.telefone} • ${l.cidade}</p>
+                            <div style="margin-top:8px;"><span class="v3-tag ${st.cls}">${st.label}</span></div>
+                        </div>
+                        <div class="v3-product-footer">
+                            <span class="v3-product-price">${l.limite}</span>
+                            <div style="display:flex; gap:8px;">
+                                <button type="button" class="v3-btn ghost" onclick="event.stopPropagation(); openLeadModal('${l.id}')"><i class="fas fa-eye"></i></button>
+                                <button type="button" class="v3-btn whatsapp" onclick="event.stopPropagation(); repassarLead('${l.id}')"><i class="fab fa-whatsapp"></i> SIMULAR</button>
+                            </div>
+                        </div>
+                    </article>`;
+            }).join('');
+            document.getElementById('v3-meta-leads').textContent = LEADS.length;
+            document.getElementById('v3-meta-envios').textContent = LEADS.filter(l => l.status === 'CONFIRMADO' || l.status === 'CONCLUIDO').length;
+        }
+
+        function openLeadModal(id) {
+            const l = LEADS.find(x => x.id === id);
+            if (!l) return;
+            const st = STATUS_MAP[l.status];
+            const ini = l.nome.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+            document.getElementById('v3-modal-initials').textContent = ini;
+            document.getElementById('v3-modal-origem').textContent = l.origem;
+            document.getElementById('v3-modal-name').textContent = l.nome;
+            document.getElementById('v3-modal-phone').textContent = l.telefone + ' • ' + l.cidade;
+            document.getElementById('v3-modal-status').textContent = st.label;
+            document.getElementById('v3-modal-status').className = 'v3-tag ' + st.cls;
+            document.getElementById('v3-modal-limite').textContent = 'Limite: ' + l.limite;
+            document.getElementById('v3-lead-modal').style.display = 'flex';
+        }
+
+        function repassarLead(id) {
+            const l = LEADS.find(x => x.id === id);
+            const msg = encodeURIComponent(`Olá ${l.nome}! Aqui é o vendedor Prime Sul. Você pediu uma simulação de crédito. Posso encaminhar?`);
+            window.open(`https://wa.me/${l.telefone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+        }
+
+        document.getElementById('v3-close-lead-modal').onclick = () => document.getElementById('v3-lead-modal').style.display = 'none';
+        document.getElementById('v3-lead-modal').addEventListener('click', e => { if (e.target.id === 'v3-lead-modal') e.target.style.display = 'none'; });
+        document.getElementById('v3-btn-block-lead').onclick = () => {
+            alert('Lead bloqueado (anti-ban): não será mais contatado por este vendedor.');
+            document.getElementById('v3-lead-modal').style.display = 'none';
+        };
+        document.getElementById('v3-btn-simulate-lead').onclick = () => {
+            alert('Repassando para o bot do vendedor... (integração pendente)');
+            document.getElementById('v3-lead-modal').style.display = 'none';
+        };
+
+        document.getElementById('v3-search-input').addEventListener('input', e => {
+            renderLeads(document.querySelector('.v3-cat-pill.active').dataset.status, e.target.value);
+        });
+        document.querySelectorAll('#v3-status-filter .v3-cat-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#v3-status-filter .v3-cat-pill').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderLeads(btn.dataset.status, document.getElementById('v3-search-input').value);
+            });
+        });
+
+        const drawer = document.getElementById('v3-new-lead-drawer');
+        document.getElementById('v3-btn-new-lead').onclick = () => { drawer.style.display = 'flex'; document.getElementById('v3-duplicate-warning').style.display = 'none'; };
+        document.getElementById('v3-close-new-lead-drawer').onclick = () => { drawer.style.display = 'none'; };
+        document.getElementById('v3-btn-save-lead').onclick = () => {
+            const phone = document.getElementById('v3-lead-phone').value.replace(/\D/g, '');
+            const dup = LEADS.find(l => l.telefone.replace(/\D/g, '') === phone && phone.length >= 10);
+            if (dup) {
+                document.getElementById('v3-duplicate-warning').style.display = 'block';
+                return;
+            }
+            const nome = document.getElementById('v3-lead-name').value.trim();
+            LEADS.push({ id: 'L' + (LEADS.length + 1), nome, telefone: document.getElementById('v3-lead-phone').value, cidade: document.getElementById('v3-lead-city').value || '—', origem: document.getElementById('v3-lead-origem').value, limite: document.getElementById('v3-lead-limite').value || 'R$ 0', status: 'NOVO' });
+            renderLeads();
+            drawer.style.display = 'none';
+            document.getElementById('v3-new-lead-form').reset();
+        };
+
+        renderLeads();
+    </script>
+</body>
+</html>
