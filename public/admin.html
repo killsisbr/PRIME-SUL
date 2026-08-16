@@ -54,7 +54,7 @@
             <span class="search-shortcut">Ctrl+K</span>
         </div>
         <div class="top-actions">
-            <button class="action-btn" title="Bots WhatsApp" onclick="openToolV2('numeros','Números Anti-Ban')"><i class="fab fa-whatsapp" style="color:#25d366;"></i><span class="badge" id="notifBadge" style="display:none;">0</span></button>
+            <button class="action-btn" id="topBotsBtn" title="Bots WhatsApp" onclick="openToolV2('numeros','Números Anti-Ban')"><i class="fab fa-whatsapp" style="color:#25d366;"></i><span class="badge" id="notifBadge" style="display:none;">0</span></button>
             <div class="store-profile" onclick="logout()">
                 <div class="avatar" id="storeAvatar">PS</div>
                 <div class="store-info-top">
@@ -147,16 +147,17 @@
         const MODULES = [
             { name: 'hub', title: 'Hub de Disparo', icon: 'fa-rocket', color: '#ff7417', desc: 'Estratégia anti-ban', badge: 'HUB', border: '#ff7417' },
             { name: 'funil', title: 'Funil de Vendas', icon: 'fa-filter', color: '#3b82f6', desc: 'Conversão por estágio', badge: 'FUNIL', border: '#3b82f6' },
-            { name: 'bots', title: 'Bots WhatsApp', icon: 'fa-robot', color: '#10b981', desc: 'QR code e conexões', badge: 'BOT', border: '#10b981' },
+            { name: 'bots', title: 'Bots WhatsApp', icon: 'fa-robot', color: '#10b981', desc: 'QR code e conexões', badge: 'BOT', border: '#10b981', admin: true },
             { name: 'leads', title: 'Leads', icon: 'fa-users', color: '#3b82f6', desc: 'Minha lista de contatos' },
             { name: 'campanhas', title: 'Campanhas', icon: 'fa-paper-plane', color: '#10b981', desc: 'Disparo em massa' },
-            { name: 'numeros', title: 'Números Anti-Ban', icon: 'fa-shield-halved', color: '#df4632', desc: 'Descartáveis e limites', border: '#df4632' },
-            { name: 'vendedores', title: 'Vendedores', icon: 'fa-user-tie', color: '#8b5cf6', desc: 'Equipe e permissões', border: '#8b5cf6' },
-            { name: 'config', title: 'Configuração', icon: 'fa-cog', color: '#181716', desc: 'Crédito BB e templates' }
+            { name: 'numeros', title: 'Números Anti-Ban', icon: 'fa-shield-halved', color: '#df4632', desc: 'Descartáveis e limites', border: '#df4632', admin: true },
+            { name: 'vendedores', title: 'Vendedores', icon: 'fa-user-tie', color: '#8b5cf6', desc: 'Equipe e permissões', border: '#8b5cf6', admin: true },
+            { name: 'config', title: 'Configuração', icon: 'fa-cog', color: '#181716', desc: 'Crédito BB e templates', admin: true }
         ];
+        const visibleModules = me.role === 'admin' ? MODULES : MODULES.filter(m => !m.admin);
 
         function renderAppGrid() {
-            document.getElementById('appGrid').innerHTML = MODULES.map(m => `
+            document.getElementById('appGrid').innerHTML = visibleModules.map(m => `
                 <a href="javascript:void(0)" onclick="openToolV2('${m.name}','${m.title}')" class="app-card" data-module="${m.name}" style="${m.border ? 'border-color:' + m.border + ';' : ''}">
                     <div class="app-icon" style="color:${m.color};${m.color === '#ff7417' ? 'color:#fff;background:var(--primary);' : ''}${m.color === '#df4632' ? 'color:#fff;background:var(--danger);' : ''}${m.color === '#8b5cf6' ? 'color:#fff;background:#8b5cf6;' : ''}"><i class="fas ${m.icon}"></i></div>
                     <div class="app-name">${m.title}</div>
@@ -168,7 +169,7 @@
         // HUD grid = app modules + extras
         function renderHud() {
             const items = [
-                ...MODULES.map(m => ({ label: m.title, icon: m.icon, color: m.color, module: m.name })),
+                ...visibleModules.map(m => ({ label: m.title, icon: m.icon, color: m.color, module: m.name })),
                 { label: 'Sair da conta', icon: 'fa-sign-out-alt', color: '#df4632', action: 'logout' }
             ];
             document.getElementById('hudGrid').innerHTML = items.map(i => `
@@ -282,8 +283,11 @@
                 const botCount = Object.keys(wa.bots || {}).length;
                 document.getElementById('statBots').textContent = wa.enabled ? (botCount || 'OK') : 'DRY';
                 document.getElementById('statBotsSub').textContent = wa.enabled ? 'bots conectados' : 'modo simulação';
-                document.getElementById('notifBadge').textContent = counts.confirmados;
-                document.getElementById('notifBadge').style.display = counts.confirmados > 0 ? 'grid' : 'none';
+                const nb = document.getElementById('notifBadge');
+                if (nb) {
+                    nb.textContent = counts.confirmados;
+                    nb.style.display = counts.confirmados > 0 ? 'grid' : 'none';
+                }
             } catch (e) { console.error(e); }
         }
 
@@ -299,6 +303,10 @@
 
         renderAppGrid();
         renderHud();
+        if (me.role !== 'admin') {
+            const topBotsBtn = document.getElementById('topBotsBtn');
+            if (topBotsBtn) topBotsBtn.style.display = 'none';
+        }
         loadStats();
         setInterval(loadStats, 30000);
     </script>

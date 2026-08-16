@@ -76,7 +76,7 @@
                 if (!res.ok) throw new Error(data.error || 'Falha no login');
                 localStorage.setItem('prime_sul_token', data.token);
                 localStorage.setItem('prime_sul_user', JSON.stringify(data.user));
-                window.location.href = data.user.role === 'admin' ? '/admin.html' : '/leads.html';
+                window.location.href = '/admin.html';
             } catch (err) {
                 toast('Erro no login: ' + err.message);
             } finally {

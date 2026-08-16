@@ -79,8 +79,8 @@ Acompanhamento no funil (novo → contato → confirmado → concluído)
 - Detecção de confirmação (sim/ok/1 etc.).
 - Repasse automático ao bot do vendedor.
 
-### Painel do Vendedor (`/leads.html`)
-- Lista de leads com busca e filtro por status.
+### Painel (`/admin.html`)
+- Lista de leads com busca e filtro por status (módulo Leads em popup).
 - Cadastro e mudança de status.
 - Contadores: total, envios, conversão, confirmados.
 
@@ -89,7 +89,7 @@ Acompanhamento no funil (novo → contato → confirmado → concluído)
 - Módulos:
   - **Hub de Disparo** — estratégia anti-ban e limites.
   - **Funil de Vendas** — visualização da conversão por estágio, taxas entre etapas e gargalo.
-  - **Leads** — gestão completa com ações rápidas (confirmar/bloquear).
+  - **Leads** — gestão completa com ações rápidas (confirmar/bloquear), score 0-100 por lead e ferramentas de coluna (recalcular score, mover estágio, disparar mensagem, auto-disparo).
   - **Campanhas** — criação, start/pause/cancel do disparo.
   - **Números Anti-Ban** — cadastro e mudança de status (ativo/resfriado/banido).
   - **Vendedores** — criação da equipe e limites.
@@ -142,9 +142,8 @@ PRIME SUL/
 │   │   └── components/            # Módulos (html/css/js por módulo)
 │   │       ├── hub / funil / leads / campanhas
 │   │       ├── numeros / vendedores / config
-│   ├── login.html                 # Login (admin → admin.html, vendedor → leads.html)
-│   ├── leads.html                 # Painel do vendedor
-│   └── admin.html                 # Painel admin (app-grid + HUD Ctrl+K)
+│   ├── login.html                 # Login (admin e vendedor → admin.html)
+│   └── admin.html                 # Painel único (app-grid + HUD Ctrl+K + modais/popups)
 ├── data/                          # SQLite + sessões Baileys (gitignored)
 ├── .env.example
 └── package.json
@@ -159,8 +158,7 @@ npm run seed                  # cria admin@primesul.com.br / admin123
 npm run dev                   # http://localhost:5000
 ```
 
-- Login de vendedor → `/leads.html`.
-- Login de admin → `/admin.html`.
+- Login (admin e vendedor) → `/admin.html`; módulos de admin (Bots, Números, Vendedores, Config) só aparecem para role admin.
 
 ## API
 
