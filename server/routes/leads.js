@@ -21,6 +21,13 @@ router.get('/counts', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Funil de conversão do vendedor
+router.get('/funnel', async (req, res, next) => {
+    try {
+        res.json(await leadService.funnelBySeller(req.user.id));
+    } catch (e) { next(e); }
+});
+
 // Cria lead (com regra de duplicidade)
 router.post('/', async (req, res, next) => {
     try {

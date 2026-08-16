@@ -1,0 +1,36 @@
+<div class="fl-root">
+    <header class="fl-header">
+        <div class="fl-brand">
+            <span class="fl-brand-icon"><i class="fas fa-filter"></i></span>
+            <div>
+                <span class="fl-eyebrow">PIPELINE DE CONVERSÃO</span>
+                <h1>FUNIL DE VENDAS</h1>
+                <p>Do primeiro contato até a simulação concluída.</p>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span class="fl-live"><i class="fas fa-circle"></i> DADOS AO VIVO</span>
+            <button type="button" class="fl-refresh" id="fl-refresh" title="Atualizar"><i class="fas fa-rotate-right"></i></button>
+        </div>
+    </header>
+
+    <div class="fl-stats">
+        <div><b id="fl-total">-</b><span>LEADS NO FUNIL</span></div>
+        <div><b id="fl-hoje">-</b><span>CADASTRADOS HOJE</span></div>
+        <div><b id="fl-envios">-</b><span>ENVIOS DO BOT</span></div>
+        <div><b id="fl-taxa">-</b><span>CONVERSÃO GLOBAL</span></div>
+    </div>
+
+    <div class="fl-body">
+        <section class="fl-funnel">
+            <div class="fl-column" id="fl-column"></div>
+            <div class="fl-legend" id="fl-legend"></div>
+        </section>
+        <aside class="fl-panel">
+            <div class="fl-panel-title"><i class="fas fa-chart-simple"></i> DETALHAMENTO</div>
+            <div class="fl-detail" id="fl-detail"></div>
+            <div class="fl-panel-title"><i class="fas fa-broom"></i> GARGALO</div>
+            <div class="fl-bottleneck" id="fl-bottleneck"></div>
+        </aside>
+    </div>
+</div>

@@ -84,4 +84,45 @@ async function countsBySeller(seller_id) {
     };
 }
 
-module.exports = { createLead, listLeads, getLead, updateStatus, countsBySeller, ALLOWED_ORIGEM };
+async function funnelBySeller(seller_id) {
+    const row = await db.get(
+        `SELECT
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ?) AS total,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'novo') AS novo,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'contato') AS contato,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'confirmado') AS confirmado,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'concluido') AS concluido,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'bloqueado') AS bloqueado,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'duplicado') AS duplicado,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND date(created_at) = date('now')) AS hoje
+        `,
+        Array(8).fill(seller_id)
+    );
+
+    const pipeline = {
+        novo: row.novo,
+        contato: row.contato,
+        confirmado: row.confirmado,
+        concluido: row.concluido
+    };
+    const total = row.novo + row.contato + row.confirmado + row.concluido;
+
+    const rate = (a, b) => (a > 0 ? Math.round((b / a) * 100) : 0);
+    const conversoes = {
+        novo_contato: rate(pipeline.novo, pipeline.contato),
+        contato_confirmado: rate(pipeline.contato, pipeline.confirmado),
+        confirmado_concluido: rate(pipeline.confirmado, pipeline.concluido)
+    };
+
+    return {
+        total,
+        hoje: row.hoje,
+        descartados: row.bloqueado + row.duplicado,
+        stages: pipeline,
+        conversoes,
+        taxa_global: total ? Math.round((pipeline.concluido / total) * 100) : 0,
+        ...await countsBySeller(seller_id)
+    };
+}
+
+module.exports = { createLead, listLeads, getLead, updateStatus, countsBySeller, funnelBySeller, ALLOWED_ORIGEM };
