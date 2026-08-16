@@ -11,6 +11,8 @@ const bots = new Map();
 
 // Handlers registrados quando mensagem de confirmação chega
 const messageHandlers = [];
+// Handlers registrados quando um bot conecta (ex: auto-resume de campanhas)
+const connectedHandlers = [];
 
 function enabled() {
     return process.env.BOT_ENABLED === 'true';
@@ -54,6 +56,9 @@ async function connect(number, label) {
             entry.qr = null;
             await antiBan.ensureFresh();
             console.log(`[whatsapp] Bot conectado: ${number} (${label || ''})`);
+            for (const fn of connectedHandlers) {
+                try { await fn(number); } catch (e) { console.error('[whatsapp] onConnected handler error:', e); }
+            }
         } else if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             const banned = statusCode === DisconnectReason.forbidden || statusCode === 403;
@@ -107,6 +112,7 @@ function extractText(msg) {
 }
 
 function onMessage(fn) { messageHandlers.push(fn); }
+function onConnected(fn) { connectedHandlers.push(fn); }
 
 async function sendMessage(botNumber, toPhone, text) {
     const bot = bots.get(botNumber);
@@ -161,4 +167,4 @@ function status() {
 
 function getBot(number) { return bots.get(number) || null; }
 
-module.exports = { enabled, connect, disconnect, logout, sendMessage, onMessage, getQR, status, getBot };
+module.exports = { enabled, connect, disconnect, logout, sendMessage, onMessage, onConnected, getQR, status, getBot };

@@ -6,7 +6,7 @@ export async function init({ container }) {
             const [counts, wa] = await Promise.all([api('/leads/counts'), api('/whatsapp/status')]);
             set('#hub-stat-leads', counts.leads);
             set('#hub-stat-conf', counts.confirmados);
-            const campaigns = await api('/campaigns');
+            const campaigns = (await api('/campaigns')).campaigns;
             set('#hub-stat-camp', campaigns.length);
             const active = campaigns.filter(c => c.status === 'running').length;
             set('#hub-manager-active-count', active);

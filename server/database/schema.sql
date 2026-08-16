@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
     message      TEXT NOT NULL,
     status       TEXT NOT NULL DEFAULT 'draft'
                  CHECK (status IN ('draft','running','paused','done','cancelled')),
+    error        TEXT,                           -- motivo da pausa (ex: not_connected)
+    filters      TEXT,                           -- JSON com filtros do alvo usados na criação
     total_target INTEGER NOT NULL DEFAULT 0,
     total_sent   INTEGER NOT NULL DEFAULT 0,
     total_yes    INTEGER NOT NULL DEFAULT 0,

@@ -4,9 +4,17 @@
     <div class="ps-head">
         <div>
             <div class="ps-head-title"><i class="fas fa-paper-plane" style="color: var(--ok);"></i> CAMPANHAS DE DISPARO</div>
-            <p class="ps-head-desc">Dispare a mensagem do bot principal para os leads quentes da sua lista.</p>
+            <p class="ps-head-desc">Selecione os alvos, escreva a mensagem e dispare pelo bot anti-ban.</p>
         </div>
         <button class="btn-retro" onclick="openCampaignEditor()"><i class="fas fa-plus"></i> NOVA CAMPANHA</button>
+    </div>
+
+    <div class="cp-stats">
+        <div class="cp-stat"><b id="cp-stat-total">0</b><span>CAMPANHAS</span></div>
+        <div class="cp-stat run"><b id="cp-stat-running">0</b><span>EM EXECUÇÃO</span></div>
+        <div class="cp-stat prim"><b id="cp-stat-sent">0</b><span>ENVIADOS</span></div>
+        <div class="cp-stat ok"><b id="cp-stat-yes">0</b><span>CONFIRMADOS</span></div>
+        <div class="cp-stat bad"><b id="cp-stat-fail">0</b><span>FALHAS</span></div>
     </div>
 
     <div id="campaignsList">
@@ -16,17 +24,48 @@
 
 <!-- Modal nova campanha -->
 <div class="v2-submodal-overlay" id="campaignEditorModal" style="display:none;">
-    <div class="v2-submodal" style="max-width:760px;">
-        <div class="v2-submodal-header"><div><span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">NOVA CAMPANHA</span><h3>CRIAR CAMPANHA</h3></div><button type="button" class="btn-close-submodal" onclick="closeCampaignEditor()"><i class="fas fa-times"></i></button></div>
+    <div class="v2-submodal" style="max-width:780px;">
+        <div class="v2-submodal-header"><div><span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">NOVA CAMPANHA</span><h3>CRIAR DISPARO EM MASSA</h3></div><button type="button" class="btn-close-submodal" onclick="closeCampaignEditor()"><i class="fas fa-times"></i></button></div>
         <form id="campaignForm">
             <div class="v2-submodal-body" style="display:grid; grid-template-columns:1fr 1fr; gap:0 14px;">
                 <div class="v2-form-group" style="grid-column:1/-1;"><label>Nome da campanha</label><input type="text" class="ps-input" id="cName" required placeholder="EX: Leads quentes semana 34"></div>
-                <div class="v2-form-group" style="grid-column:1/-1;"><label>Mensagem do bot</label><textarea class="ps-textarea" id="cMessage" rows="3" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea></div>
-                <div class="v2-form-group" style="grid-column:1/-1;"><label>Número do bot</label><select class="ps-select" id="cNumber"><option value="">Nenhum ativo...</option></select></div>
+                <div class="v2-form-group" style="grid-column:1/-1;">
+                    <label>Mensagem do bot <span style="font-weight:600;color:var(--text-muted);">(use <b>{nome}</b> para o primeiro nome)</span></label>
+                    <textarea class="ps-textarea" id="cMessage" rows="3" oninput="cpPreview()" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea>
+                </div>
+                <div class="cp-preview" id="cPreview">Pré-visualização da mensagem...</div>
+
+                <div class="v2-form-group" style="grid-column:1/-1;">
+                    <label>Número do bot</label>
+                    <select class="ps-select" id="cNumber"><option value="">Nenhum ativo...</option></select>
+                </div>
+
+                <div class="cp-filters">
+                    <div class="cp-filters-title"><i class="fas fa-filter"></i> FILTROS DO ALVO</div>
+                    <div class="cp-check-grid" id="cStatusChecks">
+                        <label class="cp-check on"><input type="checkbox" value="novo" checked> NOVO</label>
+                        <label class="cp-check on"><input type="checkbox" value="contato" checked> EM CONTATO</label>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                        <input type="text" class="ps-input" id="cOrigem" placeholder="Origem (ex: SITE)">
+                        <select class="ps-select" id="cPrioridade">
+                            <option value="">Prioridade: todas</option>
+                            <option value="alta">Alta</option>
+                            <option value="media">Média</option>
+                            <option value="baixa">Baixa</option>
+                        </select>
+                        <input type="text" class="ps-input" id="cCidade" placeholder="Cidade (ex: porto)">
+                    </div>
+                    <div style="margin-top:8px;">
+                        <input type="number" class="ps-input" id="cLimit" min="1" placeholder="Quantidade máx (vazio = todos)">
+                    </div>
+                </div>
+
+                <div class="cp-target-line" id="cTargetLine">Calculando alvos...</div>
             </div>
             <footer style="display:flex; justify-content:flex-end; gap:10px; padding:12px 22px; border-top:3px solid var(--dark); background:var(--bg);">
                 <button type="button" class="btn-retro btn-secondary-retro" onclick="closeCampaignEditor()">Cancelar</button>
-                <button type="submit" class="btn-retro"><i class="fas fa-save"></i> Criar</button>
+                <button type="submit" class="btn-retro" id="cSubmit"><i class="fas fa-save"></i> Criar</button>
             </footer>
         </form>
     </div>

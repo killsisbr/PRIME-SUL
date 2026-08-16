@@ -8,6 +8,15 @@ const DEFAULT_DELAY_MS = Number(process.env.CAMPAIGN_DELAY_MS) || 15000;
 
 const running = new Set();
 
+// IDs vêm de req.params (string) ou de chamadas internas (number) — normaliza
+function numId(id) {
+    const n = Number(id);
+    return Number.isFinite(n) ? n : id;
+}
+
+// Status que o disparo em massa atinge por padrão (leads quentes)
+const HOT_STATUSES = ['novo', 'contato'];
+
 // Message de entrada do bot principal (anti-ban): pergunta se pode encaminhar a simulação
 function buildMainMessage(lead) {
     const tmpl = process.env.BOT_MAIN_WELCOME ||
@@ -15,28 +24,58 @@ function buildMainMessage(lead) {
     return tmpl.replace('{nome}', lead.name.split(' ')[0]);
 }
 
-async function createCampaign({ seller_id, name, message, number_ids }) {
-    const numbers = await db.all(
-        `SELECT * FROM bot_numbers WHERE id IN (${number_ids.map(() => '?').join(',')}) AND status = 'ativo'`,
-        number_ids
-    );
+// Constrói WHERE dinâmico para selecionar os leads-alvo da campanha
+function buildTargetWhere(sellerId, filters = {}) {
+    const clauses = ['l.seller_id = ?'];
+    const params = [sellerId];
+
+    const rawStatuses = Array.isArray(filters.status) ? filters.status : (filters.status ? [filters.status] : []);
+    const statuses = rawStatuses.filter(s => HOT_STATUSES.includes(s));
+    clauses.push(`l.status IN (${(statuses.length ? statuses : HOT_STATUSES).map(() => '?').join(',')})`);
+    for (const s of statuses.length ? statuses : HOT_STATUSES) params.push(s);
+
+    if (filters.origem) { clauses.push('l.origem = ?'); params.push(filters.origem); }
+    if (filters.prioridade) { clauses.push('l.prioridade = ?'); params.push(filters.prioridade); }
+    if (filters.cidade) { clauses.push('l.city LIKE ?'); params.push(`%${filters.cidade}%`); }
+
+    // Não envia para quem já recebeu envio de alguma campanha
+    clauses.push('NOT EXISTS (SELECT 1 FROM sends s WHERE s.lead_id = l.id AND s.campaign_id IS NOT NULL)');
+
+    let limit = null;
+    const rawLimit = Number(filters.limit);
+    if (Number.isFinite(rawLimit) && rawLimit > 0) {
+        limit = Math.min(Math.floor(rawLimit), 10000);
+    }
+    return { where: clauses.join(' AND '), params, limit };
+}
+
+async function countTargets(sellerId, filters = {}) {
+    const { where, params } = buildTargetWhere(sellerId, filters);
+    const row = await db.get(`SELECT COUNT(*) AS c FROM leads l WHERE ${where}`, params);
+    return row ? row.c : 0;
+}
+
+async function createCampaign({ seller_id, name, message, number_ids, filters = {} }) {
+    const ids = (number_ids || []).map(Number).filter(Boolean);
+    const numbers = ids.length
+        ? await db.all(
+            `SELECT * FROM bot_numbers WHERE id IN (${ids.map(() => '?').join(',')}) AND status = 'ativo'`,
+            ids
+        )
+        : await db.all("SELECT * FROM bot_numbers WHERE status = 'ativo' ORDER BY id ASC LIMIT 1");
     if (!numbers.length) throw new Error('Nenhum número ativo disponível');
 
-    // Seleciona leads quentes do vendedor que ainda não foram disparados
-    const targets = await db.all(`
-        SELECT l.* FROM leads l
-        WHERE l.seller_id = ?
-          AND l.status IN ('novo','contato')
-          AND NOT EXISTS (
-            SELECT 1 FROM sends s WHERE s.lead_id = l.id AND s.campaign_id IS NOT NULL
-          )
-        ORDER BY l.created_at ASC
-    `, [seller_id]);
+    const { where, params, limit } = buildTargetWhere(seller_id, filters);
+    const targets = await db.all(
+        `SELECT * FROM leads l WHERE ${where} ORDER BY l.created_at ASC${limit ? ' LIMIT ' + limit : ''}`,
+        params
+    );
+    if (!targets.length) throw new Error('Nenhum lead corresponde aos filtros escolhidos');
 
     const result = await db.run(
-        `INSERT INTO campaigns (seller_id, number_id, name, message, status, total_target)
-         VALUES (?, ?, ?, ?, 'draft', ?)`,
-        [seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), targets.length]
+        `INSERT INTO campaigns (seller_id, number_id, name, message, status, total_target, filters)
+         VALUES (?, ?, ?, ?, 'draft', ?, ?)`,
+        [seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), targets.length, JSON.stringify(filters || {})]
     );
 
     for (const lead of targets) {
@@ -49,13 +88,14 @@ async function createCampaign({ seller_id, name, message, number_ids }) {
 }
 
 async function startCampaign(id) {
+    id = numId(id);
     const campaign = await db.get('SELECT * FROM campaigns WHERE id = ?', [id]);
     if (!campaign) throw new Error('Campanha não encontrada');
     if (running.has(id)) return { started: true, message: 'Já em execução' };
     if (campaign.status === 'done' || campaign.status === 'cancelled') return { started: false };
 
     running.add(id);
-    await db.run("UPDATE campaigns SET status = 'running' WHERE id = ?", [id]);
+    await db.run("UPDATE campaigns SET status = 'running', error = NULL WHERE id = ?", [id]);
     processCampaign(campaign); // não bloqueia
     return { started: true };
 }
@@ -80,7 +120,7 @@ async function processCampaign(campaign) {
             continue;
         }
 
-        // Anti-ban: respeita limite do número
+        // Anti-ban: só envia para leads quentes
         if (!antiBan.shouldSend(lead)) {
             await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
             continue;
@@ -99,8 +139,8 @@ async function processCampaign(campaign) {
         } else {
             await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
             if (res.reason === 'not_connected') {
-                console.warn('[campaign] Bot offline — pausando campanha');
-                await db.run("UPDATE campaigns SET status = 'paused' WHERE id = ?", [campaign.id]);
+                console.warn(`[campaign] ${campaign.name} — bot offline, pausando (auto-resume na reconexão)`);
+                await db.run("UPDATE campaigns SET status = 'paused', error = 'not_connected' WHERE id = ?", [campaign.id]);
                 running.delete(campaign.id);
                 return;
             }
@@ -115,22 +155,64 @@ async function processCampaign(campaign) {
     if (remaining.c > 0 && running.has(campaign.id)) {
         await processCampaign(campaign); // próximo lote
     } else if (running.has(campaign.id)) {
-        await db.run("UPDATE campaigns SET status = 'done' WHERE id = ?", [campaign.id]);
+        await db.run("UPDATE campaigns SET status = 'done', error = NULL WHERE id = ?", [campaign.id]);
         console.log(`[campaign] ${campaign.name} — concluída`);
         running.delete(campaign.id);
     }
 }
 
 function pauseCampaign(id) {
+    id = numId(id);
     running.delete(id);
-    return db.run("UPDATE campaigns SET status = 'paused' WHERE id = ?", [id]);
+    return db.run("UPDATE campaigns SET status = 'paused', error = NULL WHERE id = ?", [id]);
 }
 
 function cancelCampaign(id) {
+    id = numId(id);
     running.delete(id);
-    return db.run("UPDATE campaigns SET status = 'cancelled' WHERE id = ?", [id]);
+    return db.run("UPDATE campaigns SET status = 'cancelled', error = NULL WHERE id = ?", [id]);
+}
+
+// Reinicia campanhas pausadas por bot offline (chamado quando um bot reconecta)
+async function resumePausedFromOffline() {
+    const rows = await db.all("SELECT * FROM campaigns WHERE status = 'paused' AND error = 'not_connected'");
+    for (const c of rows) {
+        running.add(c.id);
+        await db.run("UPDATE campaigns SET status = 'running', error = NULL WHERE id = ?", [c.id]);
+        processCampaign(c);
+        console.log(`[campaign] ${c.name} — auto-resume após reconexão do bot`);
+    }
+    return rows.length;
+}
+
+// Reenvia os envios que falharam (falhou/caiu) e reinicia o processamento
+async function retryCampaign(id) {
+    id = numId(id);
+    const campaign = await db.get('SELECT * FROM campaigns WHERE id = ?', [id]);
+    if (!campaign) throw new Error('Campanha não encontrada');
+    if (running.has(id)) return { retried: 0, message: 'Campanha já em execução' };
+
+    const res = await db.run(
+        "UPDATE sends SET status = 'pending' WHERE campaign_id = ? AND status IN ('falhou','caiu')",
+        [id]
+    );
+    if (!res.changes) return { retried: 0, message: 'Nenhum envio falho para reenviar' };
+
+    await db.run("UPDATE campaigns SET status = 'running', error = NULL WHERE id = ?", [id]);
+    running.add(id);
+    processCampaign(campaign);
+    return { retried: res.changes, message: `${res.changes} envio(s) sendo reenviado(s)` };
 }
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-module.exports = { createCampaign, startCampaign, pauseCampaign, cancelCampaign, buildMainMessage };
+module.exports = {
+    createCampaign,
+    countTargets,
+    startCampaign,
+    pauseCampaign,
+    cancelCampaign,
+    retryCampaign,
+    resumePausedFromOffline,
+    buildMainMessage
+};

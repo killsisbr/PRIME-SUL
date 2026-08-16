@@ -41,6 +41,11 @@ const NUMBER_MIGRATIONS = {
     cooled_until: 'TEXT'
 };
 
+const CAMPAIGN_MIGRATIONS = {
+    error: 'TEXT',
+    filters: 'TEXT'
+};
+
 async function migrate() {
     const leadCols = await all(`PRAGMA table_info(leads)`);
     const leadExisting = new Set(leadCols.map(c => c.name));
@@ -57,6 +62,15 @@ async function migrate() {
         if (!numExisting.has(name)) {
             await run(`ALTER TABLE bot_numbers ADD COLUMN ${name} ${def}`);
             console.log(`[db] migração: coluna bot_numbers.${name} adicionada`);
+        }
+    }
+
+    const campCols = await all(`PRAGMA table_info(campaigns)`);
+    const campExisting = new Set(campCols.map(c => c.name));
+    for (const [name, def] of Object.entries(CAMPAIGN_MIGRATIONS)) {
+        if (!campExisting.has(name)) {
+            await run(`ALTER TABLE campaigns ADD COLUMN ${name} ${def}`);
+            console.log(`[db] migração: coluna campaigns.${name} adicionada`);
         }
     }
 }

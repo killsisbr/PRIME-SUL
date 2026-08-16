@@ -40,6 +40,10 @@ async function bootstrap() {
     // Registra fluxo anti-ban de confirmação
     botFlow.register();
 
+    // Reinicia campanhas pausadas por bot offline quando qualquer bot reconecta
+    const campaignService = require('./services/campaign-service');
+    whatsapp.onConnected(() => campaignService.resumePausedFromOffline());
+
     if (whatsapp.enabled()) {
         const antiBan = require('./services/anti-ban-service');
         const mainNumber = process.env.BOT_MAIN_NUMBER;
