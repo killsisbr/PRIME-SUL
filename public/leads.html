@@ -153,91 +153,120 @@
 
     <script>
         const STATUS_MAP = {
-            NOVO: { label: 'NOVO', cls: 'novo' },
-            CONTATO: { label: 'EM CONTATO', cls: 'contato' },
-            CONFIRMADO: { label: 'CONFIRMADO', cls: 'confirmado' },
-            CONCLUIDO: { label: 'CONCLUÍDO', cls: 'concluido' },
-            BLOQUEADO: { label: 'BLOQUEADO', cls: 'bloqueado' }
+            novo: { label: 'NOVO', cls: 'novo' },
+            contato: { label: 'EM CONTATO', cls: 'contato' },
+            confirmado: { label: 'CONFIRMADO', cls: 'confirmado' },
+            concluido: { label: 'CONCLUÍDO', cls: 'concluido' },
+            bloqueado: { label: 'BLOQUEADO', cls: 'bloqueado' },
+            duplicado: { label: 'DUPLICADO', cls: 'bloqueado' }
         };
 
-        const LEADS = [
-            { id: 'L001', nome: 'Maria Oliveira', telefone: '(51) 99999-1001', cidade: 'Porto Alegre', origem: 'SIMULAÇÃO', limite: 'R$ 18.000', status: 'NOVO' },
-            { id: 'L002', nome: 'João Pereira', telefone: '(51) 99999-1002', cidade: 'Canoas', origem: 'SITE', limite: 'R$ 12.500', status: 'CONFIRMADO' },
-            { id: 'L003', nome: 'Ana Souza', telefone: '(51) 99999-1003', cidade: 'Gravataí', origem: 'SIMULAÇÃO', limite: 'R$ 25.000', status: 'CONTATO' },
-            { id: 'L004', nome: 'Carlos Lima', telefone: '(51) 99999-1004', cidade: 'Viamão', origem: 'SITE', limite: 'R$ 9.800', status: 'CONCLUIDO' },
-            { id: 'L005', nome: 'Beatriz Rocha', telefone: '(51) 99999-1005', cidade: 'Alvorada', origem: 'INDICAÇÃO', limite: 'R$ 30.000', status: 'NOVO' }
-        ];
+        const token = localStorage.getItem('prime_sul_token');
+        const me = JSON.parse(localStorage.getItem('prime_sul_user') || 'null');
+        if (!token || !me) { window.location.href = '/login.html'; }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const vendedor = urlParams.get('vendedor') || 'Vendedor';
-        document.getElementById('v3-seller-desc').textContent = vendedor;
+        let LEADS = [];
+        let currentLeadId = null;
+
+        async function api(path, opts = {}) {
+            const res = await fetch('/api' + path, {
+                ...opts,
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                if (res.status === 401) { localStorage.removeItem('prime_sul_token'); window.location.href = '/login.html'; }
+                throw Object.assign(new Error(data.error || 'Erro'), { status: res.status, data });
+            }
+            return data;
+        }
+
+        function initials(nome) {
+            return nome.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+        }
+
+        function statusBadge(status) {
+            const st = STATUS_MAP[status] || { label: status, cls: 'novo' };
+            return `<span class="v3-tag ${st.cls}">${st.label}</span>`;
+        }
 
         function renderLeads(filter = 'TODOS', search = '') {
             const grid = document.getElementById('v3-leads-grid');
             const list = LEADS.filter(l =>
-                (filter === 'TODOS' || l.status === filter) &&
-                (!search || (l.nome + l.telefone + l.cidade).toLowerCase().includes(search.toLowerCase()))
+                (filter === 'TODOS' || l.status === filter.toLowerCase()) &&
+                (!search || (l.name + l.phone + (l.city || '')).toLowerCase().includes(search.toLowerCase()))
             );
             if (!list.length) {
                 grid.innerHTML = '<div class="v3-loading-state"><i class="fas fa-inbox"></i><p>Nenhum lead encontrado.</p></div>';
                 return;
             }
-            grid.innerHTML = list.map(l => {
-                const st = STATUS_MAP[l.status];
-                const ini = l.nome.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
-                return `
-                    <article class="v3-product-card" data-id="${l.id}" onclick="openLeadModal('${l.id}')">
-                        <div style="position:relative;">
-                            <div class="v3-lead-avatar">${ini}</div>
-                            <span class="v3-product-badge"><i class="fas fa-fire"></i> ${l.origem}</span>
+            grid.innerHTML = list.map(l => `
+                <article class="v3-product-card" data-id="${l.id}" onclick="openLeadModal(${l.id})">
+                    <div style="position:relative;">
+                        <div class="v3-lead-avatar">${initials(l.name)}</div>
+                        <span class="v3-product-badge"><i class="fas fa-fire"></i> ${l.origem}</span>
+                    </div>
+                    <div>
+                        <h3 class="v3-product-name">${l.name}</h3>
+                        <p class="v3-product-desc">${l.phone} • ${l.city || '—'}</p>
+                        <div style="margin-top:8px;">${statusBadge(l.status)}</div>
+                    </div>
+                    <div class="v3-product-footer">
+                        <span class="v3-product-price">${l.limite_est || 'R$ —'}</span>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="v3-btn ghost" onclick="event.stopPropagation(); openLeadModal(${l.id})"><i class="fas fa-eye"></i></button>
+                            <button type="button" class="v3-btn whatsapp" onclick="event.stopPropagation(); repassarLead(${l.id})"><i class="fab fa-whatsapp"></i> SIMULAR</button>
                         </div>
-                        <div>
-                            <h3 class="v3-product-name">${l.nome}</h3>
-                            <p class="v3-product-desc">${l.telefone} • ${l.cidade}</p>
-                            <div style="margin-top:8px;"><span class="v3-tag ${st.cls}">${st.label}</span></div>
-                        </div>
-                        <div class="v3-product-footer">
-                            <span class="v3-product-price">${l.limite}</span>
-                            <div style="display:flex; gap:8px;">
-                                <button type="button" class="v3-btn ghost" onclick="event.stopPropagation(); openLeadModal('${l.id}')"><i class="fas fa-eye"></i></button>
-                                <button type="button" class="v3-btn whatsapp" onclick="event.stopPropagation(); repassarLead('${l.id}')"><i class="fab fa-whatsapp"></i> SIMULAR</button>
-                            </div>
-                        </div>
-                    </article>`;
-            }).join('');
-            document.getElementById('v3-meta-leads').textContent = LEADS.length;
-            document.getElementById('v3-meta-envios').textContent = LEADS.filter(l => l.status === 'CONFIRMADO' || l.status === 'CONCLUIDO').length;
+                    </div>
+                </article>`).join('');
+        }
+
+        async function loadAll() {
+            try {
+                const [leads, counts] = await Promise.all([api('/leads'), api('/leads/counts')]);
+                LEADS = leads;
+                document.getElementById('v3-seller-desc').textContent = me.name;
+                document.getElementById('v3-meta-leads').textContent = counts.leads;
+                document.getElementById('v3-meta-envios').textContent = counts.envios;
+                renderLeads();
+            } catch (e) {
+                document.getElementById('v3-leads-grid').innerHTML =
+                    '<div class="v3-loading-state"><i class="fas fa-exclamation-triangle"></i><p>' + e.message + '</p></div>';
+            }
         }
 
         function openLeadModal(id) {
             const l = LEADS.find(x => x.id === id);
             if (!l) return;
+            currentLeadId = id;
             const st = STATUS_MAP[l.status];
-            const ini = l.nome.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
-            document.getElementById('v3-modal-initials').textContent = ini;
+            document.getElementById('v3-modal-initials').textContent = initials(l.name);
             document.getElementById('v3-modal-origem').textContent = l.origem;
-            document.getElementById('v3-modal-name').textContent = l.nome;
-            document.getElementById('v3-modal-phone').textContent = l.telefone + ' • ' + l.cidade;
+            document.getElementById('v3-modal-name').textContent = l.name;
+            document.getElementById('v3-modal-phone').textContent = l.phone + ' • ' + (l.city || '—');
             document.getElementById('v3-modal-status').textContent = st.label;
             document.getElementById('v3-modal-status').className = 'v3-tag ' + st.cls;
-            document.getElementById('v3-modal-limite').textContent = 'Limite: ' + l.limite;
+            document.getElementById('v3-modal-limite').textContent = 'Limite: ' + (l.limite_est || 'R$ —');
             document.getElementById('v3-lead-modal').style.display = 'flex';
         }
 
         function repassarLead(id) {
             const l = LEADS.find(x => x.id === id);
-            const msg = encodeURIComponent(`Olá ${l.nome}! Aqui é o vendedor Prime Sul. Você pediu uma simulação de crédito. Posso encaminhar?`);
-            window.open(`https://wa.me/${l.telefone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+            const msg = encodeURIComponent(`Olá ${l.name}! Aqui é o vendedor Prime Sul. Você pediu uma simulação de crédito. Posso encaminhar?`);
+            window.open(`https://wa.me/${l.phone}?text=${msg}`, '_blank');
         }
 
         document.getElementById('v3-close-lead-modal').onclick = () => document.getElementById('v3-lead-modal').style.display = 'none';
         document.getElementById('v3-lead-modal').addEventListener('click', e => { if (e.target.id === 'v3-lead-modal') e.target.style.display = 'none'; });
-        document.getElementById('v3-btn-block-lead').onclick = () => {
-            alert('Lead bloqueado (anti-ban): não será mais contatado por este vendedor.');
+        document.getElementById('v3-btn-block-lead').onclick = async () => {
+            try { await api(`/leads/${currentLeadId}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'bloqueado' }) }); } catch (e) { alert(e.message); }
             document.getElementById('v3-lead-modal').style.display = 'none';
+            await loadAll();
         };
-        document.getElementById('v3-btn-simulate-lead').onclick = () => {
-            alert('Repassando para o bot do vendedor... (integração pendente)');
+        document.getElementById('v3-btn-simulate-lead').onclick = async () => {
+            const name = document.getElementById('v3-modal-name').textContent;
+            const lead = LEADS.find(x => x.name === name);
+            if (lead) repassarLead(lead.id);
             document.getElementById('v3-lead-modal').style.display = 'none';
         };
 
@@ -255,21 +284,30 @@
         const drawer = document.getElementById('v3-new-lead-drawer');
         document.getElementById('v3-btn-new-lead').onclick = () => { drawer.style.display = 'flex'; document.getElementById('v3-duplicate-warning').style.display = 'none'; };
         document.getElementById('v3-close-new-lead-drawer').onclick = () => { drawer.style.display = 'none'; };
-        document.getElementById('v3-btn-save-lead').onclick = () => {
-            const phone = document.getElementById('v3-lead-phone').value.replace(/\D/g, '');
-            const dup = LEADS.find(l => l.telefone.replace(/\D/g, '') === phone && phone.length >= 10);
-            if (dup) {
-                document.getElementById('v3-duplicate-warning').style.display = 'block';
-                return;
+        document.getElementById('v3-btn-save-lead').onclick = async () => {
+            const warn = document.getElementById('v3-duplicate-warning');
+            warn.style.display = 'none';
+            try {
+                await api('/leads', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: document.getElementById('v3-lead-name').value.trim(),
+                        phone: document.getElementById('v3-lead-phone').value,
+                        city: document.getElementById('v3-lead-city').value.trim(),
+                        origem: document.getElementById('v3-lead-origem').value,
+                        limite_est: document.getElementById('v3-lead-limite').value.trim()
+                    })
+                });
+                drawer.style.display = 'none';
+                document.getElementById('v3-new-lead-form').reset();
+                await loadAll();
+            } catch (e) {
+                if (e.status === 409) warn.style.display = 'block';
+                else alert(e.message);
             }
-            const nome = document.getElementById('v3-lead-name').value.trim();
-            LEADS.push({ id: 'L' + (LEADS.length + 1), nome, telefone: document.getElementById('v3-lead-phone').value, cidade: document.getElementById('v3-lead-city').value || '—', origem: document.getElementById('v3-lead-origem').value, limite: document.getElementById('v3-lead-limite').value || 'R$ 0', status: 'NOVO' });
-            renderLeads();
-            drawer.style.display = 'none';
-            document.getElementById('v3-new-lead-form').reset();
         };
 
-        renderLeads();
+        loadAll();
     </script>
 </body>
 </html>

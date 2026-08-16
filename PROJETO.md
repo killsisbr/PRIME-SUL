@@ -74,19 +74,85 @@ Bot do vendedor contata e finaliza a simulação
 ### Painel
 - Visão por vendedor: leads, envios, respostas, taxas de conversão.
 
-## Stack Sugerida (a definir)
+## Stack Confirmada
 
-- Backend: Node.js (NestJS/Express) ou Python (FastAPI)
-- Frontend: React/Next.js
-- Banco: PostgreSQL
-- Bot: Evolucy/WPPConnect/Baileys (WhatsApp)
-- Fila: Redis/Bull (para disparo em massa)
+| Camada | Tecnologia |
+|--------|------------|
+| Backend | Node.js + Express |
+| Banco | SQLite (WAL mode) |
+| Auth | JWT (bcrypt) |
+| WhatsApp | Baileys (multi-session) |
+| Fila | Em processo (delay entre envios) |
+| Frontend | HTML vanilla + Tailwind/CSS (tema Neo-Brutalista) |
+
+## Estrutura do Projeto
+
+```
+PRIME SUL/
+├── server/
+│   ├── server.js                  # Entry point
+│   ├── routes/
+│   │   ├── auth.js                # POST /api/auth/login
+│   │   ├── sellers.js             # Vendedores (admin) + /me
+│   │   ├── leads.js               # CRUD leads + duplicidade
+│   │   ├── campaigns.js           # Campanhas + números descartáveis
+│   │   └── whatsapp.js            # Status dos bots
+│   ├── services/
+│   │   ├── lead-service.js        # Regra de duplicidade global
+│   │   ├── anti-ban-service.js    # Números descartáveis, limites, cooldown
+│   │   ├── whatsapp-service.js    # Baileys multi-session
+│   │   ├── campaign-service.js    # Fila de disparo em lotes
+│   │   └── bot-flow-service.js    # Confirmação (sim/não) → repasse
+│   ├── middleware/auth.js         # JWT + adminOnly
+│   ├── database/
+│   │   ├── db.js                  # SQLite helper (promises)
+│   │   ├── schema.sql             # Schema completo
+│   │   └── seed.js                # Cria admin inicial
+│   └── utils/phone.js             # Normalização E.164
+├── public/
+│   ├── css/design.css             # Design system Neo-Brutalista
+│   ├── components/                # Header, lead-card, modal, drawer
+│   ├── login.html                 # Login do vendedor (multi-tenant)
+│   └── leads.html                 # Grid de leads integrado à API
+├── data/                          # SQLite + sessões Baileys (gitignored)
+├── .env.example
+└── package.json
+```
+
+## Como Rodar
+
+```bash
+npm install
+cp .env.example .env          # ajuste JWT_SECRET
+npm run seed                  # cria admin@primesul.com.br / admin123
+npm run dev                   # http://localhost:5000
+```
+
+## API
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/api/auth/login` | Login → JWT |
+| GET | `/api/leads` | Lista leads do vendedor |
+| POST | `/api/leads` | Cadastra lead (409 se duplicado por outro vendedor) |
+| GET | `/api/leads/counts` | Contadores do painel |
+| PATCH | `/api/leads/:id/status` | Muda status do lead |
+| GET | `/api/campaigns` | Campanhas do vendedor |
+| POST | `/api/campaigns` | Cria campanha |
+| POST | `/api/campaigns/:id/start` | Inicia disparo |
+| GET | `/api/campaigns/numbers` | Números descartáveis |
+| POST | `/api/campaigns/numbers` | Registra número |
+| GET | `/api/whatsapp/status` | Status dos bots |
+| GET | `/api/sellers/me` | Perfil do vendedor |
 
 ## Próximos Passos
 
-- [ ] Validar stack e arquitetura
-- [ ] Modelagem do banco (vendedor, lead, campanha, numero, envio)
-- [ ] Regras de negócio de duplicidade
-- [ ] Integração com API do WhatsApp (bot)
-- [ ] Fluxo anti-ban (número descartável → confirmação → repasse)
-- [ ] Painel administrativo e de vendedor
+- [x] Validar stack e arquitetura
+- [x] Modelagem do banco (vendedor, lead, campanha, numero, envio)
+- [x] Regras de negócio de duplicidade
+- [x] Fluxo anti-ban (número descartável → confirmação → repasse)
+- [x] Painel do vendedor (login + leads)
+- [ ] Painel admin (gestão de vendedores e números)
+- [ ] Tela de campanhas/disparo
+- [ ] Ativar bots (BOT_ENABLED=true + QR code)
+- [ ] Fila robusta (BullMQ/Redis) para escala

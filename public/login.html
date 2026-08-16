@@ -43,17 +43,33 @@
             <div class="v3-cart-summary-box" style="margin-top:0;">
                 <div class="v3-summary-line"><span><i class="fas fa-users"></i> Multi-tenant</span><strong>Lista exclusiva</strong></div>
                 <div class="v3-summary-line"><span><i class="fas fa-ban"></i> Anti-ban</span><strong>Números descartáveis</strong></div>
-                <div class="v3-summary-line total-line"><span>Bots ativos</span><strong id="v3-login-bots">—</strong></div>
+                <div class="v3-summary-line total-line"><span>Bots ativos</span><strong id="v3-login-bots" class="v3-login-bot-status">—</strong></div>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('v3-login-form').addEventListener('submit', function (e) {
+        document.getElementById('v3-login-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             const email = document.getElementById('v3-login-email').value.trim();
-            if (email) {
-                window.location.href = '/leads.html?vendedor=' + encodeURIComponent(email);
+            const password = document.getElementById('v3-login-pass').value;
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Falha no login');
+                localStorage.setItem('prime_sul_token', data.token);
+                localStorage.setItem('prime_sul_user', JSON.stringify(data.user));
+                window.location.href = '/leads.html';
+            } catch (err) {
+                alert('Erro no login: ' + err.message);
+            } finally {
+                btn.disabled = false;
             }
         });
     </script>

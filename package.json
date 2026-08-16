@@ -1,0 +1,20 @@
+{
+  "name": "prime-sul",
+  "version": "0.1.0",
+  "description": "CRM multi-tenant de crédito com disparo em massa e bot anti-ban (parceira Banco do Brasil)",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js",
+    "seed": "node server/database/seed.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.20",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "sqlite3": "^5.1.7",
+    "uuid": "^13.0.0"
+  }
+}
