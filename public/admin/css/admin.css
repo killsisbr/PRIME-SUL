@@ -1,20 +1,21 @@
 /* ============ PRIME SUL ADMIN — Dashboard Shell (Neo-Brutalista) ============ */
+/* Tokens definidos em tokens.css — aqui apenas herdam */
 
 :root {
-    --dark: #181716;
-    --bg: #faf6f0;
-    --card: #ffffff;
-    --text: #211c18;
-    --text-muted: #756d67;
-    --primary: #ff7417;
-    --secondary: #ffbd16;
-    --warning: #ffbd16;
-    --success: #10b981;
-    --danger: #df4632;
-    --info: #3b82f6;
-    --radius-sm: 12px;
-    --radius-md: 16px;
-    --radius-lg: 22px;
+    --dark: var(--ink);
+    --bg: var(--paper);
+    --card: var(--card-bg);
+    --text: var(--text-body);
+    --text-muted: var(--text-soft);
+    --primary: var(--brand);
+    --secondary: var(--accent);
+    --warning: var(--accent);
+    --success: var(--ok);
+    --danger: var(--bad);
+    --info: var(--info);
+    --radius-sm: var(--r-sm);
+    --radius-md: var(--r-md);
+    --radius-lg: var(--r-lg);
     --transition: all 0.18s ease;
 }
 
@@ -334,10 +335,17 @@ body.admin-body {
 .hud-item i { width: 22px; text-align: center; }
 
 /* ================= DYNAMIC MODAL ================= */
+#dynamicModalOverlay {
+    padding: 2vh 2vw;
+    align-items: center;
+    justify-content: center;
+}
+
 #dynamicModalOverlay .hud-modal {
     width: 100%;
     height: 100%;
     max-width: 1400px;
+    max-height: none;
     display: flex;
     flex-direction: column;
     box-shadow: 20px 20px 0 var(--primary);
@@ -352,7 +360,9 @@ body.admin-body {
 }
 
 #dynamicModalBody { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg); }
-#dynamicModalBody:has(.promo-console) { display: flex; min-height: 0; overflow: hidden !important; padding: 18px !important; }
+#dynamicModalBody:has(.hub-v2), #dynamicModalBody:has(.promo-console) { display: flex; flex-direction: column; min-height: 0; overflow: hidden !important; padding: 18px !important; }
+#dynamicModalBody > .fiscal-container { flex: 1; }
+#dynamicModalBody .fiscal-card { margin-bottom: 20px; }
 
 #dynamicModalFooter {
     display: flex;

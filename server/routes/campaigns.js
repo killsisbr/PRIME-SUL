@@ -24,6 +24,19 @@ router.post('/numbers', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Atualiza status do número (ativo = reativa, banido = retira de circulação)
+router.patch('/numbers/:id', async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        if (!['ativo', 'resfriado', 'banido'].includes(status)) {
+            return res.status(400).json({ error: 'Status inválido. Use ativo, resfriado ou banido.' });
+        }
+        const n = await antiBan.setStatus(req.params.id, status);
+        if (!n) return res.status(404).json({ error: 'Número não encontrado' });
+        res.json(n);
+    } catch (e) { next(e); }
+});
+
 // Lista campanhas do vendedor
 router.get('/', async (req, res, next) => {
     try {

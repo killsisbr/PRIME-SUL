@@ -1,36 +1,28 @@
-<div class="fiscal-container" style="padding: 12px; font-family: 'Outfit', sans-serif;">
+<div class="fiscal-container" style="padding: 12px; font-family: var(--font-body);">
     <h1 class="v2-title" style="display: none;">NÚMEROS ANTI-BAN</h1>
 
-    <div style="font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--dark); margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-        <i class="fas fa-shield-halved" style="color: #df4632;"></i> NÚMEROS DESCARTÁVEIS
-    </div>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; font-weight: 600;">
-        Os números descartáveis são usados pelo bot principal para o primeiro contato. Ao atingir o limite diário, o número entra em resfriamento (cooldown) para evitar banimento.
-    </p>
-
-    <div style="display:flex; gap:12px; align-items:flex-start; padding:14px 16px; margin-bottom:18px; border:3px solid #b45309; border-radius:10px; background:#fff7ed; color:#7c2d12; font-weight:700;">
-        <i class="fas fa-triangle-exclamation" style="font-size:1.2rem; margin-top:2px;"></i>
-        <div><strong>Como funciona</strong><br><span style="font-size:.85rem; font-weight:600;">O número enviou muitas mensagens e caiu? Marque como banido para retirá-lo de circulação imediatamente.</span></div>
-    </div>
-
-    <div class="fiscal-card">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 2px dashed #cbd5e1;">
-            <label style="font-weight: 850; font-size: 1rem; text-transform: uppercase; color: var(--dark);"><i class="fas fa-phone"></i> Cadastrar novo número</label>
+    <div class="ps-head">
+        <div>
+            <div class="ps-head-title"><i class="fas fa-shield-halved" style="color: var(--bad);"></i> NÚMEROS DESCARTÁVEIS</div>
+            <p class="ps-head-desc">Os números descartáveis são usados pelo bot principal para o primeiro contato. Ao atingir o limite diário, o número entra em resfriamento (cooldown) para evitar banimento.</p>
         </div>
-        <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 20px;">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Número (com DDI 55)</label>
-                <input type="text" id="numNumber" placeholder="5511999991234" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none;">
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Rótulo</label>
-                <input type="text" id="numLabel" placeholder="bot-01" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none;">
-            </div>
-            <button onclick="addNumber()" style="padding: 12px 20px; background: var(--primary); color: white; font-weight: 800; font-size: 0.9rem; border-radius: 10px; border: 3px solid var(--dark); box-shadow: 4px 4px 0 var(--dark); cursor: pointer; text-transform: uppercase;"><i class="fas fa-plus"></i> ADICIONAR</button>
+    </div>
+
+    <div class="ps-alert ps-alert-warn">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div><strong>Como funciona</strong><span class="ps-alert-sub">O número enviou muitas mensagens e caiu? Marque como banido para retirá-lo de circulação imediatamente.</span></div>
+    </div>
+
+    <div class="ps-card">
+        <div class="ps-card-title"><i class="fas fa-phone"></i> Cadastrar novo número</div>
+        <div class="ps-grid-add">
+            <div class="ps-field"><label for="numNumber">Número (com DDI 55)</label><input type="text" class="ps-input" id="numNumber" placeholder="5511999991234"></div>
+            <div class="ps-field"><label for="numLabel">Rótulo</label><input type="text" class="ps-input" id="numLabel" placeholder="bot-01"></div>
+            <button class="btn-retro" onclick="addNumber()"><i class="fas fa-plus"></i> ADICIONAR</button>
         </div>
 
         <div id="numbersList">
-            <div style="text-align:center; padding:30px; color:var(--text-muted); font-weight:800;">Carregando números...</div>
+            <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando números...</div>
         </div>
     </div>
 </div>

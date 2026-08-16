@@ -1,16 +1,17 @@
 /* --- PRIME SUL Design System (Neo-Brutalista V3) --- */
 
+/* Tokens definidos em tokens.css — aqui apenas herdam */
 :root {
-    --v3-ink: #181716;
-    --v3-dark: #211c18;
-    --v3-cream: #fff8ed;
-    --v3-orange: #ff7417;
-    --v3-yellow: #ffbd16;
-    --v3-coral: #df4632;
-    --v3-green: #10b981;
-    --v3-blue: #3b82f6;
-    --v3-font: 'Outfit', sans-serif;
-    --v3-font-title: 'Bebas Neue', sans-serif;
+    --v3-ink: var(--ink);
+    --v3-dark: var(--ink-dark);
+    --v3-cream: var(--cream);
+    --v3-orange: var(--brand);
+    --v3-yellow: var(--accent);
+    --v3-coral: var(--bad);
+    --v3-green: var(--ok);
+    --v3-blue: var(--info);
+    --v3-font: var(--font-body);
+    --v3-font-title: var(--font-title);
 }
 
 * {
@@ -20,7 +21,7 @@
 }
 
 body.v3-body {
-    background: #faf6f0;
+    background: var(--paper);
     color: var(--v3-ink);
     font-family: var(--v3-font);
     min-height: 100vh;

@@ -1,30 +1,30 @@
 export async function init() {
     const api = window.api;
+    const toast = window.toast;
 
     async function load() {
         try {
             const sellers = await api('/sellers');
             const list = document.getElementById('sellersList');
             if (!sellers.length) {
-                list.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); font-weight:800;">Nenhum vendedor cadastrado.</div>';
+                list.innerHTML = '<div class="ps-empty">Nenhum vendedor cadastrado.</div>';
                 return;
             }
             list.innerHTML = sellers.map(s => `
-                <div style="display:grid; grid-template-columns: auto 1fr auto auto; gap:14px; align-items:center; padding:14px; border:3px solid var(--dark); border-radius:13px; background:#fff; box-shadow:4px 4px 0 var(--dark); margin-bottom:12px;">
-                    <div style="display:grid; place-items:center; width:46px; height:46px; border:2px solid var(--dark); border-radius:12px; background:#8b5cf6; color:#fff; font-weight:900;">${s.name.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase()}</div>
-                    <div>
-                        <strong style="font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:0.5px;">${s.name} ${s.role === 'admin' ? '<span style="font-size:0.6rem; background:var(--primary); color:#fff; padding:2px 6px; border-radius:6px; vertical-align:middle;">ADMIN</span>' : ''}</strong>
-                        <span style="display:block; font-size:0.68rem; font-weight:700; color:var(--text-muted); margin-top:2px;">${s.email} • bot ${s.phone}</span>
+                <div class="ps-row ps-row-seller">
+                    <div class="ps-avatar">${s.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()}</div>
+                    <div class="ps-row-main">
+                        <strong>${s.name} ${s.role === 'admin' ? '<span style="font-size:.6rem; background:var(--primary); color:#fff; padding:2px 6px; border-radius:6px; vertical-align:middle;">ADMIN</span>' : ''}</strong>
+                        <span class="ps-row-sub">${s.email} • bot ${s.phone}</span>
                     </div>
-                    <div style="text-align:center;">
-                        <b style="font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--primary);">${s.total_leads}</b>
-                        <span style="display:block; font-size:0.58rem; font-weight:900; color:var(--text-muted);">LEADS</span>
+                    <div class="ps-row-nums">
+                        <div><b style="color:var(--primary);">${s.total_leads}</b><span>LEADS</span></div>
                     </div>
-                    <span style="padding:5px 10px; border:2px solid ${s.active ? '#10b981' : '#c74838'}; border-radius:999px; font-size:0.6rem; font-weight:900; background:${s.active ? '#e3faea' : '#ffe5e0'}; color:${s.active ? '#12813b' : '#c74838'};">${s.active ? 'ATIVO' : 'INATIVO'}</span>
+                    <span class="ps-pill" style="border-color:${s.active ? '#10b981' : '#c74838'}; background:${s.active ? '#e3faea' : '#ffe5e0'}; color:${s.active ? '#12813b' : '#c74838'};">${s.active ? 'ATIVO' : 'INATIVO'}</span>
                 </div>`).join('');
         } catch (e) {
-            if (e.status === 403) document.getElementById('sellersList').innerHTML = '<div style="color:var(--danger); font-weight:800;">Acesso restrito ao admin.</div>';
-            else document.getElementById('sellersList').innerHTML = `<div style="color:var(--danger); font-weight:800;">${e.message}</div>`;
+            if (e.status === 403) document.getElementById('sellersList').innerHTML = '<div class="ps-empty" style="color:var(--bad);">Acesso restrito ao admin.</div>';
+            else document.getElementById('sellersList').innerHTML = `<div class="ps-empty" style="color:var(--bad);">${e.message}</div>`;
         }
     }
 
@@ -46,8 +46,9 @@ export async function init() {
             });
             window.closeSellerEditor();
             document.getElementById('sellerForm').reset();
+            toast('Vendedor criado!');
             load();
-        } catch (e) { alert(e.message); }
+        } catch (e) { toast(e.message, 'err'); }
     });
 
     await load();

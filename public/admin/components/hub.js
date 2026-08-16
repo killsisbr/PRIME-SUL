@@ -56,12 +56,12 @@ export async function init({ container }) {
     }
 
     async function hubStartCampaign(id) {
-        try { const r = await api(`/campaigns/${id}/start`, { method: 'POST' }); alert(r.message || 'Campanha iniciada!'); loadStats(); }
-        catch (e) { alert(e.message); }
+        try { const r = await api(`/campaigns/${id}/start`, { method: 'POST' }); window.toast(r.message || 'Campanha iniciada!'); loadStats(); }
+        catch (e) { window.toast(e.message, 'err'); }
     }
     async function hubPauseCampaign(id) {
-        try { await api(`/campaigns/${id}/pause`, { method: 'POST' }); loadStats(); }
-        catch (e) { alert(e.message); }
+        try { await api(`/campaigns/${id}/pause`, { method: 'POST' }); window.toast('Campanha pausada'); loadStats(); }
+        catch (e) { window.toast(e.message, 'err'); }
     }
     window.hubStartCampaign = hubStartCampaign;
     window.hubPauseCampaign = hubPauseCampaign;
@@ -100,8 +100,9 @@ export async function init({ container }) {
             });
             closeModal('hub-campaign-editor-modal');
             document.getElementById('hub-campaign-form').reset();
+            window.toast('Campanha criada!');
             loadStats();
-        } catch (e) { alert(e.message); }
+        } catch (e) { window.toast(e.message, 'err'); }
     });
 
     loadStats();

@@ -1,0 +1,130 @@
+/* ============ PRIME SUL ADMIN — Blocos compartilhados dos módulos ============ */
+/* Usado por todos os componentes dinâmicos (config, campanhas, vendedores, numeros, leads). */
+
+/* --- cabeçalho da página do módulo --- */
+.ps-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+.ps-head-title { font-family: var(--font-title); font-size: 2.2rem; color: var(--dark); display: flex; align-items: center; gap: 10px; letter-spacing: .5px; }
+.ps-head-desc { color: var(--text-muted); font-size: .9rem; font-weight: 600; margin-top: 4px; }
+
+/* --- card --- */
+.ps-card { border: 3px solid var(--dark); border-radius: var(--r-md); background: var(--card); box-shadow: var(--shadow-md); padding: 20px; margin-bottom: 20px; }
+.ps-card-title { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 2px dashed #cbd5e1; font-weight: 850; font-size: 1rem; text-transform: uppercase; color: var(--dark); }
+
+/* --- aviso --- */
+.ps-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; margin-bottom: 18px; border: 3px solid; border-radius: 10px; font-weight: 700; }
+.ps-alert-warn { border-color: #b45309; background: #fff7ed; color: #7c2d12; }
+.ps-alert strong { display: block; }
+.ps-alert .ps-alert-sub { font-size: .85rem; font-weight: 600; }
+.ps-alert i { font-size: 1.2rem; margin-top: 2px; }
+
+/* --- grids de formulário --- */
+.ps-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ps-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ps-grid-add { display: grid; grid-template-columns: 2fr 1fr auto; gap: 12px; align-items: end; }
+
+.ps-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.ps-field > label { font-weight: 850; text-transform: uppercase; font-size: .75rem; color: var(--dark); letter-spacing: .3px; }
+.ps-input, .ps-select, .ps-textarea {
+    width: 100%; padding: 12px; border: 3px solid var(--dark); border-radius: 10px;
+    background: var(--card); color: var(--text); font-family: inherit; font-weight: 700;
+    font-size: .95rem; outline: none; transition: var(--transition);
+}
+.ps-input:focus, .ps-select:focus, .ps-textarea:focus { border-color: var(--primary); box-shadow: 2px 2px 0 var(--dark); }
+.ps-textarea { resize: vertical; }
+.ps-hint { font-size: .7rem; font-weight: 700; color: var(--text-muted); }
+.ps-hint code { background: var(--cream); border: 2px solid var(--ink); border-radius: 5px; padding: 0 5px; }
+
+/* --- toggle (check) --- */
+.ps-toggle-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 14px; border: 3px solid #d1d5db; border-radius: 10px; background: #f9fafb; cursor: pointer; }
+.ps-toggle-row input { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
+.ps-toggle-row label { font-weight: 850; font-size: .9rem; text-transform: uppercase; color: var(--dark); cursor: pointer; }
+
+/* --- botão salvar --- */
+.ps-btn-save {
+    width: 100%; padding: 14px; background: var(--violet); color: #fff; font-weight: 800; font-size: 1rem;
+    border: 3px solid var(--dark); border-radius: 10px; box-shadow: 4px 4px 0 var(--dark);
+    cursor: pointer; text-transform: uppercase; font-family: inherit; transition: var(--transition);
+}
+.ps-btn-save:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--dark); }
+.ps-btn-save:disabled { opacity: .6; cursor: default; transform: none; box-shadow: 4px 4px 0 var(--dark); }
+
+/* --- linha de listagem --- */
+.ps-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 14px; align-items: center; padding: 12px 14px; border: 3px solid var(--dark); border-radius: 13px; background: var(--card); box-shadow: var(--shadow-sm); margin-bottom: 10px; }
+.ps-row-seller { grid-template-columns: auto 1fr auto auto; }
+.ps-row-main { min-width: 0; }
+.ps-row-main strong { font-family: var(--font-title); font-size: 1.2rem; letter-spacing: .5px; }
+.ps-row-sub { display: block; font-size: .68rem; font-weight: 700; color: var(--text-muted); margin-top: 2px; }
+.ps-row-nums { display: flex; gap: 14px; align-items: baseline; }
+.ps-row-nums > div { text-align: center; }
+.ps-row-nums b { font-family: var(--font-title); font-size: 1.3rem; }
+.ps-row-nums span { display: block; font-size: .55rem; font-weight: 900; color: var(--text-muted); }
+.ps-actions { display: flex; gap: 6px; }
+
+/* --- avatar --- */
+.ps-avatar { display: grid; place-items: center; width: 46px; height: 46px; border: 2px solid var(--dark); border-radius: 12px; background: var(--violet); color: #fff; font-weight: 900; font-size: .85rem; }
+
+/* --- pill de status --- */
+.ps-pill { padding: 5px 10px; border: 2px solid; border-radius: 999px; font-size: .6rem; font-weight: 900; white-space: nowrap; }
+
+/* --- botões de ícone --- */
+.ps-icon-btn { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid var(--dark); border-radius: 8px; background: var(--card); color: var(--dark); cursor: pointer; font-size: .8rem; }
+.ps-icon-btn:hover { background: var(--secondary); }
+.ps-icon-btn.start { background: #25d366; color: #fff; }
+.ps-icon-btn.warn { background: var(--secondary); }
+.ps-icon-btn.danger { color: var(--danger); }
+
+/* --- estado vazio / carregando --- */
+.ps-loading { text-align: center; padding: 30px; color: var(--text-muted); font-weight: 800; }
+.ps-empty { text-align: center; padding: 30px; color: var(--text-muted); font-weight: 800; border: 2px dashed #c4b7ac; border-radius: 14px; }
+.ps-empty i { font-size: 1.8rem; display: block; margin-bottom: 8px; color: var(--primary); }
+
+/* --- grid de leads --- */
+.ps-leads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.ps-lead-card { display: flex; flex-direction: column; justify-content: space-between; padding: 14px; border: 3px solid var(--dark); border-radius: 16px; background: var(--card); box-shadow: var(--shadow-md); }
+.ps-lead-card .ps-lead-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ps-lead-card .ps-lead-top .ps-avatar { width: 40px; height: 40px; font-size: .8rem; background: var(--secondary); color: var(--ink); }
+.ps-lead-name { font-family: var(--font-title); font-size: 1.15rem; letter-spacing: .5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ps-lead-sub { font-size: .65rem; font-weight: 700; color: var(--text-muted); }
+.ps-lead-foot { display: flex; justify-content: space-between; align-items: center; }
+.ps-lead-limite { font-family: var(--font-title); font-size: 1.1rem; color: var(--dark); }
+.ps-lead-actions { display: flex; gap: 6px; margin-top: 10px; }
+
+/* --- filtros de status (leads) --- */
+.lead-filter {
+    padding: 8px 16px; border: 2.5px solid var(--dark); border-radius: 12px; background: #fff;
+    color: var(--dark); font-weight: 800; font-size: .78rem; cursor: pointer;
+    box-shadow: var(--shadow-sm); transition: all .15s ease; font-family: var(--font-body);
+}
+.lead-filter:hover, .lead-filter.active { background: var(--dark); color: #fff; box-shadow: 3px 3px 0 var(--primary); }
+
+/* --- alias legado: num-btn --- */
+.num-btn { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid var(--dark); border-radius: 8px; background: var(--card); color: var(--dark); cursor: pointer; font-size: .8rem; }
+.num-btn:hover { background: var(--accent); }
+
+/* --- toasts --- */
+.ps-toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 15000; display: flex; flex-direction: column; gap: 10px; }
+.ps-toast {
+    min-width: 260px; max-width: 380px; padding: 12px 16px; border: 3px solid var(--dark); border-radius: 12px;
+    background: var(--card); box-shadow: var(--shadow-md); font-weight: 800; font-size: .85rem;
+    display: flex; gap: 10px; align-items: center; animation: psToastIn .2s ease-out;
+    transition: opacity .2s ease, transform .2s ease;
+}
+.ps-toast.ok { border-left: 8px solid var(--ok); }
+.ps-toast.err { border-left: 8px solid var(--bad); }
+.ps-toast.info { border-left: 8px solid var(--info); }
+.ps-toast.ok i { color: var(--ok); }
+.ps-toast.err i { color: var(--bad); }
+.ps-toast.info i { color: var(--info); }
+@keyframes psToastIn { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* --- responsivo --- */
+@media (max-width: 900px) {
+    .ps-grid-3, .ps-grid-2 { grid-template-columns: 1fr; }
+    .ps-grid-add { grid-template-columns: 1fr 1fr; }
+    .ps-row, .ps-row-seller { grid-template-columns: 1fr auto; }
+    .ps-row-nums { justify-content: flex-end; }
+}
+@media (max-width: 640px) {
+    .ps-grid-add { grid-template-columns: 1fr; }
+    .ps-head { align-items: flex-start; flex-direction: column; }
+}

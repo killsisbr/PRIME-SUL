@@ -1,20 +1,16 @@
-<div class="fiscal-container" style="padding: 12px; font-family: 'Outfit', sans-serif;">
+<div class="fiscal-container" style="padding: 12px; font-family: var(--font-body);">
     <h1 class="v2-title" style="display: none;">VENDEDORES</h1>
 
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
+    <div class="ps-head">
         <div>
-            <div style="font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--dark); display:flex; align-items:center; gap:10px;">
-                <i class="fas fa-user-tie" style="color: #8b5cf6;"></i> VENDEDORES
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; margin-top:4px;">
-                Cada vendedor tem sua lista exclusiva de leads e seu bot de WhatsApp.
-            </p>
+            <div class="ps-head-title"><i class="fas fa-user-tie" style="color: var(--violet);"></i> VENDEDORES</div>
+            <p class="ps-head-desc">Cada vendedor tem sua lista exclusiva de leads e seu bot de WhatsApp.</p>
         </div>
         <button class="btn-retro" onclick="openSellerEditor()"><i class="fas fa-plus"></i> NOVO VENDEDOR</button>
     </div>
 
     <div id="sellersList">
-        <div style="text-align:center; padding:30px; color:var(--text-muted); font-weight:800;">Carregando vendedores...</div>
+        <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando vendedores...</div>
     </div>
 </div>
 
@@ -24,11 +20,11 @@
         <div class="v2-submodal-header"><div><span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">EQUIPE</span><h3>NOVO VENDEDOR</h3></div><button type="button" class="btn-close-submodal" onclick="closeSellerEditor()"><i class="fas fa-times"></i></button></div>
         <form id="sellerForm">
             <div class="v2-submodal-body" style="display:grid; grid-template-columns:1fr 1fr; gap:0 14px;">
-                <div class="v2-form-group" style="grid-column:1/-1;"><label>Nome completo</label><input type="text" id="sName" required placeholder="Ex: João Pereira"></div>
-                <div class="v2-form-group"><label>E-mail</label><input type="email" id="sEmail" required placeholder="vendedor@primesul.com.br"></div>
-                <div class="v2-form-group"><label>Senha</label><input type="password" id="sPass" required placeholder="••••••••"></div>
-                <div class="v2-form-group" style="grid-column:1/-1;"><label>Número do bot (WhatsApp, com DDI 55)</label><input type="text" id="sPhone" required placeholder="5511999997777"></div>
-                <div class="v2-form-group"><label>Limite de leads (0 = ilimitado)</label><input type="number" id="sMaxLeads" value="0" min="0"></div>
+                <div class="v2-form-group" style="grid-column:1/-1;"><label>Nome completo</label><input type="text" class="ps-input" id="sName" required placeholder="Ex: João Pereira"></div>
+                <div class="v2-form-group"><label>E-mail</label><input type="email" class="ps-input" id="sEmail" required placeholder="vendedor@primesul.com.br"></div>
+                <div class="v2-form-group"><label>Senha</label><input type="password" class="ps-input" id="sPass" required placeholder="••••••••"></div>
+                <div class="v2-form-group" style="grid-column:1/-1;"><label>Número do bot (WhatsApp, com DDI 55)</label><input type="text" class="ps-input" id="sPhone" required placeholder="5511999997777"></div>
+                <div class="v2-form-group"><label>Limite de leads (0 = ilimitado)</label><input type="number" class="ps-input" id="sMaxLeads" value="0" min="0"></div>
             </div>
             <footer style="display:flex; justify-content:flex-end; gap:10px; padding:12px 22px; border-top:3px solid var(--dark); background:var(--bg);">
                 <button type="button" class="btn-retro btn-secondary-retro" onclick="closeSellerEditor()">Cancelar</button>

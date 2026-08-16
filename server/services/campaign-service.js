@@ -1,9 +1,10 @@
 const db = require('../database/db');
 const antiBan = require('./anti-ban-service');
+const settings = require('./settings-service');
 const whatsapp = require('./whatsapp-service');
 
-const BATCH = Number(process.env.CAMPAIGN_BATCH_SIZE) || 50;
-const DELAY_MS = Number(process.env.CAMPAIGN_DELAY_MS) || 15000;
+const DEFAULT_BATCH = Number(process.env.CAMPAIGN_BATCH_SIZE) || 50;
+const DEFAULT_DELAY_MS = Number(process.env.CAMPAIGN_DELAY_MS) || 15000;
 
 const running = new Set();
 
@@ -60,10 +61,12 @@ async function startCampaign(id) {
 }
 
 async function processCampaign(campaign) {
-    console.log(`[campaign] ${campaign.name} — processando`);
+    const batch = await settings.getNumber('cfg_batch', DEFAULT_BATCH);
+    const delayMs = await settings.getNumber('cfg_delay', DEFAULT_DELAY_MS);
+    console.log(`[campaign] ${campaign.name} — processando (lote ${batch}, delay ${delayMs}ms)`);
     const pending = await db.all(
         'SELECT * FROM sends WHERE campaign_id = ? AND status = ? ORDER BY id ASC LIMIT ?',
-        [campaign.id, 'pending', BATCH]
+        [campaign.id, 'pending', batch]
     );
 
     for (const send of pending) {
@@ -102,7 +105,7 @@ async function processCampaign(campaign) {
                 return;
             }
         }
-        await sleep(DELAY_MS);
+        await sleep(delayMs);
     }
 
     const remaining = await db.get(

@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prime Sul — Login do Vendedor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23ff7417'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Arial' font-size='28' font-weight='bold'>PS</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/tokens.css">
     <link rel="stylesheet" href="/css/design.css">
     <style>
         .v3-login-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
@@ -49,6 +51,15 @@
     </div>
 
     <script>
+        function toast(msg, type = 'err') {
+            const el = document.createElement('div');
+            el.className = 'ps-toast ' + type;
+            el.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:15000; padding:12px 18px; border:3px solid var(--v3-ink); border-radius:12px; background:#fff; box-shadow:5px 5px 0 var(--v3-ink); font-weight:800; font-size:.85rem; display:flex; gap:10px; align-items:center;';
+            el.innerHTML = '<i class="fas ' + (type === 'ok' ? 'fa-circle-check' : 'fa-triangle-exclamation') + '"></i><span>' + msg + '</span>';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
         document.getElementById('v3-login-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             const email = document.getElementById('v3-login-email').value.trim();
@@ -67,7 +78,7 @@
                 localStorage.setItem('prime_sul_user', JSON.stringify(data.user));
                 window.location.href = data.user.role === 'admin' ? '/admin.html' : '/leads.html';
             } catch (err) {
-                alert('Erro no login: ' + err.message);
+                toast('Erro no login: ' + err.message);
             } finally {
                 btn.disabled = false;
             }

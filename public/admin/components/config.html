@@ -1,94 +1,59 @@
-<div class="fiscal-container" style="padding: 12px; font-family: 'Outfit', sans-serif;">
+<div class="fiscal-container" style="padding: 12px; font-family: var(--font-body);">
     <h1 class="v2-title" style="display: none;">CONFIGURAÇÃO</h1>
 
-    <div style="font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--dark); margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-        <i class="fas fa-cog" style="color: #8b5cf6;"></i> CONFIGURAÇÃO DO SISTEMA
+    <div class="ps-head">
+        <div>
+            <div class="ps-head-title"><i class="fas fa-cog" style="color: var(--violet);"></i> CONFIGURAÇÃO DO SISTEMA</div>
+            <p class="ps-head-desc">Configure a parceira Banco do Brasil, templates de mensagem e limites anti-ban. As mudanças valem para os novos disparos.</p>
+        </div>
     </div>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; font-weight: 600;">
-        Configure a parceira Banco do Brasil, templates de mensagem e limites anti-ban. As mudanças valem para os novos disparos.
-    </p>
 
-    <div style="display:flex; gap:12px; align-items:flex-start; padding:14px 16px; margin-bottom:18px; border:3px solid #b45309; border-radius:10px; background:#fff7ed; color:#7c2d12; font-weight:700;">
-        <i class="fas fa-triangle-exclamation" style="font-size:1.2rem; margin-top:2px;"></i>
-        <div><strong>Segurança em primeiro lugar</strong><br><span style="font-size:.85rem; font-weight:600;">Mensagens em massa seguem as boas práticas anti-ban: volume diário limitado por número descartável e repasse apenas para quem confirmou.</span></div>
+    <div class="ps-alert ps-alert-warn">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div><strong>Segurança em primeiro lugar</strong><span class="ps-alert-sub">Mensagens em massa seguem as boas práticas anti-ban: volume diário limitado por número descartável e repasse apenas para quem confirmou.</span></div>
     </div>
 
     <!-- PARCEIRA BB -->
-    <div class="fiscal-card">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px dashed #cbd5e1;">
-            <i class="fas fa-bank" style="color:#181716; font-size:1.2rem;"></i>
-            <label style="font-weight: 850; font-size: 1rem; text-transform: uppercase; color: var(--dark);">Parceira Banco do Brasil</label>
+    <div class="ps-card">
+        <div class="ps-card-title"><i class="fas fa-bank" style="color: var(--ink);"></i> Parceira Banco do Brasil</div>
+        <div class="ps-grid-2">
+            <div class="ps-field"><label for="cfgCnpj">CNPJ da Empresa</label><input type="text" class="ps-input" id="cfgCnpj" placeholder="00.000.000/0001-00"></div>
+            <div class="ps-field"><label for="cfgParceiro">Código do Parceiro BB</label><input type="text" class="ps-input" id="cfgParceiro" placeholder="Ex: PARC-0001"></div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">CNPJ da Empresa</label>
-                <input type="text" id="cfgCnpj" placeholder="00.000.000/0001-00" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none;">
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Código do Parceiro BB</label>
-                <input type="text" id="cfgParceiro" placeholder="Ex: PARC-0001" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none;">
-            </div>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Produtos oferecidos</label>
-                <select id="cfgProdutos" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none; background: white;">
-                    <option value="consignado">Consignado</option>
-                    <option value="emprestimo">Empréstimo Pessoal</option>
-                    <option value="financiamento">Financiamento</option>
-                </select>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Ambiente BB</label>
-                <select id="cfgAmbiente" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none; background: white;">
-                    <option value="homologacao">Homologação (Testes)</option>
-                    <option value="producao">Produção</option>
-                </select>
-            </div>
+        <div class="ps-grid-2">
+            <div class="ps-field"><label for="cfgProdutos">Produtos oferecidos</label><select class="ps-select" id="cfgProdutos">
+                <option value="consignado">Consignado</option>
+                <option value="emprestimo">Empréstimo Pessoal</option>
+                <option value="financiamento">Financiamento</option>
+            </select></div>
+            <div class="ps-field"><label for="cfgAmbiente">Ambiente BB</label><select class="ps-select" id="cfgAmbiente">
+                <option value="homologacao">Homologação (Testes)</option>
+                <option value="producao">Produção</option>
+            </select></div>
         </div>
     </div>
 
     <!-- TEMPLATES -->
-    <div class="fiscal-card" style="margin-top:18px;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 2px dashed #cbd5e1;">
-            <i class="fas fa-comment-dots" style="color:#ff7417; font-size:1.2rem;"></i>
-            <label style="font-weight: 850; font-size: 1rem; text-transform: uppercase; color: var(--dark);">Templates de Mensagem</label>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
-            <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Mensagem inicial do bot (usa {nome})</label>
-            <textarea id="cfgTemplate" rows="3" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.9rem; outline: none; resize: vertical;">Olá {nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.</textarea>
-        </div>
-        <p style="font-size:0.7rem; font-weight:700; color:var(--text-muted);">Variáveis: <code>{nome}</code> é substituído pelo primeiro nome do lead no disparo.</p>
+    <div class="ps-card">
+        <div class="ps-card-title"><i class="fas fa-comment-dots" style="color: var(--brand);"></i> Templates de Mensagem</div>
+        <div class="ps-field"><label for="cfgTemplate">Mensagem inicial do bot (usa {nome})</label><textarea class="ps-textarea" id="cfgTemplate" rows="3">Olá {nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.</textarea></div>
+        <p class="ps-hint">Variáveis: <code>{nome}</code> é substituído pelo primeiro nome do lead no disparo.</p>
     </div>
 
     <!-- ANTI-BAN -->
-    <div class="fiscal-card" style="margin-top:18px;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px dashed #cbd5e1;">
-            <i class="fas fa-shield-halved" style="color:#df4632; font-size:1.2rem;"></i>
-            <label style="font-weight: 850; font-size: 1rem; text-transform: uppercase; color: var(--dark);">Limites Anti-Ban</label>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Msgs por número / dia</label>
-                <input type="number" id="cfgDailyLimit" value="40" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none;">
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Delay entre envios (ms)</label>
-                <input type="number" id="cfgDelay" value="15000" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none;">
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-weight: 850; text-transform: uppercase; font-size: 0.75rem; color: var(--dark);">Lote por ciclo</label>
-                <input type="number" id="cfgBatch" value="50" style="padding: 12px; border: 3px solid var(--dark); border-radius: 10px; font-weight: 700; font-size: 0.95rem; outline: none;">
-            </div>
+    <div class="ps-card">
+        <div class="ps-card-title"><i class="fas fa-shield-halved" style="color: var(--bad);"></i> Limites Anti-Ban</div>
+        <div class="ps-grid-3">
+            <div class="ps-field"><label for="cfgDailyLimit">Msgs por número / dia</label><input type="number" class="ps-input" id="cfgDailyLimit" value="40" min="1"></div>
+            <div class="ps-field"><label for="cfgDelay">Delay entre envios (ms)</label><input type="number" class="ps-input" id="cfgDelay" value="15000" min="1000"></div>
+            <div class="ps-field"><label for="cfgBatch">Lote por ciclo</label><input type="number" class="ps-input" id="cfgBatch" value="50" min="1"></div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding: 14px; border: 3px solid #d1d5db; border-radius: 10px; background: #f9fafb;">
-            <input type="checkbox" id="cfgBotEnabled" style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary);">
-            <label for="cfgBotEnabled" style="font-weight: 850; font-size: 0.9rem; text-transform: uppercase; color: var(--dark); cursor: pointer;">Ativar Bots WhatsApp (requer QR Code)</label>
+        <div class="ps-toggle-row">
+            <input type="checkbox" id="cfgBotEnabled">
+            <label for="cfgBotEnabled">Ativar Bots WhatsApp (requer QR Code)</label>
         </div>
 
-        <button onclick="saveFiscalSettings()" style="width: 100%; padding: 14px; background: #8b5cf6; color: white; font-weight: 800; font-size: 1rem; border-radius: 10px; border: 3px solid var(--dark); box-shadow: 4px 4px 0 var(--dark); cursor: pointer; text-transform: uppercase;">
-            <i class="fas fa-save"></i> SALVAR CONFIGURAÇÕES
-        </button>
+        <button class="ps-btn-save" onclick="saveFiscalSettings()"><i class="fas fa-save"></i> SALVAR CONFIGURAÇÕES</button>
     </div>
 </div>

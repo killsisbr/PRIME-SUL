@@ -1,5 +1,6 @@
 export async function init() {
     const api = window.api;
+    const toast = window.toast;
 
     async function load() {
         try {
@@ -36,9 +37,9 @@ export async function init() {
                     cfg_bot_enabled: document.getElementById('cfgBotEnabled').checked ? 'true' : 'false'
                 })
             });
-            alert('Configurações salvas!');
+            toast('Configurações salvas!');
         } catch (e) {
-            alert('Erro ao salvar: ' + e.message);
+            toast('Erro ao salvar: ' + e.message, 'err');
         } finally {
             btn.innerHTML = orig;
             btn.disabled = false;

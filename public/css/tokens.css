@@ -1,0 +1,62 @@
+/* ============ PRIME SUL Design Tokens — fonte única de verdade ============ */
+/* Carregado em todas as páginas (vendedor e admin). Paleta canônica + aliases. */
+
+:root {
+    /* --- canônico --- */
+    --ink: #181716;
+    --ink-dark: #211c18;
+    --text-body: #211c18;
+    --text-soft: #756d67;
+    --paper: #faf6f0;
+    --cream: #fff8ed;
+    --card-bg: #ffffff;
+    --brand: #ff7417;
+    --accent: #ffbd16;
+    --ok: #10b981;
+    --bad: #df4632;
+    --info: #3b82f6;
+    --violet: #8b5cf6;
+    --font-body: 'Outfit', sans-serif;
+    --font-title: 'Bebas Neue', sans-serif;
+    --r-sm: 12px;
+    --r-md: 16px;
+    --r-lg: 22px;
+    --shadow-sm: 3px 3px 0 var(--ink);
+    --shadow-md: 5px 5px 0 var(--ink);
+    --shadow-lg: 8px 8px 0 var(--ink);
+
+    /* --- aliases admin (dashboard) --- */
+    --dark: var(--ink);
+    --bg: var(--paper);
+    --card: var(--card-bg);
+    --text: var(--text-body);
+    --text-muted: var(--text-soft);
+    --primary: var(--brand);
+    --secondary: var(--accent);
+    --warning: var(--accent);
+    --success: var(--ok);
+    --danger: var(--bad);
+    --radius-sm: var(--r-sm);
+    --radius-md: var(--r-md);
+    --radius-lg: var(--r-lg);
+
+    /* --- aliases v3 (vendedor) --- */
+    --v3-ink: var(--ink);
+    --v3-dark: var(--ink-dark);
+    --v3-cream: var(--cream);
+    --v3-orange: var(--brand);
+    --v3-yellow: var(--accent);
+    --v3-coral: var(--bad);
+    --v3-green: var(--ok);
+    --v3-blue: var(--info);
+    --v3-font: var(--font-body);
+    --v3-font-title: var(--font-title);
+
+    /* --- aliases hub --- */
+    --hub-ink: var(--ink);
+    --hub-dark: var(--ink-dark);
+    --hub-cream: var(--cream);
+    --hub-orange: var(--brand);
+    --hub-yellow: var(--accent);
+    --hub-coral: var(--bad);
+}

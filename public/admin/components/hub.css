@@ -3,12 +3,12 @@
 #dynamicModalBody:has(.hub-v2) { display: flex; min-height: 0; overflow: hidden !important; padding: 18px !important; }
 
 .hub-v2 {
-    --hub-ink: #181716;
-    --hub-dark: #211c18;
-    --hub-cream: #fff8ed;
-    --hub-orange: #ff7417;
-    --hub-yellow: #ffbd16;
-    --hub-coral: #df4632;
+    --hub-ink: var(--ink);
+    --hub-dark: var(--ink-dark);
+    --hub-cream: var(--cream);
+    --hub-orange: var(--brand);
+    --hub-yellow: var(--accent);
+    --hub-coral: var(--bad);
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     gap: 14px;

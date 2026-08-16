@@ -4,11 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prime Sul — Leads</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23ff7417'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Arial' font-size='28' font-weight='bold'>PS</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/tokens.css">
     <link rel="stylesheet" href="/css/design.css">
+    <style>
+        .ps-toast-wrap { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 15000; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .ps-toast { min-width: 260px; max-width: 380px; padding: 12px 16px; border: 3px solid var(--v3-ink); border-radius: 12px; background: #fff; box-shadow: 5px 5px 0 var(--v3-ink); font-weight: 800; font-size: .85rem; display: flex; gap: 10px; align-items: center; animation: psToastIn .2s ease-out; transition: opacity .2s ease, transform .2s ease; }
+        .ps-toast.ok { border-left: 8px solid var(--v3-green); } .ps-toast.ok i { color: var(--v3-green); }
+        .ps-toast.err { border-left: 8px solid var(--v3-coral); } .ps-toast.err i { color: var(--v3-coral); }
+        @keyframes psToastIn { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+    </style>
 </head>
 <body class="v3-body">
 
@@ -185,6 +194,17 @@
             return nome.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
         }
 
+        function toast(msg, type = 'ok') {
+            let wrap = document.getElementById('psToastWrap');
+            if (!wrap) { wrap = document.createElement('div'); wrap.id = 'psToastWrap'; wrap.className = 'ps-toast-wrap'; document.body.appendChild(wrap); }
+            const icon = type === 'ok' ? 'fa-circle-check' : 'fa-triangle-exclamation';
+            const el = document.createElement('div');
+            el.className = 'ps-toast ' + type;
+            el.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
+            wrap.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(() => el.remove(), 220); }, 3000);
+        }
+
         function statusBadge(status) {
             const st = STATUS_MAP[status] || { label: status, cls: 'novo' };
             return `<span class="v3-tag ${st.cls}">${st.label}</span>`;
@@ -259,7 +279,7 @@
         document.getElementById('v3-close-lead-modal').onclick = () => document.getElementById('v3-lead-modal').style.display = 'none';
         document.getElementById('v3-lead-modal').addEventListener('click', e => { if (e.target.id === 'v3-lead-modal') e.target.style.display = 'none'; });
         document.getElementById('v3-btn-block-lead').onclick = async () => {
-            try { await api(`/leads/${currentLeadId}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'bloqueado' }) }); } catch (e) { alert(e.message); }
+            try { await api(`/leads/${currentLeadId}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'bloqueado' }) }); toast('Lead bloqueado'); } catch (e) { toast(e.message, 'err'); }
             document.getElementById('v3-lead-modal').style.display = 'none';
             await loadAll();
         };
@@ -300,10 +320,11 @@
                 });
                 drawer.style.display = 'none';
                 document.getElementById('v3-new-lead-form').reset();
+                toast('Lead salvo!');
                 await loadAll();
             } catch (e) {
                 if (e.status === 409) warn.style.display = 'block';
-                else alert(e.message);
+                else toast(e.message, 'err');
             }
         };
 
