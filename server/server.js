@@ -18,6 +18,7 @@ app.use('/api/leads', require('./routes/leads'));
 app.use('/api/campaigns', require('./routes/campaigns'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
+app.use('/api/tools', require('./routes/tools'));
 
 // Front estático
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -43,6 +44,12 @@ async function bootstrap() {
     // Reinicia campanhas pausadas por bot offline quando qualquer bot reconecta
     const campaignService = require('./services/campaign-service');
     whatsapp.onConnected(() => campaignService.resumePausedFromOffline());
+
+    // Fila persistente de jobs (ações em massa, retomada após restart)
+    const jobQueue = require('./services/job-queue-service');
+    await jobQueue.recover();
+    await campaignService.recoverInterrupted();
+    jobQueue.start();
 
     if (whatsapp.enabled()) {
         const antiBan = require('./services/anti-ban-service');

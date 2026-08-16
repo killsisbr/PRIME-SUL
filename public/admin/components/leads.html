@@ -26,10 +26,114 @@
             <option value="media">★ Média</option>
             <option value="baixa">★ Baixa</option>
         </select>
+        <select id="kbx-score" class="kbx-select" title="Filtrar por score mínimo">
+            <option value="">TODOS SCORES</option>
+            <option value="70">Score ≥ 70</option>
+            <option value="50">Score ≥ 50</option>
+        </select>
         <span class="kbx-count" id="kbx-total">0 leads</span>
     </div>
 
     <div class="kbx-board" id="kbx-board">
         <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando leads...</div>
+    </div>
+</div>
+
+<!-- ============ FERRAMENTAS DE COLUNA ============ -->
+<div class="v2-submodal-overlay" id="ctoolsOverlay" style="display:none;">
+    <div class="v2-submodal" style="max-width:760px;">
+        <div class="v2-submodal-header">
+            <div>
+                <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">FERRAMENTAS DE COLUNA</span>
+                <h3>COLUNA <span id="ctools-status" style="color:var(--primary);">NOVO</span></h3>
+            </div>
+            <button type="button" class="btn-close-submodal" id="ctools-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body">
+            <div class="ctools-section">
+                <div class="ctools-section-title"><i class="fas fa-bolt"></i> AÇÕES EM MASSA</div>
+                <div class="ctools-actions">
+                    <div class="ctools-action" id="ctools-send-wrap">
+                        <div class="ctools-action-title"><i class="fas fa-paper-plane"></i> DISPARAR MENSAGEM <span class="ctools-hint">(cria campanha e inicia o envio)</span></div>
+                        <div class="v2-form-group">
+                            <label>Mensagem do bot <span style="font-weight:600; color:var(--text-muted);">(use <b>{nome}</b> para o primeiro nome)</span></label>
+                            <textarea id="ctools-msg" class="ps-textarea" rows="2" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea>
+                        </div>
+                        <div class="ctools-row">
+                            <input type="number" id="ctools-limit" class="ps-input" min="1" placeholder="Limite (vazio = todos)">
+                            <select id="ctools-number" class="ps-select"><option value="">Número ativo</option></select>
+                            <button type="button" class="btn-retro" id="ctools-send"><i class="fas fa-rocket"></i> DISPARAR</button>
+                        </div>
+                    </div>
+
+                    <div class="ctools-action">
+                        <div class="ctools-action-title"><i class="fas fa-right-left"></i> MOVER PARA ESTÁGIO <span class="ctools-hint">(com histórico)</span></div>
+                        <div class="ctools-row">
+                            <select id="ctools-to" class="ps-select">
+                                <option value="novo">NOVO</option>
+                                <option value="contato">EM CONTATO</option>
+                                <option value="confirmado">CONFIRMADO</option>
+                                <option value="concluido">CONCLUÍDO</option>
+                                <option value="bloqueado">BLOQUEADO</option>
+                                <option value="duplicado">DUPLICADO</option>
+                            </select>
+                            <input type="number" id="ctools-move-limit" class="ps-input" min="1" placeholder="Limite">
+                            <button type="button" class="btn-retro btn-secondary-retro" id="ctools-move"><i class="fas fa-arrows-up-down"></i> MOVER</button>
+                        </div>
+                    </div>
+
+                    <div class="ctools-action">
+                        <div class="ctools-action-title"><i class="fas fa-gauge-high"></i> RECALCULAR SCORE</div>
+                        <div class="ctools-row">
+                            <input type="number" id="ctools-recalc-limit" class="ps-input" min="1" placeholder="Limite">
+                            <button type="button" class="btn-retro btn-secondary-retro" id="ctools-recalc"><i class="fas fa-rotate"></i> RECALCULAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ctools-section">
+                <div class="ctools-section-title"><i class="fas fa-wand-magic-sparkles"></i> AUTO-DISPARO AO ENTRAR NA COLUNA</div>
+                <div class="ctools-auto">
+                    <label class="ctools-toggle">
+                        <input type="checkbox" id="ctools-auto">
+                        <span>Disparar automaticamente quando um lead cair nesta coluna</span>
+                    </label>
+                    <div class="v2-form-group">
+                        <label>Mensagem do auto-disparo</label>
+                        <textarea id="ctools-auto-msg" class="ps-textarea" rows="2" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea>
+                    </div>
+                    <button type="button" class="btn-retro" id="ctools-save-auto"><i class="fas fa-save"></i> SALVAR CONFIGURAÇÃO</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ PROGRESSO DA AÇÃO EM MASSA ============ -->
+<div class="v2-submodal-overlay" id="ctoolsProgress" style="display:none;">
+    <div class="v2-submodal" style="max-width:560px;">
+        <div class="v2-submodal-header">
+            <div>
+                <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">AÇÃO EM MASSA</span>
+                <h3 id="ctp-title">PROCESSANDO...</h3>
+            </div>
+            <button type="button" class="btn-close-submodal" id="ctp-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body">
+            <div class="ctp-status" id="ctp-status"><i class="fas fa-spinner fa-spin"></i> Aguardando processamento...</div>
+            <div class="ctp-bar"><i id="ctp-fill" style="width:0%"></i></div>
+            <div class="ctp-metrics">
+                <div><b id="ctp-done">0</b><span>PROCESSADOS</span></div>
+                <div><b id="ctp-total">0</b><span>TOTAL</span></div>
+                <div class="ok"><b id="ctp-ok">0</b><span>OK</span></div>
+                <div class="bad"><b id="ctp-fail">0</b><span>FALHAS</span></div>
+            </div>
+            <div class="ctp-log" id="ctp-log"></div>
+        </div>
+        <footer class="ctp-footer">
+            <button type="button" class="btn-retro btn-secondary-retro" id="ctp-cancel"><i class="fas fa-ban"></i> CANCELAR</button>
+            <button type="button" class="btn-retro" id="ctp-done-btn" style="display:none;"><i class="fas fa-check"></i> CONCLUIR</button>
+        </footer>
     </div>
 </div>

@@ -65,6 +65,10 @@
         .kb-card.pri-alta .kb-pri { color: var(--v3-coral); }
         .kb-card.pri-media .kb-pri { color: var(--v3-yellow); }
         .kb-origem { margin-left: auto; padding: 2px 7px; border: 1.5px solid var(--v3-ink); border-radius: 6px; background: var(--v3-cream); font: 800 .56rem var(--font-body); letter-spacing: .8px; }
+        .kb-score { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1.5px solid var(--v3-ink); border-radius: 999px; font: 900 .62rem var(--font-body); }
+        .kb-score.s-high { background: #16a34a; color: #fff; }
+        .kb-score.s-mid { background: var(--v3-yellow); color: var(--v3-ink); }
+        .kb-score.s-low { background: #b9b1a7; color: #fff; }
         .kb-limit { padding: 2px 7px; border-radius: 6px; background: var(--v3-ink); color: var(--v3-yellow); font: 900 .62rem var(--font-body); }
         .kb-card h4 { margin: 0 0 3px; font: 900 .86rem var(--font-body); color: var(--v3-ink); line-height: 1.2; }
         .kb-phone { margin: 0 0 9px; color: var(--text-soft); font: 600 .68rem var(--font-body); }
@@ -154,6 +158,12 @@
                 <option value="alta">Alta</option>
                 <option value="media">Média</option>
                 <option value="baixa">Baixa</option>
+            </select>
+            <span class="kb-filter-label">Score</span>
+            <select id="kb-score" class="kb-select">
+                <option value="">TODOS</option>
+                <option value="70">≥ 70</option>
+                <option value="50">≥ 50</option>
             </select>
             <span class="kb-filter-label">Limite R$</span>
             <input type="number" id="kb-lim-min" class="kb-date" placeholder="mín" style="width:90px;">
@@ -379,6 +389,7 @@
             const search = document.getElementById('kb-search').value.trim().toLowerCase();
             const origem = document.getElementById('kb-origem').value;
             const prio = document.getElementById('kb-prioridade').value;
+            const scoreMin = document.getElementById('kb-score').value ? Number(document.getElementById('kb-score').value) : null;
             const limMin = document.getElementById('kb-lim-min').value ? Number(document.getElementById('kb-lim-min').value) : null;
             const limMax = document.getElementById('kb-lim-max').value ? Number(document.getElementById('kb-lim-max').value) : null;
             const dataDe = document.getElementById('kb-data-de').value;
@@ -388,6 +399,7 @@
                 if (activeFilter !== 'TODOS' && colOf(l.status) !== activeFilter) return false;
                 if (origem && l.origem !== origem) return false;
                 if (prio && l.prioridade !== prio) return false;
+                if (scoreMin !== null && (l.score ?? 0) < scoreMin) return false;
                 if (search && !(l.name + ' ' + l.phone + ' ' + (l.city || '') + ' ' + (l.obs || '')).toLowerCase().includes(search)) return false;
                 const m = moneyNum(l.limite_est);
                 if (limMin !== null && (m === null || m < limMin)) return false;
@@ -423,11 +435,16 @@
             document.getElementById('kb-board').querySelectorAll('.kb-col').forEach(bindColumn);
         }
 
+        function scoreCls(s) { return s == null ? 's-low' : (s >= 70 ? 's-high' : s >= 50 ? 's-mid' : 's-low'); }
+
         function cardHtml(l) {
+            const score = l.score == null ? '—' : l.score;
+            const scoreIcon = (l.score ?? 0) >= 70 ? '<i class="fas fa-bolt"></i> ' : '';
             return `
             <article class="kb-card pri-${l.prioridade || 'media'}" draggable="true" data-id="${l.id}">
                 <div class="kb-card-top">
                     <span class="kb-pri"><i class="fas fa-star"></i></span>
+                    <span class="kb-score ${scoreCls(l.score)}" title="Score do lead">${scoreIcon}${score}</span>
                     <span class="kb-origem">${l.origem}</span>
                     ${l.limite_est ? `<span class="kb-limit">${l.limite_est}</span>` : ''}
                 </div>
@@ -525,6 +542,7 @@
             pri.style.background = l.prioridade === 'alta' ? '#ffe5e0' : (l.prioridade === 'baixa' ? '#f1ece4' : '#fff3d6');
 
             const fields = [
+                ['Score', l.score != null ? l.score + '/100' : '—', 'fa-gauge-high'],
                 ['Telefone / WhatsApp', l.phone, 'fa-phone'],
                 ['Cidade', l.city || '—', 'fa-location-dot'],
                 ['Limite estimado', l.limite_est || '—', 'fa-sack-dollar'],
@@ -656,13 +674,13 @@
             }
         };
 
-        ['kb-search', 'kb-origem', 'kb-prioridade', 'kb-lim-min', 'kb-lim-max', 'kb-data-de', 'kb-data-ate'].forEach(id => {
+        ['kb-search', 'kb-origem', 'kb-prioridade', 'kb-score', 'kb-lim-min', 'kb-lim-max', 'kb-data-de', 'kb-data-ate'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => render());
             document.getElementById(id).addEventListener('change', () => render());
         });
 
         document.getElementById('kb-limpar').onclick = () => {
-            ['kb-search', 'kb-origem', 'kb-prioridade', 'kb-lim-min', 'kb-lim-max', 'kb-data-de', 'kb-data-ate'].forEach(id => {
+            ['kb-search', 'kb-origem', 'kb-prioridade', 'kb-score', 'kb-lim-min', 'kb-lim-max', 'kb-data-de', 'kb-data-ate'].forEach(id => {
                 document.getElementById(id).value = '';
             });
             render();

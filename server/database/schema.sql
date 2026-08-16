@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS leads (
     obs           TEXT,                          -- observações do vendedor
     prioridade    TEXT NOT NULL DEFAULT 'media'
                   CHECK (prioridade IN ('alta','media','baixa')),
+    score         INTEGER,                          -- 0-100 calculado automaticamente
     status        TEXT NOT NULL DEFAULT 'novo'
                   CHECK (status IN ('novo','contato','confirmado','concluido','bloqueado','duplicado')),
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
@@ -100,3 +101,33 @@ CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT
 );
+
+-- Configuração por coluna/estágio (auto-ferramentas: auto-disparo, etc.)
+CREATE TABLE IF NOT EXISTS stage_config (
+    status     TEXT PRIMARY KEY,
+    config     TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Fila persistente de jobs (ações em massa, execuções longas)
+CREATE TABLE IF NOT EXISTS jobs (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    type         TEXT NOT NULL,
+    ref_id       INTEGER,
+    seller_id    INTEGER,
+    payload      TEXT,                              -- JSON (progresso, resultados, params)
+    status       TEXT NOT NULL DEFAULT 'waiting'
+                 CHECK (status IN ('waiting','running','done','failed','cancelled')),
+    attempts     INTEGER NOT NULL DEFAULT 0,
+    max_attempts INTEGER NOT NULL DEFAULT 3,
+    run_after    TEXT,                              -- agenda para depois (ISO/UTC)
+    error        TEXT,
+    result       TEXT,                              -- JSON de conclusão
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    started_at   TEXT,
+    finished_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+CREATE INDEX IF NOT EXISTS idx_jobs_type_ref ON jobs(type, ref_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_seller ON jobs(seller_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_waiting ON jobs(status, run_after);

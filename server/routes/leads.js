@@ -8,10 +8,10 @@ router.use(auth);
 // Lista leads do vendedor (com filtros avançados)
 router.get('/', async (req, res, next) => {
     try {
-        const { status, search, origem, prioridade, cidade, data_de, data_ate } = req.query;
+        const { status, search, origem, prioridade, cidade, data_de, data_ate, score_min, score_max } = req.query;
         const leads = await leadService.listLeads({
             seller_id: req.user.id,
-            status, search, origem, prioridade, cidade, data_de, data_ate
+            status, search, origem, prioridade, cidade, data_de, data_ate, score_min, score_max
         });
         res.json(leads);
     } catch (e) { next(e); }

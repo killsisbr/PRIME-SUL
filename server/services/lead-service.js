@@ -1,9 +1,14 @@
 const db = require('../database/db');
 const { normalizePhone } = require('../utils/phone');
+const scoreService = require('./score-service');
+const campaignService = require('./campaign-service');
+const stageConfig = require('./stage-config-service');
 
 const ALLOWED_ORIGEM = ['SITE', 'SIMULACAO', 'INDICACAO'];
 const ALLOWED_PRIORIDADE = ['alta', 'media', 'baixa'];
-const EDITABLE_FIELDS = ['name', 'phone', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade'];
+const EDITABLE_FIELDS = ['name', 'phone', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade', 'score'];
+// Campos que alteram o score automático
+const SCORE_FIELDS = ['renda', 'valor_desejado', 'limite_est', 'origem', 'prioridade', 'city', 'name'];
 
 async function createLead({ seller_id, name, phone, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
     const normalized = normalizePhone(phone);
@@ -30,11 +35,15 @@ async function createLead({ seller_id, name, phone, city, origem = 'SITE', limit
         return { lead: existing, duplicated: false, already_mine: true };
     }
 
+    const score = scoreService.computeScore({
+        name: name.trim(), city, origem: origem.toUpperCase(), limite_est,
+        renda, valor_desejado, prioridade, status: 'novo'
+    });
     const result = await db.run(
-        `INSERT INTO leads (seller_id, name, phone, city, origem, limite_est, renda, valor_desejado, obs, prioridade)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO leads (seller_id, name, phone, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [seller_id, name.trim(), normalized, city || null, origem.toUpperCase(), limite_est || null,
-         renda || null, valor_desejado || null, obs || null, prioridade]
+         renda || null, valor_desejado || null, obs || null, prioridade, score]
     );
     const lead = await db.get('SELECT * FROM leads WHERE id = ?', [result.lastID]);
     await db.run(
@@ -44,7 +53,7 @@ async function createLead({ seller_id, name, phone, city, origem = 'SITE', limit
     return { lead, duplicated: false, already_mine: false };
 }
 
-async function listLeads({ seller_id, status, search, origem, prioridade, cidade, data_de, data_ate }) {
+async function listLeads({ seller_id, status, search, origem, prioridade, cidade, data_de, data_ate, score_min, score_max }) {
     let sql = `
         SELECT l.*, s.name AS seller_name
         FROM leads l
@@ -66,6 +75,14 @@ async function listLeads({ seller_id, status, search, origem, prioridade, cidade
     if (cidade) {
         sql += ' AND l.city LIKE ?';
         params.push(`%${cidade}%`);
+    }
+    if (score_min !== undefined && score_min !== null && score_min !== '') {
+        sql += ' AND l.score >= ?';
+        params.push(Number(score_min));
+    }
+    if (score_max !== undefined && score_max !== null && score_max !== '') {
+        sql += ' AND l.score <= ?';
+        params.push(Number(score_max));
     }
     if (data_de) {
         sql += ' AND date(l.created_at) >= date(?)';
@@ -102,6 +119,18 @@ async function updateLead(id, seller_id, fields) {
         throw e;
     }
 
+    const manualScore = fields.score !== undefined && fields.score !== null && fields.score !== '';
+    if (manualScore) {
+        const v = Math.round(Number(fields.score));
+        if (!Number.isFinite(v) || v < 0 || v > 100) {
+            const e = new Error('Score deve ser um número entre 0 e 100');
+            e.status = 400;
+            throw e;
+        }
+    }
+    // Recalcula score automaticamente quando campos que influenciam o score mudam
+    const recalcScore = !manualScore && SCORE_FIELDS.some(f => fields[f] !== undefined);
+
     const updates = [];
     const params = [];
     for (const f of EDITABLE_FIELDS) {
@@ -129,6 +158,9 @@ async function updateLead(id, seller_id, fields) {
         } else if (f === 'prioridade') {
             updates.push('prioridade = ?');
             params.push(String(fields[f]).toLowerCase());
+        } else if (f === 'score') {
+            updates.push('score = ?');
+            params.push(Math.round(Number(fields.score)));
         } else if (f === 'city' || f === 'limite_est' || f === 'renda' || f === 'valor_desejado' || f === 'obs') {
             updates.push(`${f} = ?`);
             params.push(fields[f] || null);
@@ -142,7 +174,13 @@ async function updateLead(id, seller_id, fields) {
     updates.push(`updated_at = datetime('now')`);
     params.push(id, seller_id);
     await db.run(`UPDATE leads SET ${updates.join(', ')} WHERE id = ? AND seller_id = ?`, params);
-    return getLead(id, seller_id);
+    const fresh = await getLead(id, seller_id);
+    if (recalcScore && fresh) {
+        const next = scoreService.computeScore(fresh);
+        await db.run('UPDATE leads SET score = ? WHERE id = ?', [next, id]);
+        return getLead(id, seller_id);
+    }
+    return fresh;
 }
 
 async function updateStatus(id, seller_id, status) {
@@ -164,6 +202,26 @@ async function updateStatus(id, seller_id, status) {
         'INSERT INTO lead_history (lead_id, seller_id, from_status, to_status) VALUES (?, ?, ?, ?)',
         [id, seller_id, lead.status, status]
     );
+
+    // Recalcula score (estágio influencia o score)
+    const fresh = await getLead(id, seller_id);
+    const next = scoreService.computeScore(fresh);
+    await db.run('UPDATE leads SET score = ? WHERE id = ?', [next, id]);
+
+    // Auto-disparo configurado na coluna de destino
+    if (fresh) {
+        try {
+            const cfg = await stageConfig.get(status);
+            if (cfg.auto_send && cfg.message) {
+                const r = await campaignService.sendToLead(fresh, cfg.message, seller_id);
+                if (r.sent) console.log(`[auto-send] Lead #${id} → disparo automático iniciado (campanha ${r.campaign_id})`);
+                else console.log(`[auto-send] Lead #${id} → ignorado (${r.reason})`);
+            }
+        } catch (e) {
+            console.warn(`[auto-send] Lead #${id} — erro:`, e.message);
+        }
+    }
+
     return getLead(id, seller_id);
 }
 
@@ -186,6 +244,7 @@ async function countsBySeller(seller_id) {
     return {
         leads: row.leads,
         envios: row.envios,
+        confirmados: row.confirmados,
         conversao: row.envios ? Math.round((row.confirmados / row.envios) * 100) : 0
     };
 }

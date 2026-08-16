@@ -34,7 +34,8 @@ const LEAD_MIGRATIONS = {
     renda: 'TEXT',
     valor_desejado: 'TEXT',
     obs: 'TEXT',
-    prioridade: "TEXT NOT NULL DEFAULT 'media'"
+    prioridade: "TEXT NOT NULL DEFAULT 'media'",
+    score: 'INTEGER'
 };
 
 const NUMBER_MIGRATIONS = {
@@ -73,6 +74,34 @@ async function migrate() {
             console.log(`[db] migração: coluna campaigns.${name} adicionada`);
         }
     }
+
+    // Tabelas novas (criadas no schema.sql — reforço para bancos antigos)
+    await run(`CREATE TABLE IF NOT EXISTS stage_config (
+        status     TEXT PRIMARY KEY,
+        config     TEXT NOT NULL DEFAULT '{}',
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    await run(`CREATE TABLE IF NOT EXISTS jobs (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        type         TEXT NOT NULL,
+        ref_id       INTEGER,
+        seller_id    INTEGER,
+        payload      TEXT,
+        status       TEXT NOT NULL DEFAULT 'waiting'
+                     CHECK (status IN ('waiting','running','done','failed','cancelled')),
+        attempts     INTEGER NOT NULL DEFAULT 0,
+        max_attempts INTEGER NOT NULL DEFAULT 3,
+        run_after    TEXT,
+        error        TEXT,
+        result       TEXT,
+        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+        started_at   TEXT,
+        finished_at  TEXT
+    )`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status)`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_jobs_type_ref ON jobs(type, ref_id)`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_jobs_seller ON jobs(seller_id)`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_jobs_waiting ON jobs(status, run_after)`);
 }
 
 function run(sql, params = []) {

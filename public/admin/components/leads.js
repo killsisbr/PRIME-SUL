@@ -11,6 +11,8 @@ const COLUMNS = [
     { status: 'bloqueado', label: 'BLOQUEADOS', color: 'var(--bad)' }
 ];
 
+let _ctpTimer = null;
+
 export async function init() {
     const api = window.api;
     const toast = window.toast;
@@ -33,19 +35,25 @@ export async function init() {
         return d.toLocaleDateString('pt-BR');
     }
 
+    function scoreCls(s) { return s == null ? 's-low' : (s >= 70 ? 's-high' : s >= 50 ? 's-mid' : 's-low'); }
+
     function applyFilters() {
         const search = document.getElementById('kbx-search').value.trim().toLowerCase();
         const origem = document.getElementById('kbx-origem').value;
         const prio = document.getElementById('kbx-prio').value;
+        const scoreMin = document.getElementById('kbx-score').value ? Number(document.getElementById('kbx-score').value) : null;
         return LEADS.filter(l => {
             if (origem && l.origem !== origem) return false;
             if (prio && l.prioridade !== prio) return false;
+            if (scoreMin !== null && (l.score ?? 0) < scoreMin) return false;
             if (search && !(l.name + ' ' + l.phone + ' ' + (l.city || '')).toLowerCase().includes(search)) return false;
             return true;
         });
     }
 
     function cardHtml(l) {
+        const score = l.score == null ? '—' : l.score;
+        const scoreIcon = (l.score ?? 0) >= 70 ? '<i class="fas fa-bolt"></i> ' : '';
         return `
         <article class="kbx-card pri-${l.prioridade || 'media'}" draggable="true" data-id="${l.id}">
             <div class="kbx-card-top">
@@ -56,6 +64,7 @@ export async function init() {
                 </div>
             </div>
             <div class="kbx-chips">
+                <span class="kbx-score ${scoreCls(l.score)}" title="Score do lead">${scoreIcon}${score}</span>
                 <span class="kbx-chip origem">${l.origem}</span>
                 ${l.limite_est ? `<span class="kbx-chip limite">${l.limite_est}</span>` : ''}
             </div>
@@ -80,6 +89,7 @@ export async function init() {
                 <header class="kbx-col-head">
                     <span class="kbx-col-dot" style="background:${col.color};"></span>
                     <h3>${col.label}</h3>
+                    <button type="button" class="kbx-gear" data-tools="${col.status}" title="Ferramentas da coluna"><i class="fas fa-gear"></i></button>
                     <span class="kbx-col-count">${cards.length}</span>
                 </header>
                 <div class="kbx-col-body">
@@ -151,6 +161,8 @@ export async function init() {
 
     // ações rápidas (delegado no board)
     document.getElementById('kbx-board').addEventListener('click', async e => {
+        const gear = e.target.closest('.kbx-gear');
+        if (gear) { openColumnTools(gear.dataset.tools); return; }
         const btn = e.target.closest('[data-act]');
         if (!btn) return;
         const card = btn.closest('.kbx-card');
@@ -187,9 +199,202 @@ export async function init() {
     document.getElementById('kbx-search').addEventListener('input', () => render());
     document.getElementById('kbx-origem').addEventListener('change', () => render());
     document.getElementById('kbx-prio').addEventListener('change', () => render());
+    document.getElementById('kbx-score').addEventListener('change', () => render());
 
+    // ================= FERRAMENTAS DE COLUNA =================
+    const TOOLS_LABEL = { novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO' };
+    const DEFAULT_AUTO_MSG = 'Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar.';
+    let toolsStatus = 'novo';
+    let toolsConfig = {};
+    let ctpJobId = null;
+    let ctpRunning = false;
+
+    async function loadNumbers() {
+        try {
+            const numbers = await api('/campaigns/numbers');
+            document.getElementById('ctools-number').innerHTML =
+                numbers.filter(n => n.status === 'ativo').map(n => `<option value="${n.id}">${n.number} (${n.messages_sent} enviadas)</option>`).join('')
+                || '<option value="">Nenhum número ativo</option>';
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadStageConfig() {
+        try { toolsConfig = await api('/tools/stage-config'); } catch (e) { toolsConfig = {}; }
+    }
+
+    function openColumnTools(status) {
+        toolsStatus = status;
+        document.getElementById('ctools-status').textContent = TOOLS_LABEL[status] || status.toUpperCase();
+        const canSend = status === 'novo' || status === 'contato';
+        document.getElementById('ctools-send-wrap').style.display = canSend ? '' : 'none';
+        document.getElementById('ctools-msg').value = DEFAULT_AUTO_MSG;
+        document.getElementById('ctools-limit').value = '';
+        document.getElementById('ctools-move-limit').value = '';
+        document.getElementById('ctools-recalc-limit').value = '';
+        document.getElementById('ctools-to').value = status === 'novo' ? 'contato' : 'confirmado';
+        const cfg = toolsConfig[status] || {};
+        document.getElementById('ctools-auto').checked = !!cfg.auto_send;
+        document.getElementById('ctools-auto-msg').value = cfg.message || DEFAULT_AUTO_MSG;
+        syncAutoToggle();
+        loadNumbers();
+        document.getElementById('ctoolsOverlay').style.display = 'flex';
+    }
+
+    function syncAutoToggle() {
+        const label = document.querySelector('.ctools-toggle');
+        if (label) label.classList.toggle('on', document.getElementById('ctools-auto').checked);
+    }
+
+    function stopPolling() {
+        ctpRunning = false;
+        clearTimeout(_ctpTimer);
+        _ctpTimer = null;
+    }
+
+    function runJob(job, title) {
+        ctpJobId = job.id;
+        document.getElementById('ctp-title').textContent = title;
+        document.getElementById('ctoolsOverlay').style.display = 'none';
+        document.getElementById('ctp-cancel').style.display = 'inline-flex';
+        document.getElementById('ctp-done-btn').style.display = 'none';
+        document.getElementById('ctp-log').style.display = 'none';
+        document.getElementById('ctp-log').innerHTML = '';
+        document.getElementById('ctoolsProgress').style.display = 'flex';
+        stopPolling();
+        ctpRunning = true;
+        pollJob();
+    }
+
+    function pollJob() {
+        clearTimeout(_ctpTimer);
+        if (!ctpRunning) return;
+        _ctpTimer = setTimeout(async () => {
+            try {
+                const job = await api(`/tools/jobs/${ctpJobId}`);
+                renderJob(job);
+                if (['done', 'failed', 'cancelled'].includes(job.status)) {
+                    stopPolling();
+                    document.getElementById('ctp-cancel').style.display = 'none';
+                    document.getElementById('ctp-done-btn').style.display = 'inline-flex';
+                    if (job.status === 'failed') toast(job.error || 'Ação falhou', 'err');
+                    refresh();
+                } else {
+                    pollJob();
+                }
+            } catch (e) {
+                pollJob();
+            }
+        }, 1500);
+    }
+
+    function renderJob(job) {
+        const p = job.payload || {};
+        const done = p.done || 0;
+        const total = p.total || 0;
+        const ok = p.ok != null ? p.ok : (p.changed != null ? p.changed : done);
+        const fail = p.fail || 0;
+        const pct = total ? Math.round(done / total * 100) : (job.status === 'running' ? 5 : 0);
+        document.getElementById('ctp-fill').style.width = pct + '%';
+        document.getElementById('ctp-done').textContent = done;
+        document.getElementById('ctp-total').textContent = total;
+        document.getElementById('ctp-ok').textContent = ok;
+        document.getElementById('ctp-fail').textContent = fail;
+
+        const statusEl = document.getElementById('ctp-status');
+        statusEl.className = 'ctp-status ' + (job.status === 'failed' ? 'failed' : job.status === 'done' ? 'done' : job.status === 'cancelled' ? 'cancelled' : '');
+        statusEl.innerHTML = job.status === 'running' ? '<i class="fas fa-spinner fa-spin"></i> PROCESSANDO...'
+            : job.status === 'waiting' ? '<i class="fas fa-hourglass-half"></i> AGUARDANDO NA FILA...'
+            : job.status === 'done' ? `<i class="fas fa-check-circle"></i> CONCLUÍDO — ${ok} ok${fail ? `, ${fail} falha(s)` : ''}`
+            : job.status === 'failed' ? `<i class="fas fa-xmark-circle"></i> FALHOU: ${job.error || ''}`
+            : '<i class="fas fa-ban"></i> CANCELADO';
+
+        const log = document.getElementById('ctp-log');
+        if (Array.isArray(p.log) && p.log.length) {
+            log.style.display = 'flex';
+            log.innerHTML = p.log.slice(-15).map(x =>
+                `<div class="ctp-log-item ${x.ok ? 'ok' : 'fail'}"><i class="fas ${x.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>${x.label}</span></div>`
+            ).join('');
+        } else {
+            log.style.display = 'none';
+        }
+    }
+
+    document.getElementById('ctools-close').onclick = () => document.getElementById('ctoolsOverlay').style.display = 'none';
+    document.getElementById('ctoolsOverlay').addEventListener('click', e => { if (e.target.id === 'ctoolsOverlay') e.target.style.display = 'none'; });
+    document.getElementById('ctp-close').onclick = () => { stopPolling(); document.getElementById('ctoolsProgress').style.display = 'none'; };
+    document.getElementById('ctp-done-btn').onclick = () => { stopPolling(); document.getElementById('ctoolsProgress').style.display = 'none'; };
+    document.getElementById('ctp-cancel').onclick = async () => {
+        try {
+            const job = await api(`/tools/jobs/${ctpJobId}`);
+            if (job.type === 'campaign_run' && job.ref_id) {
+                await api(`/campaigns/${job.ref_id}/pause`, { method: 'POST' });
+            }
+            await api(`/tools/jobs/${ctpJobId}/cancel`, { method: 'POST' });
+            toast('Ação cancelada', 'info');
+            stopPolling();
+            renderJob({ status: 'cancelled', payload: null });
+            refresh();
+        } catch (e) { toast(e.message, 'err'); }
+    };
+    document.getElementById('ctools-auto').addEventListener('change', syncAutoToggle);
+
+    document.getElementById('ctools-save-auto').onclick = async () => {
+        const cfg = {
+            auto_send: document.getElementById('ctools-auto').checked,
+            message: document.getElementById('ctools-auto-msg').value.trim()
+        };
+        try {
+            await api('/tools/stage-config', { method: 'PUT', body: JSON.stringify({ status: toolsStatus, config: cfg }) });
+            toolsConfig[toolsStatus] = cfg;
+            toast('Configuração da coluna salva!');
+        } catch (e) { toast(e.message, 'err'); }
+    };
+
+    document.getElementById('ctools-send').onclick = async () => {
+        const message = document.getElementById('ctools-msg').value.trim();
+        if (!message) return toast('Digite a mensagem', 'err');
+        const body = { status: toolsStatus, message };
+        const lim = document.getElementById('ctools-limit').value;
+        if (lim) body.limit = Number(lim);
+        const num = document.getElementById('ctools-number').value;
+        if (num) body.number_id = Number(num);
+        try {
+            const r = await api('/tools/send', { method: 'POST', body: JSON.stringify(body) });
+            toast(`Campanha criada (${r.campaign.total_target} alvo${r.campaign.total_target !== 1 ? 's' : ''})`);
+            if (r.job_id) runJob({ id: r.job_id }, 'DISPARANDO MENSAGEM');
+            else refresh();
+        } catch (e) { toast(e.message, 'err'); }
+    };
+
+    document.getElementById('ctools-move').onclick = async () => {
+        const to_status = document.getElementById('ctools-to').value;
+        if (to_status === toolsStatus) return toast('Escolha um estágio diferente', 'err');
+        const body = { status: toolsStatus, to_status };
+        const lim = document.getElementById('ctools-move-limit').value;
+        if (lim) body.limit = Number(lim);
+        if (!confirm(`Mover os leads desta coluna para ${TOOLS_LABEL[to_status]}?`)) return;
+        try {
+            const r = await api('/tools/move', { method: 'POST', body: JSON.stringify(body) });
+            runJob(r.job, 'MOVENDO LEADS');
+        } catch (e) { toast(e.message, 'err'); }
+    };
+
+    document.getElementById('ctools-recalc').onclick = async () => {
+        const body = { status: toolsStatus };
+        const lim = document.getElementById('ctools-recalc-limit').value;
+        if (lim) body.limit = Number(lim);
+        try {
+            const r = await api('/tools/recalc', { method: 'POST', body: JSON.stringify(body) });
+            runJob(r.job, 'RECALCULANDO SCORE');
+        } catch (e) { toast(e.message, 'err'); }
+    };
+
+    await loadStageConfig();
     await refresh();
     return {};
 }
 
-export async function destroy() {}
+export async function destroy() {
+    clearTimeout(_ctpTimer);
+    _ctpTimer = null;
+}
