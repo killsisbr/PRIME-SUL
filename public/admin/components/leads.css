@@ -34,7 +34,6 @@
 .kbx-card.pri-media { border-left: 8px solid var(--secondary); }
 .kbx-card.pri-baixa { border-left: 8px solid #b9b1a7; }
 .kbx-score { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 2px solid var(--dark); border-radius: 999px; font: 900 .68rem var(--font-body); }
-.kbx-score .kbx-score-icon { font-size: .6rem; }
 .kbx-score.s-high { background: var(--ok); color: #fff; }
 .kbx-score.s-mid { background: var(--secondary); color: var(--dark); }
 .kbx-score.s-low { background: var(--bad); color: #fff; }

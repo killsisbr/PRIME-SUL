@@ -44,7 +44,6 @@
 .bt-progress-bar.warn { background: var(--secondary); }
 .bt-progress-bar.danger { background: var(--bad); }
 .bt-progress-meta { display: flex; justify-content: space-between; margin-top: 6px; font: 700 .62rem var(--font-body); color: var(--text-muted); }
-.bt-progress-meta .warn { color: #b45309; font-weight: 900; }
 
 .bt-qr { display: none; flex-direction: column; align-items: center; gap: 6px; margin-top: 12px; padding: 12px; border: 2.5px dashed var(--dark); border-radius: 12px; background: var(--cream); }
 .bt-qr.show { display: flex; }

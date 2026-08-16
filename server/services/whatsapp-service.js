@@ -165,6 +165,4 @@ function status() {
     return out;
 }
 
-function getBot(number) { return bots.get(number) || null; }
-
-module.exports = { enabled, connect, disconnect, logout, sendMessage, onMessage, onConnected, getQR, status, getBot };
+module.exports = { enabled, connect, disconnect, logout, sendMessage, onMessage, onConnected, getQR, status };

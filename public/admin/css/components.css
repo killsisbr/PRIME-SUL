@@ -78,29 +78,6 @@
 .ps-empty { text-align: center; padding: 30px; color: var(--text-muted); font-weight: 800; border: 2px dashed #c4b7ac; border-radius: 14px; }
 .ps-empty i { font-size: 1.8rem; display: block; margin-bottom: 8px; color: var(--primary); }
 
-/* --- grid de leads --- */
-.ps-leads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-.ps-lead-card { display: flex; flex-direction: column; justify-content: space-between; padding: 14px; border: 3px solid var(--dark); border-radius: 16px; background: var(--card); box-shadow: var(--shadow-md); }
-.ps-lead-card .ps-lead-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.ps-lead-card .ps-lead-top .ps-avatar { width: 40px; height: 40px; font-size: .8rem; background: var(--secondary); color: var(--ink); }
-.ps-lead-name { font-family: var(--font-title); font-size: 1.15rem; letter-spacing: .5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ps-lead-sub { font-size: .65rem; font-weight: 700; color: var(--text-muted); }
-.ps-lead-foot { display: flex; justify-content: space-between; align-items: center; }
-.ps-lead-limite { font-family: var(--font-title); font-size: 1.1rem; color: var(--dark); }
-.ps-lead-actions { display: flex; gap: 6px; margin-top: 10px; }
-
-/* --- filtros de status (leads) --- */
-.lead-filter {
-    padding: 8px 16px; border: 2.5px solid var(--dark); border-radius: 12px; background: #fff;
-    color: var(--dark); font-weight: 800; font-size: .78rem; cursor: pointer;
-    box-shadow: var(--shadow-sm); transition: all .15s ease; font-family: var(--font-body);
-}
-.lead-filter:hover, .lead-filter.active { background: var(--dark); color: #fff; box-shadow: 3px 3px 0 var(--primary); }
-
-/* --- alias legado: num-btn --- */
-.num-btn { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid var(--dark); border-radius: 8px; background: var(--card); color: var(--dark); cursor: pointer; font-size: .8rem; }
-.num-btn:hover { background: var(--accent); }
-
 /* --- toasts --- */
 .ps-toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 15000; display: flex; flex-direction: column; gap: 10px; }
 .ps-toast {

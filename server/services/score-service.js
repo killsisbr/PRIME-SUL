@@ -55,13 +55,6 @@ function computeScore(lead) {
     return Math.max(0, Math.min(100, Math.round(s)));
 }
 
-async function applyScore(lead) {
-    if (!lead || !lead.id) return null;
-    const score = computeScore(lead);
-    await db.run('UPDATE leads SET score = ? WHERE id = ?', [score, lead.id]);
-    return score;
-}
-
 async function recalcScoresFor(leadIds) {
     let scored = 0;
     let changed = 0;
@@ -78,4 +71,4 @@ async function recalcScoresFor(leadIds) {
     return { scored, changed };
 }
 
-module.exports = { computeScore, applyScore, recalcScoresFor, moneyNum };
+module.exports = { computeScore, recalcScoresFor };

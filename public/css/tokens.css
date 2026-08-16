@@ -40,7 +40,7 @@
     --radius-md: var(--r-md);
     --radius-lg: var(--r-lg);
 
-    /* --- aliases v3 (vendedor) --- */
+    /* --- aliases v3 (login vendedor) --- */
     --v3-ink: var(--ink);
     --v3-dark: var(--ink-dark);
     --v3-cream: var(--cream);
@@ -51,12 +51,4 @@
     --v3-blue: var(--info);
     --v3-font: var(--font-body);
     --v3-font-title: var(--font-title);
-
-    /* --- aliases hub --- */
-    --hub-ink: var(--ink);
-    --hub-dark: var(--ink-dark);
-    --hub-cream: var(--cream);
-    --hub-orange: var(--brand);
-    --hub-yellow: var(--accent);
-    --hub-coral: var(--bad);
 }

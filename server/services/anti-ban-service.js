@@ -95,7 +95,5 @@ module.exports = {
     shouldSend,
     ensureFresh,
     currentLimit,
-    currentCooldownHours,
-    DEFAULT_LIMIT,
-    DEFAULT_COOLDOWN_HOURS
+    currentCooldownHours
 };

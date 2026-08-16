@@ -65,7 +65,7 @@ export async function init() {
                 <div class="cp-card-head">
                     <div>
                         <div class="cp-card-name">${c.name}</div>
-                        <div class="cp-card-meta">Criada em ${(c.created_at || '').slice(0, 10)} • ${total} alvo(s) • <b style="color:${s.c};">${s.pct === undefined ? '' : ''}${c.status.toUpperCase()}</b></div>
+                        <div class="cp-card-meta">Criada em ${(c.created_at || '').slice(0, 10)} • ${total} alvo(s) • <b style="color:${s.c};">${c.status.toUpperCase()}</b></div>
                     </div>
                     <span class="ps-pill" style="background:${s.bg}; color:${s.c}; border-color:${s.c};">${c.status.toUpperCase()}</span>
                 </div>

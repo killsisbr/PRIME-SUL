@@ -1,10 +1,11 @@
 const CONN_LABEL = { connected: 'CONECTADO', connecting: 'CONECTANDO', offline: 'OFFLINE', banned: 'BANIDO' };
 const BAN_LABEL = { ativo: 'ATIVO', resfriado: 'RESFRIADO', banido: 'BANIDO' };
 
+const _pollers = new Map();
+
 export async function init() {
     const api = window.api;
     const toast = window.toast;
-    const pollers = new Map();
 
     function fmtNum(n) {
         const s = String(n).replace(/\D/g, '');
@@ -13,7 +14,7 @@ export async function init() {
     }
 
     function stopPolling() {
-        for (const [num, id] of pollers) { clearInterval(id); pollers.delete(num); }
+        for (const [num, id] of _pollers) { clearInterval(id); _pollers.delete(num); }
     }
 
     function render(data) {
@@ -79,15 +80,15 @@ export async function init() {
     }
 
     function startQrPoll(number) {
-        if (pollers.has(number)) return;
+        if (_pollers.has(number)) return;
         pollQr(number);
         const id = setInterval(() => pollQr(number), 2500);
-        pollers.set(number, id);
+        _pollers.set(number, id);
     }
 
     function stopQrPoll(number) {
-        const id = pollers.get(number);
-        if (id) { clearInterval(id); pollers.delete(number); }
+        const id = _pollers.get(number);
+        if (id) { clearInterval(id); _pollers.delete(number); }
     }
 
     async function pollQr(number) {
@@ -125,7 +126,7 @@ export async function init() {
         try {
             if (act === 'conectar' || act === 'reativar') {
                 if (act === 'reativar') {
-                    await api(`/campaigns/numbers/${btn.dataset.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'ativo' }) });
+                    await api(`/campaigns/numbers/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'ativo' }) });
                     toast('Número reativado', 'info');
                 }
                 const res = await api('/whatsapp/connect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number }) });
@@ -136,7 +137,7 @@ export async function init() {
                 toast('Desconectado', 'info');
             } else if (act === 'banir') {
                 if (!confirm('Banir este número? Ele sai de circulação permanentemente.')) { btn.disabled = false; return; }
-                await api(`/campaigns/numbers/${btn.dataset.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'banido' }) });
+                await api(`/campaigns/numbers/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'banido' }) });
                 toast('Número banido', 'err');
             } else if (act === 'remover') {
                 if (!confirm('Remover sessão deste número? O WhatsApp será deslogado.')) { btn.disabled = false; return; }
@@ -176,5 +177,6 @@ export async function init() {
 }
 
 export async function destroy() {
-    // pollers são limpos via stopPolling antes de cada render; nada global a limpar
+    for (const [, id] of _pollers) clearInterval(id);
+    _pollers.clear();
 }

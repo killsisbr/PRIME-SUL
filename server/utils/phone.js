@@ -6,8 +6,4 @@ function normalizePhone(input) {
     return p;
 }
 
-function isValidPhone(p) {
-    return /^55[1-9]\d{10,11}$/.test(p);
-}
-
-module.exports = { normalizePhone, isValidPhone };
+module.exports = { normalizePhone };

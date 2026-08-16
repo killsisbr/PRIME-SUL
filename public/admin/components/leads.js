@@ -201,6 +201,36 @@ export async function init() {
     document.getElementById('kbx-prio').addEventListener('change', () => render());
     document.getElementById('kbx-score').addEventListener('change', () => render());
 
+    // ================= NOVO LEAD =================
+    document.getElementById('kbx-new').onclick = () => document.getElementById('leadNewOverlay').style.display = 'flex';
+    document.getElementById('leadNew-close').onclick = () => document.getElementById('leadNewOverlay').style.display = 'none';
+    document.getElementById('leadNew-cancel').onclick = () => document.getElementById('leadNewOverlay').style.display = 'none';
+    document.getElementById('leadNewOverlay').addEventListener('click', e => { if (e.target.id === 'leadNewOverlay') e.target.style.display = 'none'; });
+    document.getElementById('leadNew-save').onclick = async () => {
+        const name = document.getElementById('leadNew-name').value.trim();
+        const phone = document.getElementById('leadNew-phone').value.trim();
+        if (!name || !phone) return toast('Nome e telefone são obrigatórios', 'err');
+        const body = {
+            name, phone,
+            origem: document.getElementById('leadNew-origem').value,
+            prioridade: document.getElementById('leadNew-prio').value,
+            city: document.getElementById('leadNew-city').value.trim(),
+            limite_est: document.getElementById('leadNew-limite').value.trim(),
+            obs: document.getElementById('leadNew-obs').value.trim()
+        };
+        try {
+            await api('/leads', { method: 'POST', body: JSON.stringify(body) });
+            toast('Lead cadastrado!');
+            document.getElementById('leadNewOverlay').style.display = 'none';
+            document.getElementById('leadNew-name').value = '';
+            document.getElementById('leadNew-phone').value = '';
+            document.getElementById('leadNew-city').value = '';
+            document.getElementById('leadNew-limite').value = '';
+            document.getElementById('leadNew-obs').value = '';
+            refresh();
+        } catch (e) { toast(e.message, 'err'); }
+    };
+
     // ================= FERRAMENTAS DE COLUNA =================
     const TOOLS_LABEL = { novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO' };
     const DEFAULT_AUTO_MSG = 'Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar.';

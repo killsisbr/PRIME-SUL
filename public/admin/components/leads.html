@@ -32,10 +32,70 @@
             <option value="50">Score ≥ 50</option>
         </select>
         <span class="kbx-count" id="kbx-total">0 leads</span>
+        <button type="button" class="btn-retro" id="kbx-new" style="padding:8px 14px; font-size:.72rem;"><i class="fas fa-plus"></i> NOVO LEAD</button>
     </div>
 
     <div class="kbx-board" id="kbx-board">
         <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando leads...</div>
+    </div>
+</div>
+
+<!-- ============ NOVO LEAD ============ -->
+<div class="v2-submodal-overlay" id="leadNewOverlay" style="display:none;">
+    <div class="v2-submodal" style="max-width:560px;">
+        <div class="v2-submodal-header">
+            <div>
+                <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">LEADS</span>
+                <h3>NOVO LEAD</h3>
+            </div>
+            <button type="button" class="btn-close-submodal" id="leadNew-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body">
+            <div class="v2-form-group">
+                <label>Nome <span style="color:var(--bad);">*</span></label>
+                <input type="text" id="leadNew-name" class="ps-input" placeholder="Nome completo">
+            </div>
+            <div class="v2-form-group">
+                <label>Telefone <span style="color:var(--bad);">*</span></label>
+                <input type="text" id="leadNew-phone" class="ps-input" placeholder="(11) 99999-0000">
+            </div>
+            <div class="ps-grid-2">
+                <div class="v2-form-group">
+                    <label>Origem</label>
+                    <select id="leadNew-origem" class="ps-select">
+                        <option value="SITE">Site</option>
+                        <option value="SIMULACAO">Simulação</option>
+                        <option value="INDICACAO">Indicação</option>
+                    </select>
+                </div>
+                <div class="v2-form-group">
+                    <label>Prioridade</label>
+                    <select id="leadNew-prio" class="ps-select">
+                        <option value="media">★ Média</option>
+                        <option value="alta">★ Alta</option>
+                        <option value="baixa">★ Baixa</option>
+                    </select>
+                </div>
+            </div>
+            <div class="ps-grid-2">
+                <div class="v2-form-group">
+                    <label>Cidade</label>
+                    <input type="text" id="leadNew-city" class="ps-input" placeholder="Cidade">
+                </div>
+                <div class="v2-form-group">
+                    <label>Limite estimado (R$)</label>
+                    <input type="text" id="leadNew-limite" class="ps-input" placeholder="Ex.: 50.000">
+                </div>
+            </div>
+            <div class="v2-form-group">
+                <label>Observações</label>
+                <textarea id="leadNew-obs" class="ps-textarea" rows="2" placeholder="Detalhes do lead"></textarea>
+            </div>
+        </div>
+        <footer class="ctp-footer">
+            <button type="button" class="btn-retro btn-secondary-retro" id="leadNew-cancel"><i class="fas fa-times"></i> CANCELAR</button>
+            <button type="button" class="btn-retro" id="leadNew-save"><i class="fas fa-save"></i> SALVAR LEAD</button>
+        </footer>
     </div>
 </div>
 

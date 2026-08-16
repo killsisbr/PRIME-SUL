@@ -193,14 +193,17 @@ async function processCampaign(campaign, job) {
             if (!c || c.status !== 'running') return;
 
             const lead = await db.get('SELECT * FROM leads WHERE id = ?', [send.lead_id]);
-            const botNumber = await db.get('SELECT * FROM bot_numbers WHERE id = ?', [send.number_id]);
 
+            // Anti-ban: rotação entre números — sempre escolhe o menos usado hoje
+            const botNumber = await antiBan.pickBestNumber();
             if (!botNumber) {
-                await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
-                progress.falhou++;
-                progress.done++;
-                continue;
+                console.warn(`[campaign] ${campaign.name} — limite diário atingido em todos os números, pausando`);
+                await db.run("UPDATE campaigns SET status = 'paused', error = 'daily_limit' WHERE id = ?", [campaign.id]);
+                running.delete(campaign.id);
+                await jobs.complete(job.id, { status: 'paused', ...progress }).catch(() => {});
+                return;
             }
+            await db.run('UPDATE sends SET number_id = ? WHERE id = ?', [botNumber.id, send.id]);
 
             // Anti-ban: só envia para leads quentes
             if (!antiBan.shouldSend(lead)) {
@@ -284,6 +287,20 @@ async function resumePausedFromOffline() {
     return rows.length;
 }
 
+// Reinicia campanhas pausadas por limite diário (chamado quando um número fica disponível)
+async function resumePausedFromLimit() {
+    const rows = await db.all("SELECT * FROM campaigns WHERE status = 'paused' AND error = 'daily_limit'");
+    let resumed = 0;
+    for (const c of rows) {
+        const available = await antiBan.pickBestNumber();
+        if (!available) continue;
+        await startCampaign(c.id);
+        console.log(`[campaign] ${c.name} — auto-resume após cooldown de número`);
+        resumed++;
+    }
+    return resumed;
+}
+
 // Reenvia os envios que falharam (falhou/caiu) e reinicia o processamento
 async function retryCampaign(id) {
     id = numId(id);
@@ -341,7 +358,6 @@ function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 module.exports = {
     createCampaign,
-    createDirectCampaign,
     sendToLead,
     countTargets,
     startCampaign,
@@ -349,6 +365,6 @@ module.exports = {
     cancelCampaign,
     retryCampaign,
     resumePausedFromOffline,
-    recoverInterrupted,
-    buildMainMessage
+    resumePausedFromLimit,
+    recoverInterrupted
 };

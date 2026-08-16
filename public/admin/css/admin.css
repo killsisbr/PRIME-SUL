@@ -360,9 +360,8 @@ body.admin-body {
 }
 
 #dynamicModalBody { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg); }
-#dynamicModalBody:has(.hub-v2), #dynamicModalBody:has(.promo-console) { display: flex; flex-direction: column; min-height: 0; overflow: hidden !important; padding: 18px !important; }
+#dynamicModalBody:has(.hub-v2) { display: flex; flex-direction: column; min-height: 0; overflow: hidden !important; padding: 18px !important; }
 #dynamicModalBody > .fiscal-container { flex: 1; }
-#dynamicModalBody .fiscal-card { margin-bottom: 20px; }
 
 #dynamicModalFooter {
     display: flex;

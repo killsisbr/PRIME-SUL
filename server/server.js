@@ -66,9 +66,12 @@ async function bootstrap() {
         console.log('[whatsapp] BOT_ENABLED=false — bots desligados (dry-run).');
     }
 
-    // Reativa números resfriados cujo cooldown expirou (a cada 60s)
+    // Reativa números resfriados cujo cooldown expirou e retoma campanhas pausadas por limite (a cada 60s)
     const antiBan = require('./services/anti-ban-service');
-    setInterval(() => antiBan.ensureFresh().catch(e => console.error('[anti-ban] refresh:', e.message)), 60 * 1000);
+    setInterval(async () => {
+        try { await antiBan.ensureFresh(); } catch (e) { console.error('[anti-ban] refresh:', e.message); }
+        try { await campaignService.resumePausedFromLimit(); } catch (e) { console.error('[campaign] resume:', e.message); }
+    }, 60 * 1000);
     await antiBan.ensureFresh();
 
     app.listen(PORT, process.env.HOST || '0.0.0.0', () => {

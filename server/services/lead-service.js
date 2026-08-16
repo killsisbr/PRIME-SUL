@@ -290,4 +290,4 @@ async function funnelBySeller(seller_id) {
     };
 }
 
-module.exports = { createLead, listLeads, getLead, updateLead, updateStatus, getHistory, countsBySeller, funnelBySeller, ALLOWED_ORIGEM, ALLOWED_PRIORIDADE };
+module.exports = { createLead, listLeads, getLead, updateLead, updateStatus, getHistory, countsBySeller, funnelBySeller };
