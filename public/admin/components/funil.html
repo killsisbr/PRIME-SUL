@@ -34,3 +34,51 @@
         </aside>
     </div>
 </div>
+
+<!-- ============ POPUP: LEADS DO ESTÁGIO (filtrado) ============ -->
+<div class="v2-submodal-overlay" id="flpOverlay" style="display:none;">
+    <div class="v2-submodal" style="max-width:880px;">
+        <div class="v2-submodal-header">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span class="flp-dot" id="flp-dot"></span>
+                <div>
+                    <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">LEADS DO ESTÁGIO</span>
+                    <h3 id="flp-label" style="color:var(--ink);">NOVO</h3>
+                </div>
+            </div>
+            <button type="button" class="btn-close-submodal" id="flp-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body flp-body">
+            <div class="flp-filters">
+                <div class="flp-search"><i class="fas fa-search"></i><input type="text" id="flp-search" placeholder="Buscar por nome, telefone, cidade..."></div>
+                <select id="flp-origem" class="ps-select">
+                    <option value="">TODAS ORIGENS</option>
+                    <option value="SITE">Site</option>
+                    <option value="SIMULACAO">Simulação</option>
+                    <option value="INDICACAO">Indicação</option>
+                </select>
+                <select id="flp-prio" class="ps-select">
+                    <option value="">TODAS PRIORIDADES</option>
+                    <option value="alta">★ Alta</option>
+                    <option value="media">★ Média</option>
+                    <option value="baixa">★ Baixa</option>
+                </select>
+                <select id="flp-score" class="ps-select" title="Score mínimo">
+                    <option value="">TODOS SCORES</option>
+                    <option value="70">Score ≥ 70</option>
+                    <option value="50">Score ≥ 50</option>
+                </select>
+                <input type="text" id="flp-cidade" class="ps-input" placeholder="Cidade">
+                <input type="date" id="flp-de" class="ps-input" title="Cadastro de">
+                <input type="date" id="flp-ate" class="ps-input" title="Cadastro até">
+                <button type="button" class="flp-clear" id="flp-clear" title="Limpar filtros"><i class="fas fa-eraser"></i> LIMPAR</button>
+            </div>
+            <div class="flp-summary" id="flp-summary"></div>
+            <div class="flp-list" id="flp-list"></div>
+        </div>
+        <footer class="ctp-footer">
+            <span class="flp-total" id="flp-total">0 leads</span>
+            <button type="button" class="btn-retro" id="flp-done"><i class="fas fa-check"></i> FECHAR</button>
+        </footer>
+    </div>
+</div>
