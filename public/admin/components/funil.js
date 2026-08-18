@@ -5,6 +5,8 @@ const STAGES = [
     { key: 'concluido', label: 'CONCLUÍDO', color: '#10b981', dark: false }
 ];
 
+let popupSearchTimer = null;
+
 const TRANSITIONS = [
     { from: 'novo', to: 'contato', key: 'novo_contato' },
     { from: 'contato', to: 'confirmado', key: 'contato_confirmado' },
@@ -162,7 +164,6 @@ export async function init() {
 
     // ================= POPUP DE LEADS DO ESTÁGIO =================
     let popupStage = 'novo';
-    let popupSearchTimer = null;
 
     function openStagePopup(key) {
         popupStage = key;
