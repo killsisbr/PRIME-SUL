@@ -1,0 +1,139 @@
+<div class="mk-root">
+    <div class="ps-head" style="margin-bottom:14px;">
+        <div>
+            <div class="ps-head-title"><i class="fas fa-bullhorn" style="color: var(--secondary);"></i> MARKETING & STATUS</div>
+            <p class="ps-head-desc">Crie status promocionais com preview de celular e agende os bots para publicar no WhatsApp.</p>
+        </div>
+        <button type="button" class="mk-new" id="mk-new"><i class="fas fa-plus"></i> NOVO STATUS</button>
+    </div>
+
+    <div class="mk-stats">
+        <div><b id="mk-agendados">0</b><span>AGENDADOS</span></div>
+        <div><b id="mk-enviados">0</b><span>ENVIADOS</span></div>
+        <div><b id="mk-falhas">0</b><span>FALHAS</span></div>
+    </div>
+
+    <div class="mk-list" id="mk-list">
+        <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando status...</div>
+    </div>
+</div>
+
+<!-- POPUP ELABORADO: AGENDAR STATUS -->
+<div class="v2-submodal-overlay" id="mkOverlay" style="display:none;">
+    <div class="v2-submodal mk-submodal">
+        <div class="v2-submodal-header">
+            <div class="mk-head-title">
+                <span class="mk-dot" id="mk-dot"></span>
+                <div>
+                    <h3 id="mk-title">NOVO STATUS</h3>
+                    <p id="mk-subtitle">Agende um status promocional para o bot publicar</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close-submodal" id="mk-close"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="v2-submodal-body mk-body">
+            <div class="mk-form-side">
+                <div class="mk-form-tabs">
+                    <button type="button" class="mk-tab active" data-tab="conteudo"><i class="fas fa-edit"></i> Conteúdo</button>
+                    <button type="button" class="mk-tab" data-tab="design"><i class="fas fa-palette"></i> Design</button>
+                    <button type="button" class="mk-tab" data-tab="agenda"><i class="fas fa-clock"></i> Agendamento</button>
+                </div>
+
+                <div class="mk-section" id="mkSec-conteudo">
+                    <label class="mk-label">Título do Agendamento</label>
+                    <input type="text" id="mk-title-input" class="mk-input" placeholder="Ex: Oferta da semana — Crédito">
+                    <small class="mk-hint">Identificação interna (só você vê no painel)</small>
+
+                    <label class="mk-label">Mensagem do Status <span class="mk-charcount" id="mk-charcount">0 / 2200</span></label>
+                    <textarea id="mk-message" class="mk-input mk-textarea" rows="5" placeholder="Escreva a legenda promocional que aparecerá no celular..."></textarea>
+
+                    <div class="mk-drawer" id="mk-drawer"></div>
+                    <div class="mk-templates" id="mk-templates"></div>
+                </div>
+
+                <div class="mk-section" id="mkSec-design" style="display:none;">
+                    <label class="mk-label">Tipo de Status</label>
+                    <div class="mk-types">
+                        <label class="mk-type active"><input type="radio" name="mk-type" value="text" checked><i class="fas fa-font"></i> Texto</label>
+                        <label class="mk-type"><input type="radio" name="mk-type" value="image"><i class="fas fa-image"></i> Foto</label>
+                        <label class="mk-type"><input type="radio" name="mk-type" value="link"><i class="fas fa-link"></i> Link</label>
+                    </div>
+
+                    <label class="mk-label" id="mk-media-label" style="display:none;">URL da Imagem</label>
+                    <input type="url" id="mk-media" class="mk-input" style="display:none;" placeholder="https://sua-imagem.jpg">
+
+                    <label class="mk-label">Cor de Fundo</label>
+                    <div class="mk-colors" id="mk-colors">
+                        <span class="mk-color active" data-color="teal" style="background:linear-gradient(135deg,#128c7e,#075e54);"></span>
+                        <span class="mk-color" data-color="purple" style="background:linear-gradient(135deg,#833ab4,#fd1d1d);"></span>
+                        <span class="mk-color" data-color="blue" style="background:linear-gradient(135deg,#1e3c72,#2a5298);"></span>
+                        <span class="mk-color" data-color="red" style="background:linear-gradient(135deg,#ff416c,#ff4b2b);"></span>
+                        <span class="mk-color" data-color="orange" style="background:linear-gradient(135deg,#fcb045,#fd1d1d);"></span>
+                        <span class="mk-color" data-color="dark" style="background:linear-gradient(135deg,#0f2027,#203a43);"></span>
+                    </div>
+
+                    <label class="mk-label">Fonte do Texto</label>
+                    <select id="mk-font" class="mk-input">
+                        <option value="2">Padrão (Sans Serif)</option>
+                        <option value="1">Serifada (Georgia)</option>
+                        <option value="3">Cursiva (Caveat)</option>
+                        <option value="4">Descontraída (Comic Sans)</option>
+                        <option value="5">Monospace (Courier)</option>
+                    </select>
+                </div>
+
+                <div class="mk-section" id="mkSec-agenda" style="display:none;">
+                    <label class="mk-label">Quando publicar?</label>
+                    <input type="datetime-local" id="mk-schedule" class="mk-input">
+                    <small class="mk-hint">Data e horário em que será enviado automaticamente. Vazio = apenas rascunho agendável.</small>
+
+                    <label class="mk-label">Bot que vai postar</label>
+                    <select id="mk-number" class="mk-input"><option value="">Auto (menos usado)</option></select>
+                    <small class="mk-hint">Se vazio, o sistema escolhe o número ativo menos usado do dia.</small>
+
+                    <label class="mk-check">
+                        <input type="checkbox" id="mk-recurring">
+                        <span><strong>Repetir todo dia neste horário</strong> <small>Após publicar, reagenda automaticamente para amanhã.</small></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mk-preview-side">
+                <div class="mk-preview-head">
+                    <span><i class="fas fa-eye"></i> PRÉVIA DO CELULAR</span>
+                    <button type="button" class="mk-simulate" id="mk-simulate"><i class="fas fa-play"></i> SIMULAR</button>
+                </div>
+                <div class="mk-phone">
+                    <div class="mk-notch"></div>
+                    <div class="mk-statusbar"><span>09:41</span><span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-three-quarters"></i></span></div>
+                    <div class="mk-screen" id="mk-screen">
+                        <div class="mk-wa-top">
+                            <div class="mk-progress"><div id="mk-progress-fill" style="width:60%;"></div></div>
+                            <div class="mk-wa-user">
+                                <div class="mk-avatar">P</div>
+                                <div class="mk-wa-meta"><span class="mk-storename" id="mk-storename">PRIME SUL</span><span class="mk-now">Agora mesmo</span></div>
+                            </div>
+                        </div>
+                        <div class="mk-tpl" id="mk-tpl-text"><div class="mk-tpl-text-center" id="mk-text-center">Legenda do Status aqui...</div></div>
+                        <div class="mk-tpl" id="mk-tpl-image" style="display:none;"><img id="mk-img" alt=""><div class="mk-img-caption" id="mk-img-caption"></div></div>
+                        <div class="mk-tpl" id="mk-tpl-link" style="display:none;">
+                            <div class="mk-link-card">
+                                <div class="mk-link-title"><i class="fab fa-whatsapp"></i> <span id="mk-link-brand">PRIME SUL</span></div>
+                                <div class="mk-link-text" id="mk-link-text">Acesse e confira a oferta!</div>
+                                <div class="mk-link-url"><i class="fas fa-link"></i> <span id="mk-link-url">primesul.simulacao</span></div>
+                            </div>
+                        </div>
+                        <div class="mk-swipe"><i class="fas fa-chevron-up"></i><span>Responder</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mk-footer">
+            <button type="button" class="mk-btn ghost" id="mk-cancel">CANCELAR</button>
+            <button type="button" class="mk-btn danger" id="mk-delete" style="display:none;"><i class="fas fa-trash"></i> EXCLUIR</button>
+            <button type="button" class="mk-btn primary" id="mk-save"><i class="fas fa-save"></i> GRAVAR STATUS</button>
+        </div>
+    </div>
+</div>

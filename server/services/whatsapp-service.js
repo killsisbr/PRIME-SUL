@@ -141,6 +141,36 @@ function getQR(number) {
     return bot ? bot.qr || null : null;
 }
 
+// Cores de fundo dos status (mesmo mapeamento do painel)
+const STATUS_COLORS = {
+    teal: '#075e54', purple: '#833ab4', blue: '#1e3c72',
+    red: '#ff416c', orange: '#fcb045', dark: '#0f2027'
+};
+
+// Publica um status promocional no WhatsApp (status@broadcast) usando um bot conectado
+async function postStatus(botNumber, { text, imageUrl, caption, color = 'teal', font = 2 }) {
+    const bot = bots.get(botNumber);
+    if (!bot || bot.status !== 'connected') {
+        console.warn(`[whatsapp] Bot ${botNumber} não conectado — status não publicado`);
+        return { sent: false, reason: 'not_connected' };
+    }
+    try {
+        const payload = imageUrl
+            ? { image: { url: imageUrl }, caption: caption || text || '' }
+            : { text: text || '' };
+        await bot.sock.sendMessage('status@broadcast', payload, {
+            backgroundColor: STATUS_COLORS[color] || STATUS_COLORS.teal,
+            font: Number(font) || 2,
+            statusJidList: []
+        });
+        bot.lastActivity = Date.now();
+        return { sent: true };
+    } catch (e) {
+        console.error(`[whatsapp] Erro ao postar status de ${botNumber}:`, e.message);
+        return { sent: false, reason: 'error' };
+    }
+}
+
 async function disconnect(number) {
     const bot = bots.get(number);
     if (!bot) return { ok: false, reason: 'not_found' };
@@ -171,4 +201,4 @@ function status() {
     return out;
 }
 
-module.exports = { enabled, connect, disconnect, logout, sendMessage, onMessage, onConnected, getQR, status };
+module.exports = { enabled, connect, disconnect, logout, sendMessage, postStatus, onMessage, onConnected, getQR, status };

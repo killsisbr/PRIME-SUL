@@ -143,3 +143,23 @@ CREATE TABLE IF NOT EXISTS bot_events (
 );
 CREATE INDEX IF NOT EXISTS idx_bot_events_number ON bot_events(number, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bot_events_created ON bot_events(created_at DESC);
+
+-- Marketing: status promocionais agendados para os bots postarem no WhatsApp
+CREATE TABLE IF NOT EXISTS marketing_posts (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    title        TEXT NOT NULL,
+    type         TEXT NOT NULL DEFAULT 'text' CHECK (type IN ('text','image','link')),
+    message      TEXT,
+    media_url    TEXT,
+    color        TEXT NOT NULL DEFAULT 'teal',
+    font         TEXT NOT NULL DEFAULT '2',
+    number_id    INTEGER REFERENCES bot_numbers(id),
+    scheduled_at TEXT,
+    recurring    INTEGER NOT NULL DEFAULT 0,
+    status       TEXT NOT NULL DEFAULT 'scheduled'
+                 CHECK (status IN ('scheduled','sent','failed','cancelled')),
+    error        TEXT,
+    sent_at      TEXT,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_marketing_posts_status ON marketing_posts(status, scheduled_at);

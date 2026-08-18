@@ -19,6 +19,7 @@ app.use('/api/campaigns', require('./routes/campaigns'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/bots', require('./routes/bots'));
+app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/tools', require('./routes/tools'));
 
 // Front estático
@@ -69,9 +70,11 @@ async function bootstrap() {
 
     // Reativa números resfriados cujo cooldown expirou e retoma campanhas pausadas por limite (a cada 60s)
     const antiBan = require('./services/anti-ban-service');
+    const marketingService = require('./services/marketing-service');
     setInterval(async () => {
         try { await antiBan.ensureFresh(); } catch (e) { console.error('[anti-ban] refresh:', e.message); }
         try { await campaignService.resumePausedFromLimit(); } catch (e) { console.error('[campaign] resume:', e.message); }
+        try { await marketingService.processDue(); } catch (e) { console.error('[marketing] processDue:', e.message); }
     }, 60 * 1000);
     await antiBan.ensureFresh();
 
