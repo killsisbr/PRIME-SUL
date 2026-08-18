@@ -13,4 +13,4 @@ async function getNumber(key, fallback) {
     return Number.isFinite(v) && v > 0 ? v : fallback;
 }
 
-module.exports = { getNumber };
+module.exports = { get, getNumber };

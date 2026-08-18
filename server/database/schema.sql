@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
 -- Envios (1 por lead por campanha)
 CREATE TABLE IF NOT EXISTS sends (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    campaign_id INTEGER NOT NULL REFERENCES campaigns(id),
+    campaign_id INTEGER REFERENCES campaigns(id),
     lead_id     INTEGER NOT NULL REFERENCES leads(id),
     number_id   INTEGER NOT NULL REFERENCES bot_numbers(id),
     status      TEXT NOT NULL DEFAULT 'pending'

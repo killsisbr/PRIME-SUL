@@ -56,4 +56,20 @@
 
         <button class="ps-btn-save" onclick="saveFiscalSettings()"><i class="fas fa-save"></i> SALVAR CONFIGURAÇÕES</button>
     </div>
+
+    <!-- FOLLOW-UP AUTOMÁTICO -->
+    <div class="ps-card">
+        <div class="ps-card-title"><i class="fas fa-rotate-right" style="color: var(--brand);"></i> Follow-up Automático</div>
+        <p class="ps-hint">Reenvia uma mensagem para leads que pediram simulação mas não responderam. O bot reage como se fosse a primeira abordagem, respeitando os limites anti-ban.</p>
+
+        <div class="ps-grid-2">
+            <div class="ps-field"><label for="cfgFollowupDays">Dias sem resposta para reenviar (separados por vírgula)</label><input type="text" class="ps-input" id="cfgFollowupDays" placeholder="3,7,14,30"></div>
+            <div class="ps-field"><label for="cfgFollowupMsg">Mensagem do follow-up (usa {nome})</label><textarea class="ps-textarea" id="cfgFollowupMsg" rows="3">Olá {nome}, tudo bem? Você pediu uma simulação de crédito e ainda não finalizou. Posso te encaminhar a proposta? Responda SIM para continuar.</textarea></div>
+        </div>
+
+        <div class="ps-toggle-row">
+            <input type="checkbox" id="cfgFollowupEnabled">
+            <label for="cfgFollowupEnabled">Ativar follow-up automático</label>
+        </div>
+    </div>
 </div>

@@ -7,8 +7,17 @@ const botEvents = require('./bot-events-service');
 const sessionsDir = process.env.BOT_SESSIONS_DIR || path.join(__dirname, '..', '..', 'data', 'sessions');
 fs.mkdirSync(sessionsDir, { recursive: true });
 
-// Bots ativos: { [number]: { sock, status, lastActivity, connectedAt, qr, label } }
+// Bots ativos: { [number]: { sock, status, lastActivity, connectedAt, qr, label, startedAt, forceClosing } }
 const bots = new Map();
+// Estado de reconexão (backoff exponencial): { [number]: { attempts, timer } }
+const reconnectState = new Map();
+
+const HUMAN_MODE = process.env.BOT_HUMAN_MODE !== 'false';
+const RECONNECT_BASE_MS = Number(process.env.BOT_RECONNECT_BASE_MS) || 10000;
+const RECONNECT_MAX_MS = Number(process.env.BOT_RECONNECT_MAX_MS) || 30000;
+const STUCK_QR_MS = Number(process.env.BOT_STUCK_QR_MS) || 120000;
+
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 // Handlers registrados quando mensagem de confirmação chega
 const messageHandlers = [];
@@ -24,9 +33,24 @@ async function connect(number, label) {
         console.warn(`[whatsapp] BOT_ENABLED=false — bot ${number} não conecta (dry-run)`);
         return null;
     }
-    if (bots.has(number)) return bots.get(number).sock;
+    if (bots.has(number)) {
+        const existing = bots.get(number);
+        if (existing.status === 'connecting' || existing.status === 'connected') return existing.sock;
+        bots.delete(number); // entrada antiga (disconnected) — reconecta do zero
+    }
 
-    const { state, saveCreds } = await useMultiFileAuthState(path.join(sessionsDir, number));
+    // Sessão corrompida (falha ao carregar o store) → isola e gera QR novo
+    let state, saveCreds;
+    try {
+        ({ state, saveCreds } = await useMultiFileAuthState(path.join(sessionsDir, number)));
+    } catch (e) {
+        console.error(`[whatsapp] Sessão de ${number} corrompida:`, e.message);
+        const quarantine = `${path.join(sessionsDir, number)}-corrupted-${Date.now()}`;
+        try { await fs.promises.rename(path.join(sessionsDir, number), quarantine); } catch (e2) { /* sem diretório */ }
+        botEvents.log(number, 'session_corrupted', 'Sessão corrompida — isolada, novo QR gerado', label);
+        ({ state, saveCreds } = await useMultiFileAuthState(path.join(sessionsDir, number)));
+    }
+
     const { version } = await fetchLatestBaileysVersion();
     const sock = makeWASocket({
         auth: state,
@@ -36,7 +60,7 @@ async function connect(number, label) {
         browser: ['Chrome (Linux)', 'Chrome', '110.0.5481.77']
     });
 
-    const entry = { sock, status: 'connecting', lastActivity: Date.now(), connectedAt: null, qr: null, label };
+    const entry = { sock, status: 'connecting', lastActivity: Date.now(), connectedAt: null, qr: null, label, startedAt: Date.now(), forceClosing: false };
     bots.set(number, entry);
     botEvents.log(number, 'connect_queued', 'Sessão iniciando — aguardando conexão', label);
 
@@ -56,7 +80,9 @@ async function connect(number, label) {
         if (connection === 'open') {
             entry.status = 'connected';
             entry.connectedAt = Date.now();
+            entry.startedAt = Date.now();
             entry.qr = null;
+            resetBackoff(number);
             await antiBan.ensureFresh();
             botEvents.log(number, 'connected', label ? `${label} conectado` : 'Bot conectado', label);
             console.log(`[whatsapp] Bot conectado: ${number} (${label || ''})`);
@@ -70,6 +96,7 @@ async function connect(number, label) {
 
             if (banned) {
                 entry.status = 'banned';
+                clearScheduled(number);
                 botEvents.log(number, 'banned', 'Banido pelo WhatsApp (código 403)', label);
                 // Marca o número como banido no banco (se existir)
                 const n = await antiBan.registerNumber(number, label);
@@ -82,11 +109,15 @@ async function connect(number, label) {
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
             botEvents.log(number, 'disconnected', statusCode ? `Conexão fechada (código ${statusCode})` : 'Conexão fechada', label);
             console.log(`[whatsapp] Bot ${number} desconectado (code=${statusCode}). Reconectar=${shouldReconnect}`);
-            if (shouldReconnect) {
-                bots.delete(number);
-                setTimeout(() => connect(number, label), 3000);
+            if (shouldReconnect && !entry.forceClosing) {
+                scheduleReconnect(number, label);
             } else {
-                bots.delete(number);
+                entry.forceClosing = false;
+                if (!shouldReconnect) {
+                    clearScheduled(number);
+                    entry.status = 'logged_out';
+                    botEvents.log(number, 'logged_out', 'Sessão encerrada pelo usuário (logout)', label);
+                }
             }
         }
     });
@@ -127,8 +158,13 @@ async function sendMessage(botNumber, toPhone, text) {
         return { sent: false, reason: 'not_connected' };
     }
     try {
+        if (HUMAN_MODE) {
+            await bot.sock.sendPresenceUpdate('composing', `${toPhone}@s.whatsapp.net`);
+            await sleep(humanDelay(text));
+        }
         await bot.sock.sendMessage(`${toPhone}@s.whatsapp.net`, { text });
         bot.lastActivity = Date.now();
+        if (HUMAN_MODE) await bot.sock.sendPresenceUpdate('available').catch(() => {});
         return { sent: true };
     } catch (e) {
         console.error(`[whatsapp] Erro ao enviar de ${botNumber} para ${toPhone}:`, e.message);
@@ -174,6 +210,7 @@ async function postStatus(botNumber, { text, imageUrl, caption, color = 'teal', 
 async function disconnect(number) {
     const bot = bots.get(number);
     if (!bot) return { ok: false, reason: 'not_found' };
+    clearScheduled(number);
     try {
         bot.sock.end(undefined);
     } catch (e) { /* já desconectado */ }
@@ -182,9 +219,99 @@ async function disconnect(number) {
 }
 
 async function logout(number) {
+    clearScheduled(number);
     await disconnect(number);
     await fs.promises.rm(path.join(sessionsDir, number), { recursive: true, force: true });
     return { ok: true };
+}
+
+// --- Resiliência ---
+
+// Delay de digitação proporcional ao texto (simula presença humana), com teto
+function humanDelay(text) {
+    return Math.min(800 + (text || '').length * 6, 2600);
+}
+
+// Reconexão com backoff exponencial (10s → 20s → ... → 30s)
+function scheduleReconnect(number, label) {
+    const st = reconnectState.get(number) || { attempts: 0, timer: null };
+    st.attempts++;
+    const delay = Math.min(RECONNECT_BASE_MS * Math.pow(2, st.attempts - 1), RECONNECT_MAX_MS);
+    clearTimeout(st.timer);
+    st.timer = setTimeout(() => {
+        reconnectState.delete(number);
+        connect(number, label).catch((e) => console.error(`[whatsapp] erro ao reconectar ${number}:`, e.message));
+    }, delay);
+    reconnectState.set(number, st);
+    console.log(`[whatsapp] Reconexão de ${number} em ${Math.round(delay / 1000)}s (tentativa ${st.attempts})`);
+}
+
+function resetBackoff(number) {
+    const st = reconnectState.get(number);
+    if (st) {
+        clearTimeout(st.timer);
+        reconnectState.delete(number);
+    }
+}
+
+function clearScheduled(number) {
+    const st = reconnectState.get(number);
+    if (st) {
+        clearTimeout(st.timer);
+        reconnectState.delete(number);
+    }
+}
+
+// Força uma reconexão limpa (usado pelo health-check) sem duplicar reconexões
+function forceReconnect(number, label) {
+    const entry = bots.get(number);
+    if (!entry) return;
+    entry.forceClosing = true;
+    clearScheduled(number);
+    try { entry.sock.end(undefined); } catch (e) { /* já encerrado */ }
+    entry.status = 'disconnected';
+    scheduleReconnect(number, label);
+}
+
+// Health-check: detecta socket morto (deadlock) e conexões travadas sem QR
+async function healthCheck() {
+    let fixed = 0;
+    for (const [number, entry] of bots) {
+        if (entry.status === 'connected') {
+            const alive = entry.sock?.ws?.readyState === 1 && !!entry.sock?.user;
+            if (!alive) {
+                console.warn(`[whatsapp] Health-check: ${number} socket morto — reconectando`);
+                botEvents.log(number, 'deadlock', 'Socket morto detectado pelo health-check — reconectando', entry.label);
+                forceReconnect(number, entry.label);
+                fixed++;
+            }
+        } else if (entry.status === 'connecting' && !entry.qr && !entry.sock?.user && Date.now() - entry.startedAt > STUCK_QR_MS) {
+            console.warn(`[whatsapp] Health-check: ${number} conexão travada sem QR — reiniciando`);
+            botEvents.log(number, 'stuck', 'Conexão travada (sem QR) — reiniciando sessão', entry.label);
+            forceReconnect(number, entry.label);
+            fixed++;
+        }
+    }
+    return fixed;
+}
+
+// Remove sessões corrompidas antigas (7+ dias) — executa no boot
+async function cleanupSessions() {
+    let removed = 0;
+    let dirs;
+    try { dirs = await fs.promises.readdir(sessionsDir); } catch (e) { return 0; }
+    const now = Date.now();
+    for (const d of dirs) {
+        if (!d.includes('-corrupted')) continue;
+        const full = path.join(sessionsDir, d);
+        const st = await fs.promises.stat(full).catch(() => null);
+        if (st && now - st.mtimeMs > 7 * 24 * 3600 * 1000) {
+            await fs.promises.rm(full, { recursive: true, force: true });
+            console.log(`[whatsapp] Sessão corrompida antiga removida: ${d}`);
+            removed++;
+        }
+    }
+    return removed;
 }
 
 function status() {
@@ -195,10 +322,11 @@ function status() {
             label: entry.label,
             lastActivity: entry.lastActivity,
             connectedAt: entry.connectedAt,
-            waitingQr: !!entry.qr
+            waitingQr: !!entry.qr,
+            reconnectAttempts: reconnectState.get(number)?.attempts || 0
         };
     }
     return out;
 }
 
-module.exports = { enabled, connect, disconnect, logout, sendMessage, postStatus, onMessage, onConnected, getQR, status };
+module.exports = { enabled, connect, disconnect, logout, sendMessage, postStatus, onMessage, onConnected, getQR, status, healthCheck, cleanupSessions };

@@ -68,15 +68,24 @@ async function bootstrap() {
         console.log('[whatsapp] BOT_ENABLED=false — bots desligados (dry-run).');
     }
 
-    // Reativa números resfriados cujo cooldown expirou e retoma campanhas pausadas por limite (a cada 60s)
+    // Reativa números resfriados, retoma campanhas pausadas, processa marketing, follow-up e health-check (a cada 60s)
     const antiBan = require('./services/anti-ban-service');
     const marketingService = require('./services/marketing-service');
+    const followupService = require('./services/followup-service');
+    let followupTicks = 0;
     setInterval(async () => {
         try { await antiBan.ensureFresh(); } catch (e) { console.error('[anti-ban] refresh:', e.message); }
         try { await campaignService.resumePausedFromLimit(); } catch (e) { console.error('[campaign] resume:', e.message); }
         try { await marketingService.processDue(); } catch (e) { console.error('[marketing] processDue:', e.message); }
+        try { await followupService.processDue(); } catch (e) { console.error('[followup] processDue:', e.message); }
+        if (++followupTicks % 10 === 0) {
+            try { await followupService.schedule(); } catch (e) { console.error('[followup] schedule:', e.message); }
+        }
+        try { await whatsapp.healthCheck(); } catch (e) { console.error('[whatsapp] health-check:', e.message); }
     }, 60 * 1000);
     await antiBan.ensureFresh();
+    await whatsapp.cleanupSessions();
+    await followupService.schedule();
 
     app.listen(PORT, process.env.HOST || '0.0.0.0', () => {
         console.log(`[prime-sul] rodando em http://localhost:${PORT}`);

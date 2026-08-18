@@ -24,7 +24,7 @@ function register() {
             SELECT s.*, l.name AS lead_name, l.seller_id, c.name AS campaign_name
             FROM sends s
             JOIN leads l ON l.id = s.lead_id
-            JOIN campaigns c ON c.id = s.campaign_id
+            LEFT JOIN campaigns c ON c.id = s.campaign_id
             WHERE l.phone = ? AND s.number_id IN (
                 SELECT id FROM bot_numbers WHERE number = ?
             )

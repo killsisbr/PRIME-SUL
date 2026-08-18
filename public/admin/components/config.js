@@ -13,7 +13,10 @@ export async function init() {
             if (s.cfg_daily_limit) document.getElementById('cfgDailyLimit').value = s.cfg_daily_limit;
             if (s.cfg_delay) document.getElementById('cfgDelay').value = s.cfg_delay;
             if (s.cfg_batch) document.getElementById('cfgBatch').value = s.cfg_batch;
+            if (s.cfg_followup_days) document.getElementById('cfgFollowupDays').value = s.cfg_followup_days;
+            if (s.cfg_followup_message) document.getElementById('cfgFollowupMsg').value = s.cfg_followup_message;
             document.getElementById('cfgBotEnabled').checked = s.cfg_bot_enabled === 'true';
+            document.getElementById('cfgFollowupEnabled').checked = s.cfg_followup_enabled !== 'false';
         } catch (e) { console.error(e); }
     }
 
@@ -34,6 +37,9 @@ export async function init() {
                     cfg_daily_limit: document.getElementById('cfgDailyLimit').value,
                     cfg_delay: document.getElementById('cfgDelay').value,
                     cfg_batch: document.getElementById('cfgBatch').value,
+                    cfg_followup_days: document.getElementById('cfgFollowupDays').value.trim() || '3,7,14,30',
+                    cfg_followup_message: document.getElementById('cfgFollowupMsg').value.trim(),
+                    cfg_followup_enabled: document.getElementById('cfgFollowupEnabled').checked ? 'true' : 'false',
                     cfg_bot_enabled: document.getElementById('cfgBotEnabled').checked ? 'true' : 'false'
                 })
             });
