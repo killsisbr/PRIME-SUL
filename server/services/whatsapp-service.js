@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const antiBan = require('./anti-ban-service');
+const botEvents = require('./bot-events-service');
 
 const sessionsDir = process.env.BOT_SESSIONS_DIR || path.join(__dirname, '..', '..', 'data', 'sessions');
 fs.mkdirSync(sessionsDir, { recursive: true });
@@ -37,6 +38,7 @@ async function connect(number, label) {
 
     const entry = { sock, status: 'connecting', lastActivity: Date.now(), connectedAt: null, qr: null, label };
     bots.set(number, entry);
+    botEvents.log(number, 'connect_queued', 'Sessão iniciando — aguardando conexão', label);
 
     sock.ev.on('creds.update', saveCreds);
 
@@ -45,6 +47,7 @@ async function connect(number, label) {
 
         // QR emitido enquanto aguarda o scan
         if (qr) {
+            if (!entry.qr) botEvents.log(number, 'qr', 'QR gerado — aguardando leitura no celular', label);
             entry.status = 'connecting';
             entry.qr = qr;
             console.log(`[whatsapp] Bot ${number} aguardando scan do QR...`);
@@ -55,6 +58,7 @@ async function connect(number, label) {
             entry.connectedAt = Date.now();
             entry.qr = null;
             await antiBan.ensureFresh();
+            botEvents.log(number, 'connected', label ? `${label} conectado` : 'Bot conectado', label);
             console.log(`[whatsapp] Bot conectado: ${number} (${label || ''})`);
             for (const fn of connectedHandlers) {
                 try { await fn(number); } catch (e) { console.error('[whatsapp] onConnected handler error:', e); }
@@ -66,6 +70,7 @@ async function connect(number, label) {
 
             if (banned) {
                 entry.status = 'banned';
+                botEvents.log(number, 'banned', 'Banido pelo WhatsApp (código 403)', label);
                 // Marca o número como banido no banco (se existir)
                 const n = await antiBan.registerNumber(number, label);
                 if (n) await antiBan.markBanned(n.id);
@@ -75,6 +80,7 @@ async function connect(number, label) {
 
             entry.status = 'disconnected';
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            botEvents.log(number, 'disconnected', statusCode ? `Conexão fechada (código ${statusCode})` : 'Conexão fechada', label);
             console.log(`[whatsapp] Bot ${number} desconectado (code=${statusCode}). Reconectar=${shouldReconnect}`);
             if (shouldReconnect) {
                 bots.delete(number);

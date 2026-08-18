@@ -1,0 +1,32 @@
+<div class="tl-root">
+    <div class="ps-head" style="margin-bottom:14px;">
+        <div>
+            <div class="ps-head-title"><i class="fas fa-clock-rotate-left" style="color: var(--info);"></i> TIMELINE DOS BOTS</div>
+            <p class="ps-head-desc">Linha do tempo dos bots de disparo: conexões, envios, cooldowns e banimentos em tempo real.</p>
+        </div>
+        <span class="tl-live" id="tl-live"><i class="fas fa-circle"></i> AO VIVO</span>
+    </div>
+
+    <div class="tl-stats">
+        <div><b id="tl-total">0</b><span>EVENTOS</span></div>
+        <div><b id="tl-sent">0</b><span>ENVIADAS</span></div>
+        <div><b id="tl-failed">0</b><span>FALHAS</span></div>
+        <div><b id="tl-cooldowns">0</b><span>COOLDOWNS</span></div>
+        <div><b id="tl-banned">0</b><span>BANIDOS</span></div>
+    </div>
+
+    <div class="tl-filters">
+        <select id="tl-num" class="ps-select"><option value="">TODOS OS NÚMEROS</option></select>
+        <select id="tl-type" class="ps-select"><option value="">TODOS OS EVENTOS</option></select>
+        <select id="tl-period" class="ps-select">
+            <option value="today">HOJE</option>
+            <option value="7d">7 DIAS</option>
+            <option value="">TUDO</option>
+        </select>
+        <button type="button" class="tl-refresh" id="tl-refresh"><i class="fas fa-rotate"></i> ATUALIZAR</button>
+    </div>
+
+    <div class="tl-list" id="tl-list">
+        <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando timeline...</div>
+    </div>
+</div>

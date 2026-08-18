@@ -18,6 +18,7 @@ app.use('/api/leads', require('./routes/leads'));
 app.use('/api/campaigns', require('./routes/campaigns'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
+app.use('/api/bots', require('./routes/bots'));
 app.use('/api/tools', require('./routes/tools'));
 
 // Front estático

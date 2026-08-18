@@ -131,3 +131,15 @@ CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_type_ref ON jobs(type, ref_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_seller ON jobs(seller_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_waiting ON jobs(status, run_after);
+
+-- Timeline dos bots de disparo (eventos de conexão, envios, cooldowns, banimentos)
+CREATE TABLE IF NOT EXISTS bot_events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    number     TEXT NOT NULL,
+    label      TEXT,
+    type       TEXT NOT NULL,
+    detail     TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_bot_events_number ON bot_events(number, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bot_events_created ON bot_events(created_at DESC);

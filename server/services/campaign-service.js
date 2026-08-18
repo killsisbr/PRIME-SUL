@@ -3,6 +3,7 @@ const antiBan = require('./anti-ban-service');
 const settings = require('./settings-service');
 const whatsapp = require('./whatsapp-service');
 const jobs = require('./job-queue-service');
+const botEvents = require('./bot-events-service');
 
 const DEFAULT_BATCH = Number(process.env.CAMPAIGN_BATCH_SIZE) || 50;
 const DEFAULT_DELAY_MS = Number(process.env.CAMPAIGN_DELAY_MS) || 15000;
@@ -198,6 +199,8 @@ async function processCampaign(campaign, job) {
             const botNumber = await antiBan.pickBestNumber();
             if (!botNumber) {
                 console.warn(`[campaign] ${campaign.name} — limite diário atingido em todos os números, pausando`);
+                const campNum = await db.get('SELECT number, label FROM bot_numbers WHERE id = ?', [campaign.number_id]);
+                await botEvents.log(campNum ? campNum.number : 'todos', 'daily_limit', `Limite diário em todos os números — campanha "${campaign.name}" pausada`, campNum ? campNum.label : '');
                 await db.run("UPDATE campaigns SET status = 'paused', error = 'daily_limit' WHERE id = ?", [campaign.id]);
                 running.delete(campaign.id);
                 await jobs.complete(job.id, { status: 'paused', ...progress }).catch(() => {});
@@ -222,12 +225,15 @@ async function processCampaign(campaign, job) {
                     [msg, send.id]
                 );
                 await antiBan.markSent(botNumber.id);
+                botEvents.log(botNumber.number, 'send_ok', `${lead.name} → ${lead.phone}`, botNumber.label);
                 progress.sent++;
             } else {
                 await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
+                botEvents.log(botNumber.number, 'send_fail', `${lead.name} → ${lead.phone} (${res.reason || 'erro'})`, botNumber.label);
                 progress.falhou++;
                 if (res.reason === 'not_connected') {
                     console.warn(`[campaign] ${campaign.name} — bot offline, pausando (auto-resume na reconexão)`);
+                    botEvents.log(botNumber.number, 'paused', `Bot offline — campanha "${campaign.name}" pausada`, botNumber.label);
                     await db.run("UPDATE campaigns SET status = 'paused', error = 'not_connected' WHERE id = ?", [campaign.id]);
                     running.delete(campaign.id);
                     await jobs.complete(job.id, { status: 'paused', ...progress }).catch(() => {});
@@ -282,6 +288,8 @@ async function resumePausedFromOffline() {
     const rows = await db.all("SELECT * FROM campaigns WHERE status = 'paused' AND error = 'not_connected'");
     for (const c of rows) {
         await startCampaign(c.id);
+        const campNum = await db.get('SELECT number, label FROM bot_numbers WHERE id = ?', [c.number_id]);
+        botEvents.log(campNum ? campNum.number : 'todos', 'resume', `Campanha "${c.name}" retomada após reconexão do bot`, campNum ? campNum.label : '');
         console.log(`[campaign] ${c.name} — auto-resume após reconexão do bot`);
     }
     return rows.length;
@@ -295,6 +303,7 @@ async function resumePausedFromLimit() {
         const available = await antiBan.pickBestNumber();
         if (!available) continue;
         await startCampaign(c.id);
+        botEvents.log(available.number, 'resume', `Campanha "${c.name}" retomada após cooldown`, available.label);
         console.log(`[campaign] ${c.name} — auto-resume após cooldown de número`);
         resumed++;
     }
