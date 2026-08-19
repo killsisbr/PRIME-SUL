@@ -33,6 +33,7 @@ async function schedule() {
             FROM leads l
             WHERE l.status IN ('novo','contato')
               AND l.seller_id IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM opt_outs o WHERE o.organization_id=l.organization_id AND o.phone=l.phone)
               AND NOT EXISTS (SELECT 1 FROM followups f WHERE f.lead_id = l.id AND f.bucket = ?)
               AND COALESCE(
                   (SELECT MAX(s.sent_at) FROM sends s WHERE s.lead_id = l.id),
@@ -41,12 +42,12 @@ async function schedule() {
         `, [bucket, `-${days[i]} days`]);
 
         for (const lead of leads) {
-            await db.run(
+            const inserted = await db.run(
                 `INSERT OR IGNORE INTO followups (lead_id, seller_id, bucket, due_at)
                  VALUES (?, ?, ?, datetime('now'))`,
                 [lead.id, lead.seller_id, bucket]
             );
-            created++;
+            created += inserted.changes;
         }
     }
     if (created) console.log(`[followup] ${created} follow-up(s) agendado(s)`);
@@ -112,4 +113,35 @@ async function processDue() {
     return { sent };
 }
 
-module.exports = { schedule, processDue };
+module.exports = { schedule, processDue, listToday, listUpcoming };
+
+// Retornos do dia e atrasados do vendedor (para o painel "Retornos de Hoje")
+async function listToday(seller_id) {
+    return db.all(`
+        SELECT f.id, f.bucket, f.due_at, f.status, l.id AS lead_id, l.name, l.phone,
+               l.status AS lead_status, l.prioridade
+        FROM followups f
+        JOIN leads l ON l.id = f.lead_id
+        WHERE f.seller_id = ?
+          AND f.status = 'scheduled'
+          AND date(f.due_at) <= date('now')
+        ORDER BY f.due_at ASC
+        LIMIT 100
+    `, [seller_id]);
+}
+
+// Próximos retornos agendados (para além de hoje)
+async function listUpcoming(seller_id, days = 7) {
+    return db.all(`
+        SELECT f.id, f.bucket, f.due_at, f.status, l.id AS lead_id, l.name, l.phone,
+               l.status AS lead_status, l.prioridade
+        FROM followups f
+        JOIN leads l ON l.id = f.lead_id
+        WHERE f.seller_id = ?
+          AND f.status = 'scheduled'
+          AND date(f.due_at) > date('now')
+          AND date(f.due_at) <= date('now', ?)
+        ORDER BY f.due_at ASC
+        LIMIT 100
+    `, [seller_id, `+${days} days`]);
+}

@@ -54,7 +54,9 @@
             const el = document.createElement('div');
             el.className = 'ps-toast ' + type;
             el.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:15000; padding:12px 18px; border:3px solid var(--v3-ink); border-radius:12px; background:#fff; box-shadow:5px 5px 0 var(--v3-ink); font-weight:800; font-size:.85rem; display:flex; gap:10px; align-items:center;';
-            el.innerHTML = '<i class="fas ' + (type === 'ok' ? 'fa-circle-check' : 'fa-triangle-exclamation') + '"></i><span>' + msg + '</span>';
+            const icon = document.createElement('i'); icon.className = 'fas ' + (type === 'ok' ? 'fa-circle-check' : 'fa-triangle-exclamation');
+            const span = document.createElement('span'); span.textContent = String(msg);
+            el.append(icon, span);
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 3000);
         }
@@ -73,7 +75,6 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Falha no login');
-                localStorage.setItem('prime_sul_token', data.token);
                 localStorage.setItem('prime_sul_user', JSON.stringify(data.user));
                 window.location.href = data.user.role === 'admin' ? '/admin.html' : '/operador.html';
             } catch (err) {

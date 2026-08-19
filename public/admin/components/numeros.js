@@ -3,6 +3,7 @@ const STATUS = { ativo: { cls: 'novo', bg: '#e3faea', color: '#12813b' }, resfri
 export async function init() {
     const api = window.api;
     const toast = window.toast;
+    const esc = window.escapeHtml;
 
     async function load() {
         try {
@@ -17,8 +18,8 @@ export async function init() {
                 return `
                 <div class="ps-row">
                     <div class="ps-row-main">
-                        <strong>${n.number}</strong>
-                        <span class="ps-row-sub">${n.label || 'descartável'} • criado ${n.created_at ? n.created_at.slice(0, 10) : '—'}</span>
+                        <strong>${esc(n.number)}</strong>
+                        <span class="ps-row-sub">${esc(n.label || 'triagem')} • criado ${n.created_at ? esc(n.created_at.slice(0, 10)) : '—'}</span>
                     </div>
                     <div class="ps-row-nums">
                         <div><b style="color:var(--primary);">${n.messages_sent}</b><span>MSGS HOJE</span></div>
@@ -31,7 +32,7 @@ export async function init() {
                 </div>`;
             }).join('');
         } catch (e) {
-            document.getElementById('numbersList').innerHTML = `<div class="ps-empty" style="color:var(--bad);">${e.message}</div>`;
+            document.getElementById('numbersList').innerHTML = `<div class="ps-empty" style="color:var(--bad);">${esc(e.message)}</div>`;
         }
     }
 

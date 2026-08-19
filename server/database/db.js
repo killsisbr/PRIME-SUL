@@ -35,19 +35,48 @@ const LEAD_MIGRATIONS = {
     valor_desejado: 'TEXT',
     obs: 'TEXT',
     prioridade: "TEXT NOT NULL DEFAULT 'media'",
-    score: 'INTEGER'
+    score: 'INTEGER',
+    cpf: 'TEXT',
+    tags: 'TEXT'
 };
 
 const NUMBER_MIGRATIONS = {
-    cooled_until: 'TEXT'
+    cooled_until: 'TEXT',
+    messages_reset_at: 'TEXT',
+    seller_id: 'INTEGER'
 };
 
 const CAMPAIGN_MIGRATIONS = {
     error: 'TEXT',
-    filters: 'TEXT'
+    filters: 'TEXT',
+    organization_id: 'INTEGER NOT NULL DEFAULT 1'
 };
 
+const SELLER_MIGRATIONS = { organization_id: 'INTEGER NOT NULL DEFAULT 1' };
+const LEAD_ORG_MIGRATIONS = { organization_id: 'INTEGER NOT NULL DEFAULT 1' };
+const BOT_ORG_MIGRATIONS = { organization_id: 'INTEGER NOT NULL DEFAULT 1' };
+
+async function addMissingColumns(table, definitions) {
+    const cols = await all(`PRAGMA table_info(${table})`);
+    const existing = new Set(cols.map(c => c.name));
+    for (const [name, def] of Object.entries(definitions)) {
+        if (!existing.has(name)) {
+            await run(`ALTER TABLE ${table} ADD COLUMN ${name} ${def}`);
+            console.log(`[db] migração: coluna ${table}.${name} adicionada`);
+        }
+    }
+}
+
 async function migrate() {
+    await run(`CREATE TABLE IF NOT EXISTS organizations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+        active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    await run("INSERT OR IGNORE INTO organizations (id, name) VALUES (1, 'Prime Sul')");
+    await addMissingColumns('sellers', SELLER_MIGRATIONS);
+    await addMissingColumns('leads', LEAD_ORG_MIGRATIONS);
+    await addMissingColumns('bot_numbers', BOT_ORG_MIGRATIONS);
+    await run('CREATE INDEX IF NOT EXISTS idx_leads_org ON leads(organization_id)');
     const leadCols = await all(`PRAGMA table_info(leads)`);
     const leadExisting = new Set(leadCols.map(c => c.name));
     for (const [name, def] of Object.entries(LEAD_MIGRATIONS)) {
@@ -56,6 +85,7 @@ async function migrate() {
             console.log(`[db] migração: coluna leads.${name} adicionada`);
         }
     }
+    await run('CREATE INDEX IF NOT EXISTS idx_leads_cpf ON leads(cpf)');
 
     const numCols = await all(`PRAGMA table_info(bot_numbers)`);
     const numExisting = new Set(numCols.map(c => c.name));
@@ -65,6 +95,7 @@ async function migrate() {
             console.log(`[db] migração: coluna bot_numbers.${name} adicionada`);
         }
     }
+    await run('CREATE INDEX IF NOT EXISTS idx_bot_numbers_owner ON bot_numbers(organization_id, seller_id, status)');
 
     const campCols = await all(`PRAGMA table_info(campaigns)`);
     const campExisting = new Set(campCols.map(c => c.name));
@@ -75,12 +106,53 @@ async function migrate() {
         }
     }
 
+    await run(`CREATE TABLE IF NOT EXISTS seller_numbers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+        seller_id INTEGER NOT NULL REFERENCES sellers(id), number TEXT NOT NULL UNIQUE,
+        label TEXT, active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    await run('CREATE INDEX IF NOT EXISTS idx_seller_numbers_seller ON seller_numbers(seller_id, active)');
+    await run(`CREATE TABLE IF NOT EXISTS opt_outs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+        phone TEXT NOT NULL, reason TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (organization_id, phone)
+    )`);
+    await run(`CREATE TABLE IF NOT EXISTS handoffs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+        lead_id INTEGER NOT NULL REFERENCES leads(id), seller_id INTEGER NOT NULL REFERENCES sellers(id),
+        send_id INTEGER REFERENCES sends(id), seller_number_id INTEGER REFERENCES seller_numbers(id),
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sending','sent','replied','failed','cancelled')),
+        attempts INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL DEFAULT 5,
+        run_after TEXT, error TEXT, sent_at TEXT, replied_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (send_id)
+    )`);
+    await run('CREATE INDEX IF NOT EXISTS idx_handoffs_due ON handoffs(status, run_after)');
+    await run('CREATE INDEX IF NOT EXISTS idx_handoffs_seller ON handoffs(seller_id, status)');
+    await run(`CREATE TABLE IF NOT EXISTS message_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id), seller_id INTEGER REFERENCES sellers(id),
+        name TEXT NOT NULL, purpose TEXT NOT NULL CHECK (purpose IN ('screening','handoff','followup')),
+        body TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    // Preserva o telefone legado do vendedor como seu primeiro número operacional.
+    await run(`INSERT OR IGNORE INTO seller_numbers (organization_id, seller_id, number, label)
+               SELECT organization_id, id, phone, 'principal' FROM sellers WHERE phone IS NOT NULL AND phone != ''`);
+
     // Follow-ups usam sends com campaign_id NULL (não fazem parte de campanha)
     const sendCols = await all(`PRAGMA table_info(sends)`);
     const sendCampCol = sendCols.find(c => c.name === 'campaign_id');
     if (sendCampCol && sendCampCol.notnull === 1) {
         console.log('[db] migração: sends.campaign_id → aceita NULL (follow-ups)...');
-        await db.run('PRAGMA foreign_keys = OFF');
+        await run('PRAGMA foreign_keys = OFF');
+        await run('BEGIN IMMEDIATE');
+        try {
         await run(`ALTER TABLE sends RENAME TO sends_old`);
         await run(`CREATE TABLE sends (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,7 +172,13 @@ async function migrate() {
         await run(`CREATE INDEX IF NOT EXISTS idx_sends_campaign ON sends(campaign_id)`);
         await run(`CREATE INDEX IF NOT EXISTS idx_sends_lead ON sends(lead_id)`);
         await run(`UPDATE sqlite_sequence SET seq = COALESCE((SELECT MAX(id) FROM sends), 0) WHERE name = 'sends'`);
-        await db.run('PRAGMA foreign_keys = ON');
+        await run('COMMIT');
+        } catch (e) {
+            await run('ROLLBACK').catch(() => {});
+            throw e;
+        } finally {
+            await run('PRAGMA foreign_keys = ON');
+        }
         console.log('[db] sends rebuild concluído');
     }
 
@@ -110,6 +188,13 @@ async function migrate() {
         config     TEXT NOT NULL DEFAULT '{}',
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`);
+    await run(`CREATE TABLE IF NOT EXISTS seller_stage_config (
+        organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+        seller_id INTEGER NOT NULL REFERENCES sellers(id), status TEXT NOT NULL,
+        config TEXT NOT NULL DEFAULT '{}', updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (seller_id, status)
+    )`);
+    await run('CREATE INDEX IF NOT EXISTS idx_seller_stage_config_org ON seller_stage_config(organization_id, seller_id)');
     await run(`CREATE TABLE IF NOT EXISTS jobs (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         type         TEXT NOT NULL,

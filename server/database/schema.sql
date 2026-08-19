@@ -3,9 +3,19 @@
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 
+-- Empresas/tenants. A instalação atual nasce com uma organização padrão.
+CREATE TABLE IF NOT EXISTS organizations (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    active     INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT OR IGNORE INTO organizations (id, name) VALUES (1, 'Prime Sul');
+
 -- Vendedores (multi-tenant)
 CREATE TABLE IF NOT EXISTS sellers (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
     name        TEXT NOT NULL,
     email       TEXT NOT NULL UNIQUE,
     password    TEXT NOT NULL,
@@ -19,9 +29,12 @@ CREATE TABLE IF NOT EXISTS sellers (
 -- Leads (contatos capturados do site)
 CREATE TABLE IF NOT EXISTS leads (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
     seller_id     INTEGER NOT NULL REFERENCES sellers(id),
     name          TEXT NOT NULL,
     phone         TEXT NOT NULL UNIQUE,          -- telefone normalizado (E.164)
+    cpf           TEXT,                          -- identificador forte (formato livre/limpo)
+    tags          TEXT,                          -- lista separada por vírgula (ex.: quente, prioridade)
     city          TEXT,
     origem        TEXT NOT NULL DEFAULT 'SITE',
     limite_est    TEXT,
@@ -50,10 +63,13 @@ CREATE TABLE IF NOT EXISTS lead_history (
 -- Números (descartáveis) do bot principal anti-ban
 CREATE TABLE IF NOT EXISTS bot_numbers (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+    seller_id    INTEGER REFERENCES sellers(id), -- NULL = institucional compartilhado
     number       TEXT NOT NULL UNIQUE,           -- E.164
     label        TEXT,
     status       TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo','resfriado','banido')),
     messages_sent INTEGER NOT NULL DEFAULT 0,
+    messages_reset_at TEXT,
     cooled_until TEXT,                           -- reativação automática (ISO UTC) quando resfriado
     created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -61,6 +77,7 @@ CREATE TABLE IF NOT EXISTS bot_numbers (
 -- Campanhas de disparo
 CREATE TABLE IF NOT EXISTS campaigns (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
     seller_id    INTEGER REFERENCES sellers(id),
     number_id    INTEGER REFERENCES bot_numbers(id),
     name         TEXT NOT NULL,
@@ -102,12 +119,81 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT
 );
 
+-- Números operacionais pertencentes a vendedores (separados da triagem institucional).
+CREATE TABLE IF NOT EXISTS seller_numbers (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+    seller_id       INTEGER NOT NULL REFERENCES sellers(id),
+    number          TEXT NOT NULL UNIQUE,
+    label           TEXT,
+    active          INTEGER NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_seller_numbers_seller ON seller_numbers(seller_id, active);
+
+-- Bloqueio/opt-out permanente por empresa.
+CREATE TABLE IF NOT EXISTS opt_outs (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+    phone           TEXT NOT NULL,
+    reason          TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (organization_id, phone)
+);
+
+-- Repasse durável do lead confirmado para um número do vendedor.
+CREATE TABLE IF NOT EXISTS handoffs (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id  INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+    lead_id           INTEGER NOT NULL REFERENCES leads(id),
+    seller_id         INTEGER NOT NULL REFERENCES sellers(id),
+    send_id           INTEGER REFERENCES sends(id),
+    seller_number_id  INTEGER REFERENCES seller_numbers(id),
+    status            TEXT NOT NULL DEFAULT 'pending'
+                      CHECK (status IN ('pending','sending','sent','replied','failed','cancelled')),
+    attempts          INTEGER NOT NULL DEFAULT 0,
+    max_attempts      INTEGER NOT NULL DEFAULT 5,
+    run_after         TEXT,
+    error             TEXT,
+    sent_at           TEXT,
+    replied_at        TEXT,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (send_id)
+);
+CREATE INDEX IF NOT EXISTS idx_handoffs_due ON handoffs(status, run_after);
+CREATE INDEX IF NOT EXISTS idx_handoffs_seller ON handoffs(seller_id, status);
+
+-- Templates versionados e com finalidade explícita.
+CREATE TABLE IF NOT EXISTS message_templates (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+    seller_id       INTEGER REFERENCES sellers(id),
+    name            TEXT NOT NULL,
+    purpose         TEXT NOT NULL CHECK (purpose IN ('screening','handoff','followup')),
+    body            TEXT NOT NULL,
+    active          INTEGER NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Configuração por coluna/estágio (auto-ferramentas: auto-disparo, etc.)
 CREATE TABLE IF NOT EXISTS stage_config (
     status     TEXT PRIMARY KEY,
     config     TEXT NOT NULL DEFAULT '{}',
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Automação individual do funil por vendedor/estágio.
+CREATE TABLE IF NOT EXISTS seller_stage_config (
+    organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+    seller_id       INTEGER NOT NULL REFERENCES sellers(id),
+    status          TEXT NOT NULL,
+    config          TEXT NOT NULL DEFAULT '{}',
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (seller_id, status)
+);
+CREATE INDEX IF NOT EXISTS idx_seller_stage_config_org ON seller_stage_config(organization_id, seller_id);
 
 -- Fila persistente de jobs (ações em massa, execuções longas)
 CREATE TABLE IF NOT EXISTS jobs (

@@ -1,65 +1,52 @@
 const db = require('../database/db');
 const whatsapp = require('./whatsapp-service');
+const handoffs = require('./handoff-service');
 
-const YES = (process.env.BOT_CONFIRM_KEYWORDS || 'sim,sim,ok,confirmo,quero,claro,pode,pode sim')
-    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-const NO = (process.env.BOT_DENY_KEYWORDS || 'nao,não,nope,dispenso,obrigado')
-    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+const YES = (process.env.BOT_CONFIRM_KEYWORDS || 'sim,ok,confirmo,quero,claro,pode,pode sim').split(',').map(s => s.trim()).filter(Boolean);
+const NO = (process.env.BOT_DENY_KEYWORDS || 'nao,não,dispenso,obrigado').split(',').map(s => s.trim()).filter(Boolean);
+const STOP = (process.env.BOT_OPTOUT_KEYWORDS || 'pare,parar,sair,cancelar,remover,nao quero,não quero').split(',').map(s => s.trim()).filter(Boolean);
 
-function normalizeText(t) { return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
-
+function normalizeText(t = '') { return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
 function match(text, list) {
     const t = normalizeText(text);
     return list.some(k => {
         const nk = normalizeText(k);
-        return t === nk || t.startsWith(nk + ' ') || t.includes(' ' + nk) || t.startsWith(nk);
+        return t === nk || t.startsWith(nk + ' ') || t.endsWith(' ' + nk);
     });
 }
 
-// Registra o fluxo de confirmação no bot principal
-function register() {
-    whatsapp.onMessage(async ({ botNumber, phone, text }) => {
-        // Encontra o envio pendente/enviado deste lead no número do bot principal
-        const send = await db.get(`
-            SELECT s.*, l.name AS lead_name, l.seller_id, c.name AS campaign_name
-            FROM sends s
-            JOIN leads l ON l.id = s.lead_id
-            LEFT JOIN campaigns c ON c.id = s.campaign_id
-            WHERE l.phone = ? AND s.number_id IN (
-                SELECT id FROM bot_numbers WHERE number = ?
-            )
-            ORDER BY s.id DESC LIMIT 1
-        `, [phone, botNumber]);
+async function addOptOut(send, phone, reason) {
+    await db.run('INSERT OR IGNORE INTO opt_outs (organization_id,phone,reason) VALUES (?,?,?)', [send.organization_id || 1, phone, reason]);
+    await db.run("UPDATE leads SET status='bloqueado', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+    await db.run("UPDATE sends SET status='recusado', replied_at=datetime('now') WHERE id=? AND status='sent'", [send.id]);
+    await db.run("UPDATE followups SET status='cancelled' WHERE lead_id=? AND status='scheduled'", [send.lead_id]);
+}
 
-        if (!send) return;
+async function handleIncoming({ botNumber, phone, text }) {
+        if (await handoffs.markReplied(botNumber, phone)) return;
+        const send = await db.get(`SELECT s.*, l.seller_id, l.organization_id
+            FROM sends s JOIN leads l ON l.id=s.lead_id JOIN bot_numbers bn ON bn.id=s.number_id
+            WHERE l.phone=? AND bn.number=? AND s.status='sent' ORDER BY s.id DESC LIMIT 1`, [phone, botNumber]);
+        if (!send) return { handled: false };
 
+        if (match(text, STOP)) { await addOptOut(send, phone, 'Solicitado pelo contato'); return { handled: true, action: 'opt_out' }; }
         if (match(text, YES)) {
-            await db.run("UPDATE sends SET status = 'confirmado', replied_at = datetime('now') WHERE id = ?", [send.id]);
-            await db.run("UPDATE leads SET status = 'confirmado', updated_at = datetime('now') WHERE id = ?", [send.lead_id]);
-            await db.run(
-                "UPDATE campaigns SET total_yes = total_yes + 1 WHERE id = ?",
-                [send.campaign_id]
-            );
-
-            // Repassa para o bot do vendedor dono do lead
-            const seller = await db.get('SELECT * FROM sellers WHERE id = ?', [send.seller_id]);
-            if (seller && seller.phone) {
-                await whatsapp.connect(seller.phone, `vendedor-${seller.id}`);
-                const ok = await whatsapp.sendMessage(
-                    seller.phone,
-                    phone,
-                    `Cliente confirmou interesse!\n\n*${send.lead_name}*\nQuer receber a simulação de crédito.`
-                );
-                if (!ok.sent) {
-                    console.warn(`[bot-flow] Bot do vendedor ${seller.phone} offline — repasse pendente`);
-                }
-            }
+            const changed = await db.run("UPDATE sends SET status='confirmado', replied_at=datetime('now') WHERE id=? AND status='sent'", [send.id]);
+            if (!changed.changes) return { handled: true, action: 'already_processed' };
+            await db.run("UPDATE leads SET status='confirmado', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+            if (send.campaign_id) await db.run('UPDATE campaigns SET total_yes=total_yes+1 WHERE id=?', [send.campaign_id]);
+            await handoffs.enqueue(send);
+            await handoffs.processDue();
+            return { handled: true, action: 'confirmed' };
         } else if (match(text, NO)) {
-            await db.run("UPDATE sends SET status = 'recusado', replied_at = datetime('now') WHERE id = ?", [send.id]);
-            await db.run("UPDATE leads SET status = 'bloqueado', updated_at = datetime('now') WHERE id = ?", [send.lead_id]);
-            console.log(`[bot-flow] Lead ${send.lead_id} recusou — bloqueado`);
+            await addOptOut(send, phone, 'Oferta recusada');
+            return { handled: true, action: 'declined' };
         }
-    });
+        return { handled: false };
 }
 
-module.exports = { register };
+function register() {
+    whatsapp.onMessage(handleIncoming);
+}
+
+module.exports = { register, match, handleIncoming };

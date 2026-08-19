@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Sul — Crédito sem burocracia</title>
+    <meta name="description" content="Simulação de crédito grátis em 30 segundos. Empréstimo pessoal, consignado e consórcio com atendimento humanizado.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23ff7417'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Arial' font-size='28' font-weight='bold'>PS</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/tokens.css">
+    <link rel="stylesheet" href="/css/vitrine.css">
+</head>
+<body class="vitrine-body">
+
+    <!-- ============ NAV ============ -->
+    <header class="vitrine-nav">
+        <div class="vitrine-logo">
+            <div class="vitrine-logo-mark">PS</div>
+            <div class="vitrine-logo-text">
+                <strong>PRIME SUL</strong>
+                <span>crédito que realiza</span>
+            </div>
+        </div>
+        <nav class="vitrine-links" id="vitrineLinks"></nav>
+        <a class="vitrine-whatsapp" id="vitrineWhatsapp" href="#" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> Chamar no WhatsApp
+        </a>
+    </header>
+
+    <!-- ============ HERO / HOME (padrão Module HUD: stage interativo + launchpad) ============ -->
+    <main class="vitrine-hero">
+        <aside class="vitrine-stage">
+            <div class="vitrine-stage-top">
+                <span class="vitrine-eyebrow">simulação de crédito</span>
+                <i class="fas fa-bolt"></i>
+            </div>
+
+            <div class="vitrine-stage-copy">
+                <small class="vitrine-stage-hello">OLÁ, <b id="heroHello">VISITANTE</b> 👋</small>
+                <h1 class="vitrine-stage-title" id="heroTitle">O crédito certo,<br><span>sem burocracia.</span></h1>
+                <p class="vitrine-stage-desc" id="heroDesc">
+                    Preencha em 30 segundos. Um consultor Prime Sul analisa seu caso
+                    e chama você no WhatsApp com a melhor condição.
+                </p>
+            </div>
+
+            <div class="vitrine-stage-widget">
+                <label for="heroName">Qual o seu primeiro nome?</label>
+                <div class="vitrine-stage-input">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="heroName" placeholder="Digite aqui e veja a mágica..." autocomplete="off" maxlength="24">
+                </div>
+                <p class="vitrine-stage-input-hint"><i class="fas fa-wand-magic-sparkles"></i> O título muda com você</p>
+            </div>
+
+            <button class="vitrine-btn vitrine-btn-primary vitrine-btn-block" onclick="Vitrine.open()">
+                <i class="fas fa-hand-holding-dollar"></i> Solicitar simulação
+            </button>
+
+            <div class="vitrine-trust">
+                <div><i class="fas fa-shield-halved"></i> Dados protegidos</div>
+                <div><i class="fas fa-bolt"></i> Resposta rápida</div>
+                <div><i class="fas fa-user-check"></i> Atendimento humano</div>
+            </div>
+        </aside>
+
+        <section class="vitrine-launchpad">
+            <div class="vitrine-launchpad-head">
+                <div class="vitrine-eyebrow">nossas soluções</div>
+                <h2>Escolha o que combina com você</h2>
+            </div>
+            <div class="vitrine-cards" id="vitrineCards"></div>
+            <div class="vitrine-launchpad-tip">
+                <i class="fas fa-lightbulb"></i>
+                <span>Pré-análise <b>gratuita</b> e <b>sem compromisso</b>. Você decide se quer seguir.</span>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============ POPUP PRINCIPAL (2 painéis: info interativa + card de função) ============ -->
+    <div class="vitrine-overlay" id="leadOverlay" role="dialog" aria-modal="true">
+        <div class="vitrine-popup">
+            <button class="vitrine-popup-close" onclick="Vitrine.close()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+
+            <aside class="vitrine-popup-info">
+                <div class="vitrine-popup-info-num" id="popupInfoNum">01</div>
+                <div class="vitrine-popup-info-icon" id="popupInfoIcon"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="vitrine-eyebrow" id="popupInfoTagline">nossa solução</div>
+                <h3 class="vitrine-popup-info-title" id="popupInfoTitle">Empréstimo Pessoal</h3>
+                <p class="vitrine-popup-info-desc" id="popupInfoDesc"></p>
+
+                <ul class="vitrine-popup-info-benefits" id="popupInfoBenefits"></ul>
+
+                <!-- interativo por usuário: quanto deseja -->
+                <div class="vitrine-slider-wrap">
+                    <div class="vitrine-slider-label">
+                        <span>Quanto você precisa?</span>
+                        <strong id="sliderValue">R$ 10.000</strong>
+                    </div>
+                    <input type="range" id="valorSlider" class="vitrine-slider" min="1000" max="500000" step="1000" value="10000">
+                    <div class="vitrine-slider-scale">
+                        <span>R$ 1.000</span>
+                        <span>R$ 500.000</span>
+                    </div>
+                </div>
+
+                <div class="vitrine-popup-info-steps">
+                    <div class="step"><i class="fas fa-pen"></i><div><strong>1. Preencha</strong><span>Dados básicos ao lado</span></div></div>
+                    <div class="step"><i class="fas fa-headset"></i><div><strong>2. Análise</strong><span>Consultor avalia seu caso</span></div></div>
+                    <div class="step"><i class="fas fa-circle-check"></i><div><strong>3. Contato</strong><span>Você recebe a proposta no WhatsApp</span></div></div>
+                </div>
+            </aside>
+
+            <section class="vitrine-popup-form">
+                <div class="vitrine-popup-form-stamp">
+                    <i class="fas fa-feather"></i> pré-análise gratuita
+                </div>
+                <div class="vitrine-popup-form-head">
+                    <div class="vitrine-eyebrow">simulação grátis</div>
+                    <h4>Fale com a gente</h4>
+                    <p>Sem compromisso. Ninguém vai te ligar sem parar.</p>
+                </div>
+
+                <form id="leadForm" autocomplete="on" novalidate>
+                    <input type="text" name="website" class="vitrine-honeypot" tabindex="-1" aria-hidden="true">
+
+                    <div class="vitrine-field">
+                        <label for="fNome">Seu nome</label>
+                        <input type="text" id="fNome" name="name" placeholder="Como podemos te chamar?" required>
+                    </div>
+
+                    <div class="vitrine-field">
+                        <label for="fPhone">WhatsApp</label>
+                        <input type="tel" id="fPhone" name="phone" placeholder="(11) 99999-0000" inputmode="tel" required>
+                    </div>
+
+                    <div class="vitrine-field">
+                        <label for="fCity">Cidade</label>
+                        <input type="text" id="fCity" name="city" placeholder="Onde você mora?" required>
+                    </div>
+
+                    <input type="hidden" name="product_id" id="fProduct">
+                    <input type="hidden" name="valor" id="fValor">
+
+                    <label class="vitrine-consent">
+                        <input type="checkbox" id="fConsent" required>
+                        <span>Aceito ser contatado(a) por um consultor Prime Sul no WhatsApp. Seus dados estão protegidos conforme a LGPD.</span>
+                    </label>
+
+                    <button type="submit" class="vitrine-btn vitrine-btn-primary vitrine-btn-block" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> Enviar minha solicitação
+                    </button>
+                    <p class="vitrine-form-note"><i class="fas fa-lock"></i> Seus dados são usados apenas para esta análise.</p>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <!-- ============ SUB-POPUP SUCESSO ============ -->
+    <div class="vitrine-overlay" id="successOverlay" role="dialog" aria-modal="true">
+        <div class="vitrine-popup vitrine-success">
+            <div class="vitrine-success-icon"><i class="fas fa-check"></i></div>
+            <div class="vitrine-eyebrow">recebemos sua solicitação</div>
+            <h3>Quase lá!</h3>
+            <p>
+                Um consultor Prime Sul vai analisar seu caso e te chamar no
+                <strong>WhatsApp</strong> com a melhor condição.
+            </p>
+            <div class="vitrine-success-wa">
+                <i class="fab fa-whatsapp"></i> Fique de olho na sua caixa de mensagens
+            </div>
+            <button class="vitrine-btn vitrine-btn-primary" onclick="Vitrine.closeSuccess()">Entendi, obrigado!</button>
+        </div>
+    </div>
+
+    <!-- ============ TOAST ============ -->
+    <div class="vitrine-toast-wrap" id="vitrineToastWrap"></div>
+
+    <script src="/js/vitrine.js"></script>
+</body>
+</html>

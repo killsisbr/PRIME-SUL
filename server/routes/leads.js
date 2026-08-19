@@ -1,6 +1,6 @@
 const express = require('express');
 const leadService = require('../services/lead-service');
-const { auth } = require('../middleware/auth');
+const { auth, adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
 router.use(auth);
@@ -8,10 +8,22 @@ router.use(auth);
 // Lista leads do vendedor (com filtros avançados)
 router.get('/', async (req, res, next) => {
     try {
-        const { status, search, origem, prioridade, cidade, data_de, data_ate, score_min, score_max } = req.query;
+        const { status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max } = req.query;
         const leads = await leadService.listLeads({
             seller_id: req.user.id,
-            status, search, origem, prioridade, cidade, data_de, data_ate, score_min, score_max
+            status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max
+        });
+        res.json(leads);
+    } catch (e) { next(e); }
+});
+
+// Lista leads de um vendedor específico por estágio (admin)
+router.get('/by-seller/:sellerId', adminOnly, async (req, res, next) => {
+    try {
+        const { status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max } = req.query;
+        const leads = await leadService.listLeads({
+            seller_id: Number(req.params.sellerId),
+            status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max
         });
         res.json(leads);
     } catch (e) { next(e); }
@@ -34,19 +46,13 @@ router.get('/funnel', async (req, res, next) => {
 // Cria lead (com regra de duplicidade)
 router.post('/', async (req, res, next) => {
     try {
-        const { name, phone, city, origem, limite_est, renda, valor_desejado, obs, prioridade } = req.body;
+        const { name, phone, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade } = req.body;
         if (!name || !phone) return res.status(400).json({ error: 'Nome e telefone obrigatórios' });
         const result = await leadService.createLead({
             seller_id: req.user.id,
-            name, phone, city, origem, limite_est, renda, valor_desejado, obs, prioridade
+            organization_id: req.user.organization_id,
+            name, phone, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade
         });
-        if (result.duplicated) {
-            return res.status(409).json({
-                error: 'LEAD_JA_CADASTRADO',
-                message: 'Lead já cadastrado por outro vendedor',
-                owner_id: result.owner_id
-            });
-        }
         res.status(201).json(result.lead);
     } catch (e) { next(e); }
 });
@@ -75,6 +81,21 @@ router.patch('/:id', async (req, res, next) => {
         const lead = await leadService.updateLead(req.params.id, req.user.id, req.body);
         if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
         res.json(lead);
+    } catch (e) { next(e); }
+});
+
+// Transferência de lead para outro vendedor (somente admin)
+router.post('/:id/transfer', adminOnly, async (req, res, next) => {
+    try {
+        const { to_seller_id } = req.body;
+        if (!to_seller_id) return res.status(400).json({ error: 'Vendedor de destino obrigatório' });
+        const result = await leadService.transferLead(req.params.id, {
+            to_seller_id,
+            admin_id: req.user.id,
+            organization_id: req.user.organization_id
+        });
+        if (!result) return res.status(404).json({ error: 'Lead não encontrado' });
+        res.json(result);
     } catch (e) { next(e); }
 });
 

@@ -49,6 +49,7 @@ function buildTargetWhere(sellerId, filters = {}) {
 
     // Não envia para quem já recebeu envio de alguma campanha
     clauses.push('NOT EXISTS (SELECT 1 FROM sends s WHERE s.lead_id = l.id AND s.campaign_id IS NOT NULL)');
+    clauses.push('NOT EXISTS (SELECT 1 FROM opt_outs o WHERE o.organization_id = l.organization_id AND o.phone = l.phone)');
 
     let limit = null;
     const rawLimit = Number(filters.limit);
@@ -64,19 +65,19 @@ async function countTargets(sellerId, filters = {}) {
     return row ? row.c : 0;
 }
 
-async function pickNumbers(number_ids) {
+async function pickNumbers(number_ids, organizationId = 1, sellerId = null) {
     const ids = (number_ids || []).map(Number).filter(Boolean);
     if (ids.length) {
         return db.all(
-            `SELECT * FROM bot_numbers WHERE id IN (${ids.map(() => '?').join(',')}) AND status = 'ativo'`,
-            ids
+            `SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND id IN (${ids.map(() => '?').join(',')}) AND status = 'ativo'`,
+            [organizationId, sellerId, ...ids]
         );
     }
-    return db.all("SELECT * FROM bot_numbers WHERE status = 'ativo' ORDER BY id ASC LIMIT 1");
+    return db.all("SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND status = 'ativo' ORDER BY seller_id IS NULL, id ASC LIMIT 1", [organizationId, sellerId]);
 }
 
-async function createCampaign({ seller_id, name, message, number_ids, filters = {} }) {
-    const numbers = await pickNumbers(number_ids);
+async function createCampaign({ seller_id, organization_id = 1, name, message, number_ids, filters = {} }) {
+    const numbers = await pickNumbers(number_ids, organization_id, seller_id);
     if (!numbers.length) throw new Error('Nenhum número ativo disponível');
 
     const { where, params, limit } = buildTargetWhere(seller_id, filters);
@@ -87,9 +88,9 @@ async function createCampaign({ seller_id, name, message, number_ids, filters = 
     if (!targets.length) throw new Error('Nenhum lead corresponde aos filtros escolhidos');
 
     const result = await db.run(
-        `INSERT INTO campaigns (seller_id, number_id, name, message, status, total_target, filters)
-         VALUES (?, ?, ?, ?, 'draft', ?, ?)`,
-        [seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), targets.length, JSON.stringify(filters || {})]
+        `INSERT INTO campaigns (organization_id, seller_id, number_id, name, message, status, total_target, filters)
+         VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)`,
+        [organization_id, seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), targets.length, JSON.stringify(filters || {})]
     );
 
     for (const lead of targets) {
@@ -102,16 +103,16 @@ async function createCampaign({ seller_id, name, message, number_ids, filters = 
 }
 
 // Campanha direta: envia para uma lista explícita de leads (auto-disparo por coluna)
-async function createDirectCampaign({ seller_id, name, message, number_ids, lead_ids }) {
+async function createDirectCampaign({ seller_id, organization_id = 1, name, message, number_ids, lead_ids }) {
     const ids = (lead_ids || []).map(Number).filter(Boolean);
     if (!ids.length) throw new Error('Nenhum lead selecionado');
-    const numbers = await pickNumbers(number_ids);
+    const numbers = await pickNumbers(number_ids, organization_id, seller_id);
     if (!numbers.length) throw new Error('Nenhum número ativo disponível');
 
     const result = await db.run(
-        `INSERT INTO campaigns (seller_id, number_id, name, message, status, total_target, filters)
-         VALUES (?, ?, ?, ?, 'draft', ?, ?)`,
-        [seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), ids.length, JSON.stringify({ direct: ids })]
+        `INSERT INTO campaigns (organization_id, seller_id, number_id, name, message, status, total_target, filters)
+         VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)`,
+        [organization_id, seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), ids.length, JSON.stringify({ direct: ids })]
     );
 
     for (const lid of ids) {
@@ -124,25 +125,37 @@ async function createDirectCampaign({ seller_id, name, message, number_ids, lead
 }
 
 // Auto-disparo de um lead individual (usado ao entrar numa coluna com auto-disparo)
-async function sendToLead(lead, message, sellerId) {
+async function sendToLead(lead, message, sellerId, numberIds = []) {
     const active = await db.get("SELECT id FROM sends WHERE lead_id = ? AND status IN ('pending','sent') LIMIT 1", [lead.id]);
     if (active) return { sent: false, reason: 'já em contato' };
     if (!antiBan.shouldSend(lead)) return { sent: false, reason: 'estágio não elegível' };
     const campaign = await createDirectCampaign({
         seller_id: sellerId,
+        organization_id: lead.organization_id || 1,
         name: '[AUTO] Disparo automático',
         message: message || buildMainMessage(lead),
-        number_ids: [],
+        number_ids: numberIds,
         lead_ids: [lead.id]
     });
     await startCampaign(campaign.id);
     return { sent: true, campaign_id: campaign.id };
 }
 
-async function startCampaign(id) {
+async function getAuthorizedCampaign(id, sellerId, role, organizationId) {
+    const campaign = await db.get('SELECT * FROM campaigns WHERE id = ?', [numId(id)]);
+    if (!campaign) { const e = new Error('Campanha não encontrada'); e.status = 404; throw e; }
+    if (organizationId !== undefined && campaign.organization_id !== Number(organizationId)) {
+        const e = new Error('Acesso negado'); e.status = 403; throw e;
+    }
+    if (sellerId !== undefined && role !== 'admin' && campaign.seller_id !== Number(sellerId)) {
+        const e = new Error('Acesso negado'); e.status = 403; throw e;
+    }
+    return campaign;
+}
+
+async function startCampaign(id, sellerId, role, organizationId) {
     id = numId(id);
-    const campaign = await db.get('SELECT * FROM campaigns WHERE id = ?', [id]);
-    if (!campaign) throw new Error('Campanha não encontrada');
+    const campaign = await getAuthorizedCampaign(id, sellerId, role, organizationId);
     if (running.has(id)) return { started: true, message: 'Já em execução' };
     if (campaign.status === 'done' || campaign.status === 'cancelled') return { started: false };
 
@@ -196,7 +209,7 @@ async function processCampaign(campaign, job) {
             const lead = await db.get('SELECT * FROM leads WHERE id = ?', [send.lead_id]);
 
             // Anti-ban: rotação entre números — sempre escolhe o menos usado hoje
-            const botNumber = await antiBan.pickBestNumber();
+            const botNumber = await antiBan.pickBestNumber(campaign.organization_id || 1, campaign.seller_id);
             if (!botNumber) {
                 console.warn(`[campaign] ${campaign.name} — limite diário atingido em todos os números, pausando`);
                 const campNum = await db.get('SELECT number, label FROM bot_numbers WHERE id = ?', [campaign.number_id]);
@@ -228,9 +241,6 @@ async function processCampaign(campaign, job) {
                 botEvents.log(botNumber.number, 'send_ok', `${lead.name} → ${lead.phone}`, botNumber.label);
                 progress.sent++;
             } else {
-                await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
-                botEvents.log(botNumber.number, 'send_fail', `${lead.name} → ${lead.phone} (${res.reason || 'erro'})`, botNumber.label);
-                progress.falhou++;
                 if (res.reason === 'not_connected') {
                     console.warn(`[campaign] ${campaign.name} — bot offline, pausando (auto-resume na reconexão)`);
                     botEvents.log(botNumber.number, 'paused', `Bot offline — campanha "${campaign.name}" pausada`, botNumber.label);
@@ -239,6 +249,9 @@ async function processCampaign(campaign, job) {
                     await jobs.complete(job.id, { status: 'paused', ...progress }).catch(() => {});
                     return;
                 }
+                await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
+                botEvents.log(botNumber.number, 'send_fail', `${lead.name} → ${lead.phone} (${res.reason || 'erro'})`, botNumber.label);
+                progress.falhou++;
             }
             progress.done++;
             await sleep(delayMs);
@@ -269,15 +282,17 @@ async function processCampaign(campaign, job) {
     }
 }
 
-async function pauseCampaign(id) {
+async function pauseCampaign(id, sellerId, role, organizationId) {
     id = numId(id);
+    await getAuthorizedCampaign(id, sellerId, role, organizationId);
     running.delete(id);
     await jobs.cancelForRef('campaign_run', id);
     return db.run("UPDATE campaigns SET status = 'paused', error = NULL WHERE id = ?", [id]);
 }
 
-async function cancelCampaign(id) {
+async function cancelCampaign(id, sellerId, role, organizationId) {
     id = numId(id);
+    await getAuthorizedCampaign(id, sellerId, role, organizationId);
     running.delete(id);
     await jobs.cancelForRef('campaign_run', id);
     return db.run("UPDATE campaigns SET status = 'cancelled', error = NULL WHERE id = ?", [id]);
@@ -311,10 +326,9 @@ async function resumePausedFromLimit() {
 }
 
 // Reenvia os envios que falharam (falhou/caiu) e reinicia o processamento
-async function retryCampaign(id) {
+async function retryCampaign(id, sellerId, role, organizationId) {
     id = numId(id);
-    const campaign = await db.get('SELECT * FROM campaigns WHERE id = ?', [id]);
-    if (!campaign) throw new Error('Campanha não encontrada');
+    const campaign = await getAuthorizedCampaign(id, sellerId, role, organizationId);
     if (running.has(id)) return { retried: 0, message: 'Campanha já em execução' };
     const active = await jobs.getActiveCount('campaign_run', id);
     if (active > 0) return { retried: 0, message: 'Campanha já em execução' };

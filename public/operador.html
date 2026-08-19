@@ -33,10 +33,12 @@
     <!-- ============ DYNAMIC MODAL ============ -->
     <div class="hud-overlay" id="dynamicModalOverlay" style="display:none; align-items:center; justify-content:center; padding:24px; z-index:12000;">
         <div class="hud-modal" style="width:100%; height:100%; max-width:1400px; display:flex; flex-direction:column; box-shadow:20px 20px 0 var(--primary); transform:translateY(-20px);">
-            <div class="hud-search" style="display:flex; align-items:flex-end; justify-content:space-between; padding:16px 24px 0; background:var(--bg); border-bottom:4px solid var(--dark); gap:16px; min-height:70px;">
+            <div class="hud-search dynamic-modal-header" style="display:flex; align-items:flex-end; justify-content:space-between; padding:16px 24px 0; background:var(--bg); border-bottom:4px solid var(--dark); gap:16px; min-height:70px;">
                 <div style="display:flex; align-items:flex-end; gap:20px; flex:1; align-self:stretch;">
+                    <span class="dynamic-modal-orbit"><i class="fas fa-bolt"></i></span>
                     <span id="dynamicModalTitle" style="font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:1px; color:var(--primary); white-space:nowrap; margin-bottom:8px;">FERRAMENTA</span>
                 </div>
+                <button type="button" class="dynamic-modal-close" onclick="closeDynamicModal()" aria-label="Fechar"><i class="fas fa-times"></i></button>
             </div>
             <div id="dynamicModalBody" style="flex:1; overflow-y:auto; padding:24px; background:var(--bg);"></div>
             <div id="dynamicModalFooter" style="display:flex; gap:12px; justify-content:center; align-items:center; padding:8px 16px; background:var(--bg); border-top:3px solid var(--dark);">
@@ -63,50 +65,44 @@
         </div>
     </header>
 
-    <!-- ============ CONTENT ============ -->
+    <!-- ============ CONTENT (100% Module HUD) ============ -->
     <main class="content-area">
-        <div class="welcome-banner">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="welcome-text">
-                    <h1 id="greeting">BOM DIA!</h1>
-                    <p>Resumo da sua operação de crédito hoje, <span id="currentDate"></span>.</p>
+        <section class="module-hud-shell" id="homeHudShell" style="--module-accent:#10b981; max-width:1180px; margin:0 auto;">
+            <header class="module-hud-header">
+                <div class="module-hud-brand">
+                    <span><i class="fas fa-bolt"></i></span>
+                    <div>
+                        <small>PAINEL DO VENDEDOR</small>
+                        <h1 id="greeting">BOM DIA!</h1>
+                        <p>Resumo da sua operação de crédito hoje, <span id="currentDate"></span>.</p>
+                    </div>
                 </div>
-                <button class="btn-retro" onclick="document.getElementById('hudOverlay').classList.add('active'); document.getElementById('hudInput').focus();">
-                    <i class="fas fa-rocket"></i> HUB Rápido
-                </button>
+                <b><i class="fas fa-circle"></i> CENTRAL ATIVA</b>
+            </header>
+            <div class="module-hud-console">
+                <aside class="module-hud-stage">
+                    <div class="module-hud-stage-top"><span>PAINEL DO VENDEDOR</span><i class="fas fa-bolt"></i></div>
+                    <div class="module-hud-copy">
+                        <small>COMECE POR AQUI</small>
+                        <h2 id="homeHeadline">BOM DIA,<br><span>BORA VENDER.</span></h2>
+                        <p>Organize sua lista exclusiva, priorize oportunidades e avance cada contato pelo funil sem perder contexto.</p>
+                    </div>
+                    <button type="button" class="module-hud-primary" id="homePrimary"><i class="fas fa-arrow-right"></i> ABRIR PRIMEIRA FERRAMENTA</button>
+                    <div class="module-hud-metrics">
+                        <div><b id="statLeads">0</b><span>LEADS</span></div>
+                        <div><b id="statEnvios">0</b><span>ENVIOS</span></div>
+                        <div><b id="statConversao">0%</b><span>CONVERSÃO</span></div>
+                    </div>
+                </aside>
+                <div class="module-hud-launchpad" id="homeLaunchpad"></div>
             </div>
-            <div class="stat-grid">
-                <div class="stat">
-                    <div class="stat-label"><i class="fas fa-users" style="color:var(--info);"></i> Leads</div>
-                    <div class="stat-value" id="statLeads">0</div>
-                    <div class="stat-sub">cadastrados por você</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label"><i class="fas fa-paper-plane" style="color:var(--warning);"></i> Envios</div>
-                    <div class="stat-value" id="statEnvios">0</div>
-                    <div class="stat-sub">mensagens disparadas</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label"><i class="fas fa-check-circle" style="color:var(--success);"></i> Conversão</div>
-                    <div class="stat-value" id="statConversao">0%</div>
-                    <div class="stat-sub" id="statConfirmados">0 confirmados</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label"><i class="fas fa-circle-check" style="color:var(--ok);"></i> Confirmados</div>
-                    <div class="stat-value" id="statConfirmadosBig">0</div>
-                    <div class="stat-sub">leads validados pelo bot</div>
-                </div>
-            </div>
-        </div>
-
-        <h2 class="section-title"><i class="fas fa-layer-group"></i> Central de Ferramentas</h2>
-        <div class="app-grid" id="appGrid"></div>
+        </section>
     </main>
 
+    <script src="/admin/js/module-hud.js"></script>
     <script>
-        const token = localStorage.getItem('prime_sul_token');
         const me = JSON.parse(localStorage.getItem('prime_sul_user') || 'null');
-        if (!token || !me) { window.location.href = '/login.html'; }
+        if (!me) { window.location.href = '/login.html'; }
         if (me.role === 'admin') { window.location.href = '/admin.html'; }
 
         // ================= HELPERS =================
@@ -116,49 +112,57 @@
             const icon = type === 'ok' ? 'fa-circle-check' : type === 'err' ? 'fa-triangle-exclamation' : 'fa-circle-info';
             const el = document.createElement('div');
             el.className = 'ps-toast ' + (type === 'ok' ? 'ok' : type === 'err' ? 'err' : 'info');
-            el.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
+            const i = document.createElement('i'); i.className = `fas ${icon}`;
+            const span = document.createElement('span'); span.textContent = String(msg);
+            el.append(i, span);
             wrap.appendChild(el);
             setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(() => el.remove(), 220); }, 3200);
         }
         window.toast = toast;
+        window.escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
         async function api(path, opts = {}) {
             const res = await fetch('/api' + path, {
                 ...opts,
-                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+                headers: { 'Content-Type': 'application/json' }
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                if (res.status === 401) { localStorage.removeItem('prime_sul_token'); window.location.href = '/login.html'; }
+                if (res.status === 401) { localStorage.removeItem('prime_sul_user'); window.location.href = '/login.html'; }
                 throw Object.assign(new Error(data.error || 'Erro'), { status: res.status, data });
             }
             return data;
         }
         window.api = api;
 
-        function logout() {
-            localStorage.removeItem('prime_sul_token');
+        async function logout() {
+            await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
             localStorage.removeItem('prime_sul_user');
             window.location.href = '/login.html';
         }
 
         // ================= APP GRID (somente módulos do operador) =================
+        // Bots anti-ban desabilitados por hora: oculta módulos de bot/anti-ban.
+        const BOTS_DISABLED = true;
         const MODULES = [
-            { name: 'hub', title: 'Hub de Disparo', icon: 'fa-rocket', color: '#ff7417', desc: 'Estratégia anti-ban', badge: 'HUB', border: '#ff7417' },
+            { name: 'hub', title: 'Hub de Disparo', icon: 'fa-rocket', color: '#ff7417', desc: 'Estratégia anti-ban', badge: 'HUB', border: '#ff7417', bot: true },
             { name: 'funil', title: 'Funil de Vendas', icon: 'fa-filter', color: '#3b82f6', desc: 'Conversão por estágio', badge: 'FUNIL', border: '#3b82f6' },
+            { name: 'bots', title: 'Meu WhatsApp', icon: 'fa-mobile-screen-button', color: '#10b981', desc: 'Conectar números e escanear QR', badge: 'WA', border: '#10b981', bot: true },
             { name: 'leads', title: 'Leads', icon: 'fa-users', color: '#3b82f6', desc: 'Minha lista de contatos' },
             { name: 'campanhas', title: 'Campanhas', icon: 'fa-paper-plane', color: '#10b981', desc: 'Disparo em massa' }
         ];
-        const visibleModules = MODULES;
+        let visibleModules = MODULES.filter(m => !(BOTS_DISABLED && m.bot));
 
-        function renderAppGrid() {
-            document.getElementById('appGrid').innerHTML = visibleModules.map(m => `
-                <a href="javascript:void(0)" onclick="openToolV2('${m.name}','${m.title}')" class="app-card" data-module="${m.name}" style="${m.border ? 'border-color:' + m.border + ';' : ''}">
-                    <div class="app-icon" style="color:${m.color};${m.color === '#ff7417' ? 'color:#fff;background:var(--primary);' : ''}"><i class="fas ${m.icon}"></i></div>
-                    <div class="app-name">${m.title}</div>
-                    <div class="app-desc">${m.desc}</div>
-                    ${m.badge ? '<div class="app-badge" style="background:#ff7417;color:#fff;">' + m.badge + '</div>' : ''}
-                </a>`).join('');
+        function renderLaunchpad() {
+            document.getElementById('homeLaunchpad').innerHTML = visibleModules.map((m, i) => `
+                <button type="button" class="module-hud-card tone-${(i % 4) + 1}" onclick="openToolV2('${m.name}','${m.title}')" style="--module-accent:${m.color};">
+                    <em>0${i + 1}</em>
+                    <span><i class="fas ${m.icon}"></i></span>
+                    <small>FERRAMENTA</small>
+                    <strong>${m.title}</strong>
+                    <p>${m.desc}</p>
+                    <b>ACESSAR <i class="fas fa-arrow-right"></i></b>
+                </button>`).join('') + `<div class="module-hud-tip"><i class="fas fa-lightbulb"></i> Dica: use Ctrl+K para buscar qualquer ferramenta rapidamente.</div>`;
         }
 
         // HUD grid = app modules + extras
@@ -175,6 +179,7 @@
 
         // HUD keyboard
         document.getElementById('openHudBtn').onclick = () => { document.getElementById('hudOverlay').classList.add('active'); document.getElementById('hudInput').focus(); };
+        document.getElementById('homePrimary').onclick = () => { const f = visibleModules[0]; if (f) openToolV2(f.name, f.title); };
         document.addEventListener('keydown', e => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('hudOverlay').classList.add('active'); document.getElementById('hudInput').focus(); }
             if (e.key === 'Escape') { document.getElementById('hudOverlay').classList.remove('active'); closeDynamicModal(); }
@@ -187,7 +192,7 @@
         });
 
         // ================= DYNAMIC MODAL =================
-        const COMPONENTS_WITH_CSS = ['hub', 'funil', 'leads', 'campanhas'];
+        const COMPONENTS_WITH_CSS = ['hub', 'funil', 'leads', 'bots', 'campanhas'];
         let activeComponent = null;
         let activeModule = null;
         let _isOpening = false;
@@ -235,13 +240,14 @@
                 if (module && typeof module.init === 'function') {
                     await module.init({ container: body });
                 }
+                window.buildModuleHud?.(body, componentName, title);
             } catch (err) {
                 console.error('[Operador] Erro ao instanciar módulo:', err);
                 body.innerHTML = `
                     <div style="text-align:center; color:var(--danger); padding:40px; border:3px dashed var(--danger); border-radius:14px; background:#fef2f2;">
                         <i class="fas fa-exclamation-circle" style="font-size:3rem; margin-bottom:16px;"></i>
                         <h3 style="font-family:'Bebas Neue',sans-serif; font-size:2rem; margin-bottom:8px;">Erro na Execução</h3>
-                        <p style="font-weight:600; font-size:0.95rem; text-transform:uppercase; color:var(--text-muted);">${err.message}</p>
+                        <p style="font-weight:600; font-size:0.95rem; text-transform:uppercase; color:var(--text-muted);">${window.escapeHtml(err.message)}</p>
                     </div>`;
             } finally {
                 _isOpening = false;
@@ -250,6 +256,11 @@
         window.openToolV2 = openToolV2;
 
         function closeDynamicModal() {
+            const openSubmodal = [...document.querySelectorAll('.v2-submodal-overlay')]
+                .filter(el => getComputedStyle(el).display !== 'none').pop();
+            if (openSubmodal) { openSubmodal.style.display = 'none'; return; }
+            const openWorkspace = document.querySelector('#dynamicModalBody .module-hud-workspace.active');
+            if (openWorkspace) { openWorkspace.classList.remove('active'); return; }
             const overlay = document.getElementById('dynamicModalOverlay');
             overlay.classList.remove('active');
             overlay.style.display = 'none';
@@ -272,8 +283,6 @@
                 document.getElementById('statLeads').textContent = counts.leads;
                 document.getElementById('statEnvios').textContent = counts.envios;
                 document.getElementById('statConversao').textContent = counts.conversao + '%';
-                document.getElementById('statConfirmados').textContent = counts.confirmados + ' confirmados';
-                document.getElementById('statConfirmadosBig').textContent = counts.confirmados;
             } catch (e) { console.error(e); }
         }
 
@@ -286,8 +295,9 @@
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
         document.getElementById('storeName').textContent = me.name;
         document.getElementById('storeAvatar').textContent = me.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+        document.getElementById('homeHeadline').innerHTML = `${g},<br><span>${me.name.split(' ')[0].toUpperCase()}.</span>`;
 
-        renderAppGrid();
+        renderLaunchpad();
         renderHud();
         loadStats();
         setInterval(loadStats, 30000);

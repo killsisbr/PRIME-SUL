@@ -3,10 +3,11 @@ const bcrypt = require('bcryptjs');
 const db = require('./db');
 
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@primesul.com.br';
-const ADMIN_PASS = process.env.SEED_ADMIN_PASS || 'admin123';
+const ADMIN_PASS = process.env.SEED_ADMIN_PASS;
 const ADMIN_PHONE = process.env.SEED_ADMIN_PHONE || '5511999990000';
 
 async function seed() {
+    if (!ADMIN_PASS || ADMIN_PASS.length < 12) throw new Error('Defina SEED_ADMIN_PASS com pelo menos 12 caracteres');
     await db.init();
     const exists = await db.get('SELECT id FROM sellers WHERE email = ?', [ADMIN_EMAIL]);
     if (!exists) {

@@ -6,7 +6,7 @@ const router = express.Router();
 router.use(auth);
 
 // GET todas as settings
-router.get('/', async (req, res, next) => {
+router.get('/', adminOnly, async (req, res, next) => {
     try {
         const rows = await db.all('SELECT key, value FROM settings');
         const obj = {};
@@ -16,7 +16,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // Salvar settings (parcial — upsert)
-router.put('/', async (req, res, next) => {
+router.put('/', adminOnly, async (req, res, next) => {
     try {
         const entries = req.body;
         for (const [key, value] of Object.entries(entries)) {
@@ -30,7 +30,7 @@ router.put('/', async (req, res, next) => {
 });
 
 // GET settings padrão do bot (parceira BB) — admin
-router.get('/bot', async (req, res, next) => {
+router.get('/bot', adminOnly, async (req, res, next) => {
     try {
         const rows = await db.all('SELECT key, value FROM settings WHERE key IN (?, ?, ?)',
             ['bb_cnpj', 'bb_parceiro', 'msg_template']);

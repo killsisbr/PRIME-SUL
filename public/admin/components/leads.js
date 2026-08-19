@@ -17,6 +17,7 @@ export async function init() {
     const api = window.api;
     const toast = window.toast;
     let LEADS = [];
+    const esc = window.escapeHtml;
 
     const initials = n => n.split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
     const colOf = st => (st === 'duplicado') ? 'bloqueado' : st;
@@ -41,12 +42,14 @@ export async function init() {
         const search = document.getElementById('kbx-search').value.trim().toLowerCase();
         const origem = document.getElementById('kbx-origem').value;
         const prio = document.getElementById('kbx-prio').value;
+        const tag = document.getElementById('kbx-tag').value.trim().toLowerCase();
         const scoreMin = document.getElementById('kbx-score').value ? Number(document.getElementById('kbx-score').value) : null;
         return LEADS.filter(l => {
             if (origem && l.origem !== origem) return false;
             if (prio && l.prioridade !== prio) return false;
+            if (tag && !(l.tags || '').split(',').map(t => t.trim().toLowerCase()).includes(tag)) return false;
             if (scoreMin !== null && (l.score ?? 0) < scoreMin) return false;
-            if (search && !(l.name + ' ' + l.phone + ' ' + (l.city || '')).toLowerCase().includes(search)) return false;
+            if (search && !(l.name + ' ' + l.phone + ' ' + (l.city || '') + ' ' + (l.cpf || '')).toLowerCase().includes(search)) return false;
             return true;
         });
     }
@@ -57,17 +60,18 @@ export async function init() {
         return `
         <article class="kbx-card pri-${l.prioridade || 'media'}" draggable="true" data-id="${l.id}">
             <div class="kbx-card-top">
-                <span class="kbx-avatar">${initials(l.name)}</span>
+                <span class="kbx-avatar">${esc(initials(l.name))}</span>
                 <div class="kbx-idx">
-                    <strong>${l.name}</strong>
-                    <span>${l.phone}${l.city ? ' • ' + l.city : ''}</span>
+                    <strong>${esc(l.name)}</strong>
+                    <span>${esc(l.phone)}${l.city ? ' • ' + esc(l.city) : ''}</span>
                 </div>
             </div>
             <div class="kbx-chips">
                 <span class="kbx-score ${scoreCls(l.score)}" title="Score do lead">${scoreIcon}${score}</span>
-                <span class="kbx-chip origem">${l.origem}</span>
-                ${l.limite_est ? `<span class="kbx-chip limite">${l.limite_est}</span>` : ''}
+                <span class="kbx-chip origem">${esc(l.origem)}</span>
+                ${l.limite_est ? `<span class="kbx-chip limite">${esc(l.limite_est)}</span>` : ''}
             </div>
+            ${l.tags ? `<div class="kbx-tags">${l.tags.split(',').map(t => `<span class="kbx-tag">${esc(t.trim())}</span>`).join('')}</div>` : ''}
             <div class="kbx-foot">
                 <span class="kbx-date"><i class="far fa-clock"></i> ${relTime(l.created_at)}</span>
                 <div class="kbx-actions">
@@ -155,7 +159,7 @@ export async function init() {
             LEADS = await api('/leads');
             render();
         } catch (e) {
-            document.getElementById('kbx-board').innerHTML = `<div class="ps-empty" style="color:var(--bad); width:100%;">${e.message}</div>`;
+            document.getElementById('kbx-board').innerHTML = `<div class="ps-empty" style="color:var(--bad); width:100%;">${esc(e.message)}</div>`;
         }
     }
 
@@ -200,8 +204,19 @@ export async function init() {
     document.getElementById('kbx-origem').addEventListener('change', () => render());
     document.getElementById('kbx-prio').addEventListener('change', () => render());
     document.getElementById('kbx-score').addEventListener('change', () => render());
+    document.getElementById('kbx-tag').addEventListener('input', () => render());
 
     // ================= NOVO LEAD =================
+    const cpfInput = document.getElementById('leadNew-cpf');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', () => {
+            let v = cpfInput.value.replace(/\D/g, '').slice(0, 11);
+            if (v.length > 9) v = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6, 9) + '-' + v.slice(9);
+            else if (v.length > 6) v = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6);
+            else if (v.length > 3) v = v.slice(0, 3) + '.' + v.slice(3);
+            cpfInput.value = v;
+        });
+    }
     document.getElementById('kbx-new').onclick = () => document.getElementById('leadNewOverlay').style.display = 'flex';
     document.getElementById('leadNew-close').onclick = () => document.getElementById('leadNewOverlay').style.display = 'none';
     document.getElementById('leadNew-cancel').onclick = () => document.getElementById('leadNewOverlay').style.display = 'none';
@@ -212,6 +227,8 @@ export async function init() {
         if (!name || !phone) return toast('Nome e telefone são obrigatórios', 'err');
         const body = {
             name, phone,
+            cpf: document.getElementById('leadNew-cpf').value.trim(),
+            tags: document.getElementById('leadNew-tags').value.trim(),
             origem: document.getElementById('leadNew-origem').value,
             prioridade: document.getElementById('leadNew-prio').value,
             city: document.getElementById('leadNew-city').value.trim(),
@@ -224,6 +241,8 @@ export async function init() {
             document.getElementById('leadNewOverlay').style.display = 'none';
             document.getElementById('leadNew-name').value = '';
             document.getElementById('leadNew-phone').value = '';
+            document.getElementById('leadNew-cpf').value = '';
+            document.getElementById('leadNew-tags').value = '';
             document.getElementById('leadNew-city').value = '';
             document.getElementById('leadNew-limite').value = '';
             document.getElementById('leadNew-obs').value = '';
@@ -342,7 +361,7 @@ export async function init() {
         if (Array.isArray(p.log) && p.log.length) {
             log.style.display = 'flex';
             log.innerHTML = p.log.slice(-15).map(x =>
-                `<div class="ctp-log-item ${x.ok ? 'ok' : 'fail'}"><i class="fas ${x.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>${x.label}</span></div>`
+                `<div class="ctp-log-item ${x.ok ? 'ok' : 'fail'}"><i class="fas ${x.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>${esc(x.label)}</span></div>`
             ).join('');
         } else {
             log.style.display = 'none';

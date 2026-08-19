@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Sistema CRM multi-tenant (por vendedor) integrado a disparo de mensagens em massa via bot, com estratégia **anti-ban** para reduzir banimentos de números.
+Sistema CRM multi-tenant por vendedor integrado a triagem consentida de leads e encaminhamento persistente para a equipe comercial.
 
 A empresa tem acesso e permissão do **Banco do Brasil** para oferecer crédito a leads que pediram simulação. O contato do cliente é capturado via site deles e cadastrado no CRM.
 
@@ -19,9 +19,9 @@ A empresa tem acesso e permissão do **Banco do Brasil** para oferecer crédito 
 Enviar mensagens em massa a partir de um único número gera banimento do número e perda dos contatos.
 
 ### Solução
-Usar **números descartáveis** como porta de entrada:
+Usar **números institucionais de triagem** como porta de entrada, com limites, opt-out e auditoria:
 
-1. O **bot principal** envia a mensagem para o lead quente usando um número descartável.
+1. O **bot de triagem** envia a mensagem ao lead que solicitou simulação usando um número institucional autorizado.
 2. A mensagem pergunta se pode pedir para um vendedor encaminhar uma simulação.
 3. Se o cliente responder **sim** (ou confirmar de alguma forma), o bot repassa o contato para o **bot do vendedor**.
 4. O bot do vendedor entra em contato e finaliza a simulação.
@@ -65,8 +65,10 @@ Acompanhamento no funil (novo → contato → confirmado → concluído)
 
 ### Multi-Tenant por Vendedor
 - Cada vendedor possui seu login e sua lista de leads.
-- Cada vendedor tem **X números** para cadastro/disparo.
+- Cada vendedor tem **X números operacionais**, separados dos números institucionais de triagem.
+- Cada operador também pode cadastrar e escanear seus próprios números de disparo no módulo **Meu WhatsApp**; esses números nunca ficam disponíveis para campanhas de outro vendedor.
 - Isolamento total de dados entre vendedores.
+- Sessão em cookie HttpOnly, autorização no backend e organização associada a todos os registros centrais.
 
 ### Cadastro de Leads
 - Importação/entrada manual do contato.
@@ -77,7 +79,9 @@ Acompanhamento no funil (novo → contato → confirmado → concluído)
 - Números descartáveis por campanha/lote.
 - Mensagem de oferta padronizada (template editável).
 - Detecção de confirmação (sim/ok/1 etc.).
-- Repasse automático ao bot do vendedor.
+- Opt-out permanente para recusa/pedido de parada.
+- Repasse idempotente e persistente ao bot do vendedor, com retentativa após falha ou restart.
+- Arquivamento do chat após a apresentação e desarquivamento quando o cliente responde (quando suportado pela sessão WhatsApp).
 
 ### Painel (`/admin.html`)
 - Lista de leads com busca e filtro por status (módulo Leads em popup).
@@ -153,8 +157,8 @@ PRIME SUL/
 
 ```bash
 npm install
-cp .env.example .env          # ajuste JWT_SECRET
-npm run seed                  # cria admin@primesul.com.br / admin123
+cp .env.example .env          # ajuste JWT_SECRET e SEED_ADMIN_PASS
+npm run seed                  # cria o administrador inicial; senha mínima de 12 caracteres
 npm run dev                   # http://localhost:5000
 ```
 
@@ -198,4 +202,13 @@ npm run dev                   # http://localhost:5000
 - [x] Módulo funil de vendas
 - [ ] Ativar bots (BOT_ENABLED=true + QR code)
 - [ ] Integração automática de captura do site (webhook → `/api/leads`)
-- [ ] Fila robusta (BullMQ/Redis) para escala
+- [x] Fila persistente de handoff e campanhas para retomada após restart
+- [ ] Migrar a fila para BullMQ/Redis quando houver execução em múltiplas VPS/processos
+
+## Regras de conformidade
+
+- Somente contatar leads que tenham solicitado simulação e cuja origem possa ser auditada.
+- Respeitar imediatamente recusa e palavras de opt-out; contatos bloqueados não voltam a campanhas ou follow-ups.
+- Números de triagem são institucionais, não mecanismos para contornar políticas do canal.
+- Um número privado de operador só pode disparar para campanhas e leads pertencentes ao mesmo operador.
+- Toda campanha deve usar template adequado à finalidade e manter histórico de envio e resposta.

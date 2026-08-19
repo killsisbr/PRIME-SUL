@@ -16,7 +16,7 @@ export async function init() {
             renderStats(campaigns);
             renderList(campaigns);
         } catch (e) {
-            document.getElementById('campaignsList').innerHTML = `<div class="ps-empty" style="color:var(--bad);">${e.message}</div>`;
+            document.getElementById('campaignsList').innerHTML = `<div class="ps-empty" style="color:var(--bad);">${escapeHtml(e.message)}</div>`;
         }
     }
 
@@ -39,7 +39,7 @@ export async function init() {
         if (f.prioridade) out.push([{ t: 'PRIO ' + f.prioridade.toUpperCase(), k: 'prio' }]);
         if (f.cidade) out.push([{ t: 'CIDADE: ' + f.cidade.toUpperCase(), k: 'cid' }]);
         if (f.limit) out.push([{ t: 'MÁX ' + f.limit, k: 'lim' }]);
-        return out.flat().map(x => `<span class="cp-chip">${x.t}</span>`).join('');
+        return out.flat().map(x => `<span class="cp-chip">${escapeHtml(String(x.t))}</span>`).join('');
     }
 
     function renderList(campaigns) {
@@ -64,7 +64,7 @@ export async function init() {
             <div class="cp-card" data-id="${c.id}">
                 <div class="cp-card-head">
                     <div>
-                        <div class="cp-card-name">${c.name}</div>
+                        <div class="cp-card-name">${escapeHtml(String(c.name))}</div>
                         <div class="cp-card-meta">Criada em ${(c.created_at || '').slice(0, 10)} • ${total} alvo(s) • <b style="color:${s.c};">${c.status.toUpperCase()}</b></div>
                     </div>
                     <span class="ps-pill" style="background:${s.bg}; color:${s.c}; border-color:${s.c};">${c.status.toUpperCase()}</span>
@@ -102,7 +102,7 @@ export async function init() {
         try {
             const numbers = await api('/campaigns/numbers');
             document.getElementById('cNumber').innerHTML =
-                numbers.filter(n => n.status === 'ativo').map(n => `<option value="${n.id}">${n.number} (${n.messages_sent} enviadas)</option>`).join('')
+                numbers.filter(n => n.status === 'ativo').map(n => `<option value="${n.id}">${escapeHtml(n.label || ('Triagem #' + n.id))}</option>`).join('')
                 || '<option value="">Nenhum número ativo</option>';
         } catch (e) { console.error(e); }
     }
@@ -146,14 +146,82 @@ export async function init() {
         preview.textContent = (sample.trim() ? sample : 'Olá Maria! Aqui é a Prime Sul...') + `\n\n(${raw.length} caracteres)`;
     };
 
-    window.openCampaignEditor = async () => {
-        document.getElementById('campaignEditorModal').style.display = 'flex';
-        document.getElementById('cMessage').value = 'Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar.';
-        window.cpPreview();
+    window.openCampaignEditor = async (opts = {}) => {
+        let modal = document.getElementById('campaignEditorModal');
+        if (!modal) {
+            try {
+                const htmlRes = await fetch(`/admin/components/campanhas.html?cb=${Date.now()}`);
+                if (htmlRes.ok) {
+                    const text = await htmlRes.text();
+                    const temp = document.createElement('div');
+                    temp.innerHTML = text;
+                    const modalEl = temp.querySelector('#campaignEditorModal');
+                    if (modalEl) {
+                        document.body.appendChild(modalEl);
+                        modal = modalEl;
+                        // Bind events on new modal elements if created dynamically
+                        modalEl.querySelectorAll('#cStatusChecks input').forEach(i =>
+                            i.addEventListener('change', () => {
+                                i.closest('.cp-check')?.classList.toggle('on', i.checked);
+                                refreshTargetCount();
+                            })
+                        );
+                        ['cOrigem', 'cPrioridade', 'cCidade', 'cLimit'].forEach(id =>
+                            modalEl.querySelector('#' + id)?.addEventListener('input', refreshTargetCount)
+                        );
+                        modalEl.querySelector('#campaignForm')?.addEventListener('submit', async (e) => {
+                            e.preventDefault();
+                            const submit = document.getElementById('cSubmit');
+                            if (cpTargetCount === 0) { toast('Nenhum lead corresponde aos filtros', 'err'); return; }
+                            submit.disabled = true;
+                            try {
+                                await api('/campaigns', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        name: document.getElementById('cName').value.trim(),
+                                        message: document.getElementById('cMessage').value.trim(),
+                                        number_ids: document.getElementById('cNumber').value ? [Number(document.getElementById('cNumber').value)] : [],
+                                        filters: currentFilters()
+                                    })
+                                });
+                                window.closeCampaignEditor();
+                                toast('Campanha criada!');
+                                if (typeof load === 'function') load();
+                            } catch (err) { toast(err.message, 'err'); }
+                            submit.disabled = false;
+                        });
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+        if (!modal) return;
+        modal.style.display = 'flex';
+        document.getElementById('cMessage').value = opts.message || 'Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar.';
+        if (opts.name) document.getElementById('cName').value = opts.name;
+        if (opts.origem) document.getElementById('cOrigem').value = opts.origem;
+        if (opts.prioridade) document.getElementById('cPrioridade').value = opts.prioridade;
+        if (opts.cidade) document.getElementById('cCidade').value = opts.cidade;
+        if (opts.limit) document.getElementById('cLimit').value = opts.limit;
+
+        if (opts.statusList && Array.isArray(opts.statusList)) {
+            document.querySelectorAll('#cStatusChecks input').forEach(input => {
+                input.checked = opts.statusList.includes(input.value);
+                input.closest('.cp-check')?.classList.toggle('on', input.checked);
+            });
+        } else if (opts.stage) {
+            document.querySelectorAll('#cStatusChecks input').forEach(input => {
+                input.checked = (input.value === opts.stage);
+                input.closest('.cp-check')?.classList.toggle('on', input.checked);
+            });
+        }
+        window.cpPreview?.();
         await loadNumbers();
         refreshTargetCount();
     };
-    window.closeCampaignEditor = () => document.getElementById('campaignEditorModal').style.display = 'none';
+    window.closeCampaignEditor = () => {
+        const modal = document.getElementById('campaignEditorModal');
+        if (modal) modal.style.display = 'none';
+    };
 
     window.campaignAction = async (act, id) => {
         try {

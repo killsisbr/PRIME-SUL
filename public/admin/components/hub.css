@@ -1,6 +1,6 @@
 /* --- PRIME SUL HUB de Disparo (estilo Hub de Promoções do SAAS-WEB) --- */
 
-#dynamicModalBody:has(.hub-v2) { display: flex; min-height: 0; overflow: hidden !important; padding: 18px !important; }
+#dynamicModalBody:has(.hub-v2) { display: flex; min-height: 0; overflow: visible !important; padding: 18px !important; }
 
 .hub-v2 {
     --hub-ink: var(--ink);
@@ -80,7 +80,7 @@
 .hub-utility-strip button { padding: 6px 8px; color: var(--hub-ink); border: 2px solid var(--hub-ink); border-radius: 7px; background: #fff; font-size: .53rem; font-weight: 900; cursor: pointer; font-family: 'Outfit', sans-serif; }
 
 .hub-workspace-modal { z-index: 13050; }
-.hub-submodal { width: min(1050px, 94vw); max-width: none; max-height: min(730px, 88vh); border-radius: 22px; box-shadow: 12px 12px 0 var(--hub-coral); }
+.hub-submodal { width: min(1050px, 94vw); max-width: none; border-radius: 22px; box-shadow: 12px 12px 0 var(--hub-coral); }
 .hub-submodal .v2-submodal-header { flex: 0 0 auto; padding: 15px 22px; background: var(--hub-cream); }
 .hub-submodal .v2-submodal-header h3 { margin: 2px 0 0; font-size: 1.85rem; line-height: 1; }
 .hub-submodal .v2-submodal-header p { margin: 4px 0 0; color: #756d67; font-size: .68rem; font-weight: 700; }
@@ -123,7 +123,7 @@
 @media (max-width: 640px) {
     .hub-impact-strip span, .hub-card-index, .hub-tool-copy small, .hub-tool-copy em, .hub-utility-strip > span { display: none; }
     .hub-tool-icon { width: 35px; height: 35px; }
-    .hub-submodal { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; box-shadow: none; }
+    .hub-submodal { width: 100vw; height: auto; border-radius: 0; box-shadow: none; }
     .hub-campaign-form-grid { grid-template-columns: 1fr; }
     .hub-campaign-row { grid-template-columns: 1fr auto; }
 }

@@ -1,9 +1,9 @@
 /* ============ PRIME SUL - MARKETING & STATUS (modulo admin) ============ */
 
-#dynamicModalBody:has(.mk-root) { display: flex; flex-direction: column; min-height: 0; overflow: hidden !important; padding: 18px !important; }
+#dynamicModalBody:has(.mk-root) { display: flex; flex-direction: column; min-height: 0; overflow: visible !important; padding: 18px !important; }
 
 .mk-root { flex: 1; display: flex; flex-direction: column; gap: 14px; min-height: 0; font-family: var(--font-body); }
-.mk-root > .mk-list { flex: 1; overflow-y: auto; }
+.mk-root > .mk-list { flex: 1; }
 
 .mk-new { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border: 3px solid var(--dark); border-radius: 10px; background: var(--ok); color: #fff; font: 900 .74rem var(--font-body); letter-spacing: .5px; cursor: pointer; box-shadow: 3px 3px 0 var(--dark); transition: transform .12s ease, box-shadow .12s ease; }
 .mk-new:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--dark); }
@@ -39,7 +39,7 @@
 .mk-act:disabled { opacity: .5; cursor: default; transform: none; box-shadow: none; }
 
 /* ================= POPUP ELABORADO ================= */
-.mk-submodal { width: min(1050px, 95vw); max-width: none; max-height: min(760px, 92vh); border-radius: 20px; box-shadow: 12px 12px 0 var(--dark); }
+.mk-submodal { width: min(1050px, 95vw); max-width: none; border-radius: 20px; box-shadow: 12px 12px 0 var(--dark); }
 .mk-submodal .v2-submodal-header { flex: 0 0 auto; padding: 14px 22px; background: var(--bg); }
 .mk-head-title { display: flex; align-items: center; gap: 14px; }
 .mk-dot { flex: 0 0 30px; width: 30px; height: 30px; border: 3px solid var(--dark); border-radius: 9px; background: var(--secondary); box-shadow: 2px 2px 0 var(--dark); }
@@ -49,7 +49,7 @@
 
 .mk-body { display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px; padding: 20px 22px; min-height: 0; }
 
-.mk-form-side { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; padding-right: 4px; }
+.mk-form-side { display: flex; flex-direction: column; gap: 14px; min-height: 0; padding-right: 4px; }
 .mk-form-tabs { display: flex; gap: 8px; border-bottom: 3px solid var(--dark); padding-bottom: 10px; flex-shrink: 0; }
 .mk-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 2.5px solid var(--dark); border-radius: 9px; background: var(--card); color: var(--text-muted); font: 800 .68rem var(--font-body); letter-spacing: .4px; cursor: pointer; transition: all .12s ease; }
 .mk-tab:hover { transform: translateY(-1px); }

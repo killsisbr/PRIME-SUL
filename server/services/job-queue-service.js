@@ -8,9 +8,6 @@ const handlers = new Map();
 let workerTimer = null;
 let workerBusy = false;
 const POLL_MS = 1500;
-const CONCURRENCY = 2;
-
-function isoNow() { return new Date().toISOString(); }
 
 async function enqueue({ type, ref_id = null, seller_id = null, payload = null, max_attempts = 3, run_after = null }) {
     const r = await db.run(
@@ -118,7 +115,6 @@ function start() {
     workerTimer = setInterval(async () => {
         try {
             await tick();
-            if (CONCURRENCY > 1) await tick();
         } catch (e) {
             console.error('[jobs] worker error:', e.message);
         }

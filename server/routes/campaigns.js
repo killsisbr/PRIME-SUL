@@ -14,8 +14,13 @@ const DEFAULT_DELAY_MS = Number(process.env.CAMPAIGN_DELAY_MS) || 15000;
 // Números descartáveis do bot principal (anti-ban)
 router.get('/numbers', async (req, res, next) => {
     try {
-        const rows = await db.all('SELECT * FROM bot_numbers ORDER BY id DESC');
-        res.json(rows);
+        const rows = req.user.role === 'admin'
+            ? await db.all('SELECT * FROM bot_numbers WHERE organization_id = ? ORDER BY id DESC', [req.user.organization_id])
+            : await db.all('SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) ORDER BY seller_id DESC, id DESC', [req.user.organization_id, req.user.id]);
+        res.json(req.user.role === 'admin' ? rows : rows.map(n => ({
+            id: n.id, number: n.seller_id === req.user.id ? n.number : null,
+            label: n.label, status: n.status, messages_sent: n.messages_sent, owned: n.seller_id === req.user.id
+        })));
     } catch (e) { next(e); }
 });
 
@@ -23,7 +28,7 @@ router.post('/numbers', async (req, res, next) => {
     try {
         const { number, label } = req.body;
         if (!number) return res.status(400).json({ error: 'Número obrigatório' });
-        const n = await antiBan.registerNumber(number, label);
+        const n = await antiBan.registerNumber(number, label, req.user.organization_id, req.user.role === 'admin' ? null : req.user.id);
         res.status(201).json(n);
     } catch (e) { next(e); }
 });
@@ -35,7 +40,7 @@ router.patch('/numbers/:id', async (req, res, next) => {
         if (!['ativo', 'resfriado', 'banido'].includes(status)) {
             return res.status(400).json({ error: 'Status inválido. Use ativo, resfriado ou banido.' });
         }
-        const n = await antiBan.setStatus(req.params.id, status);
+        const n = await antiBan.setStatus(req.params.id, status, req.user.organization_id, req.user.role === 'admin' ? undefined : req.user.id);
         if (!n) return res.status(404).json({ error: 'Número não encontrado' });
         res.json(n);
     } catch (e) { next(e); }
@@ -92,6 +97,7 @@ router.post('/', async (req, res, next) => {
         if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
         const campaign = await campaignService.createCampaign({
             seller_id: req.user.id,
+            organization_id: req.user.organization_id,
             name,
             message,
             number_ids: number_ids || [],
@@ -104,21 +110,21 @@ router.post('/', async (req, res, next) => {
 // Inicia campanha
 router.post('/:id/start', async (req, res, next) => {
     try {
-        const result = await campaignService.startCampaign(req.params.id);
+        const result = await campaignService.startCampaign(req.params.id, req.user.id, req.user.role, req.user.organization_id);
         res.json(result);
     } catch (e) { next(e); }
 });
 
 router.post('/:id/pause', async (req, res, next) => {
     try {
-        await campaignService.pauseCampaign(req.params.id);
+        await campaignService.pauseCampaign(req.params.id, req.user.id, req.user.role, req.user.organization_id);
         res.json({ ok: true });
     } catch (e) { next(e); }
 });
 
 router.post('/:id/cancel', async (req, res, next) => {
     try {
-        await campaignService.cancelCampaign(req.params.id);
+        await campaignService.cancelCampaign(req.params.id, req.user.id, req.user.role, req.user.organization_id);
         res.json({ ok: true });
     } catch (e) { next(e); }
 });
@@ -126,7 +132,7 @@ router.post('/:id/cancel', async (req, res, next) => {
 // Reenvia os envios que falharam
 router.post('/:id/retry', async (req, res, next) => {
     try {
-        const result = await campaignService.retryCampaign(req.params.id);
+        const result = await campaignService.retryCampaign(req.params.id, req.user.id, req.user.role, req.user.organization_id);
         res.json(result);
     } catch (e) { next(e); }
 });

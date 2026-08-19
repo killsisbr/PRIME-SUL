@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const db = require('../database/db');
 const { auth, adminOnly } = require('../middleware/auth');
 const { normalizePhone } = require('../utils/phone');
+const whatsapp = require('../services/whatsapp-service');
+const QRCode = require('qrcode');
 const router = express.Router();
 
 router.use(auth);
@@ -13,8 +15,27 @@ router.get('/', adminOnly, async (req, res, next) => {
         const rows = await db.all(`
             SELECT s.id, s.name, s.email, s.phone, s.role, s.active, s.max_leads, s.created_at,
                    (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id) AS total_leads
-            FROM sellers s ORDER BY s.created_at DESC
-        `);
+            FROM sellers s WHERE s.organization_id = ? ORDER BY s.created_at DESC
+        `, [req.user.organization_id]);
+        res.json(rows);
+    } catch (e) { next(e); }
+});
+
+// Vendedores com stats por estágio (admin)
+router.get('/with-stats', adminOnly, async (req, res, next) => {
+    try {
+        const rows = await db.all(`
+            SELECT s.id, s.name, s.email, s.phone, s.role, s.active, s.max_leads,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id) AS total_leads,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'novo') AS novo,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'contato') AS contato,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'proposta') AS proposta,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'fechamento') AS fechamento,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'ganho') AS ganho,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'perdido') AS perdido,
+                   (SELECT COALESCE(SUM(l.limite_est), 0) FROM leads l WHERE l.seller_id = s.id AND l.status = 'ganho') AS total_fechado
+            FROM sellers s WHERE s.organization_id = ? AND s.role != 'admin' ORDER BY s.name
+        `, [req.user.organization_id]);
         res.json(rows);
     } catch (e) { next(e); }
 });
@@ -25,13 +46,15 @@ router.post('/', adminOnly, async (req, res, next) => {
         const { name, email, password, phone, max_leads } = req.body;
         if (!name || !email || !password || !phone) return res.status(400).json({ error: 'Dados incompletos' });
         const normalized = normalizePhone(phone);
-        const existing = await db.get('SELECT id FROM sellers WHERE email = ? OR phone = ?', [email.toLowerCase().trim(), normalized]);
+        const existing = await db.get('SELECT id FROM sellers WHERE organization_id = ? AND (email = ? OR phone = ?)', [req.user.organization_id, email.toLowerCase().trim(), normalized]);
         if (existing) return res.status(409).json({ error: 'E-mail ou telefone já em uso' });
         const hash = await bcrypt.hash(password, 10);
         const result = await db.run(
-            'INSERT INTO sellers (name, email, password, phone, max_leads) VALUES (?, ?, ?, ?, ?)',
-            [name.trim(), email.toLowerCase().trim(), hash, normalized, max_leads || 0]
+            'INSERT INTO sellers (organization_id, name, email, password, phone, max_leads) VALUES (?, ?, ?, ?, ?, ?)',
+            [req.user.organization_id, name.trim(), email.toLowerCase().trim(), hash, normalized, max_leads || 0]
         );
+        await db.run('INSERT INTO seller_numbers (organization_id, seller_id, number, label) VALUES (?, ?, ?, ?)',
+            [req.user.organization_id, result.lastID, normalized, 'principal']);
         res.status(201).json({ id: result.lastID });
     } catch (e) { next(e); }
 });
@@ -42,6 +65,77 @@ router.get('/me', async (req, res, next) => {
         const user = await db.get('SELECT id, name, email, phone, role, max_leads FROM sellers WHERE id = ?', [req.user.id]);
         if (!user) return res.status(404).json({ error: 'Vendedor não encontrado' });
         res.json(user);
+    } catch (e) { next(e); }
+});
+
+router.get('/:sellerId/numbers', async (req, res, next) => {
+    try {
+        const sellerId = Number(req.params.sellerId);
+        if (req.user.role !== 'admin' && sellerId !== req.user.id) return res.status(403).json({ error: 'Acesso negado' });
+        const rows = await db.all(`SELECT sn.* FROM seller_numbers sn JOIN sellers s ON s.id=sn.seller_id
+            WHERE sn.seller_id=? AND sn.organization_id=? ORDER BY sn.id`, [sellerId, req.user.organization_id]);
+        res.json(rows);
+    } catch (e) { next(e); }
+});
+
+router.post('/:sellerId/numbers', async (req, res, next) => {
+    try {
+        const sellerId = Number(req.params.sellerId);
+        if (req.user.role !== 'admin' && sellerId !== req.user.id) return res.status(403).json({ error: 'Acesso negado' });
+        const number = normalizePhone(req.body.number);
+        if (!number || number.length < 12 || number.length > 15) return res.status(400).json({ error: 'Número inválido' });
+        const seller = await db.get('SELECT id FROM sellers WHERE id=? AND organization_id=?', [sellerId, req.user.organization_id]);
+        if (!seller) return res.status(404).json({ error: 'Vendedor não encontrado' });
+        const screening = await db.get('SELECT id FROM bot_numbers WHERE number=?', [number]);
+        if (screening) return res.status(409).json({ error: 'Número já pertence à triagem institucional' });
+        const result = await db.run('INSERT INTO seller_numbers (organization_id,seller_id,number,label) VALUES (?,?,?,?)',
+            [req.user.organization_id, sellerId, number, String(req.body.label || 'operacional').trim()]);
+        res.status(201).json(await db.get('SELECT * FROM seller_numbers WHERE id=?', [result.lastID]));
+    } catch (e) { if (e.message.includes('UNIQUE')) return res.status(409).json({ error: 'Número já cadastrado' }); next(e); }
+});
+
+router.patch('/:sellerId/numbers/:id', async (req, res, next) => {
+    try {
+        const sellerId = Number(req.params.sellerId);
+        if (req.user.role !== 'admin' && sellerId !== req.user.id) return res.status(403).json({ error: 'Acesso negado' });
+        const active = req.body.active ? 1 : 0;
+        const result = await db.run('UPDATE seller_numbers SET active=? WHERE id=? AND seller_id=? AND organization_id=?',
+            [active, req.params.id, sellerId, req.user.organization_id]);
+        if (!result.changes) return res.status(404).json({ error: 'Número não encontrado' });
+        res.json(await db.get('SELECT * FROM seller_numbers WHERE id=?', [req.params.id]));
+    } catch (e) { next(e); }
+});
+
+async function ownedNumber(req, res) {
+    const row = await db.get(`SELECT sn.* FROM seller_numbers sn WHERE sn.id=? AND sn.organization_id=?`,
+        [req.params.id, req.user.organization_id]);
+    if (!row) { res.status(404).json({ error: 'Número não encontrado' }); return null; }
+    if (req.user.role !== 'admin' && row.seller_id !== req.user.id) { res.status(403).json({ error: 'Acesso negado' }); return null; }
+    return row;
+}
+
+router.post('/connections/:id/connect', async (req, res, next) => {
+    try {
+        const number = await ownedNumber(req, res); if (!number) return;
+        if (!number.active) return res.status(409).json({ error: 'Número inativo' });
+        await whatsapp.connect(number.number, `vendedor-${number.seller_id}`);
+        res.json({ ok: true, status: whatsapp.enabled() ? 'connecting' : 'queued' });
+    } catch (e) { next(e); }
+});
+
+router.get('/connections/:id/qr', async (req, res, next) => {
+    try {
+        const number = await ownedNumber(req, res); if (!number) return;
+        const qr = whatsapp.getQR(number.number);
+        res.json({ qr: qr ? await QRCode.toDataURL(qr, { margin: 1, width: 300 }) : null,
+            status: whatsapp.status()[number.number]?.status || 'offline' });
+    } catch (e) { next(e); }
+});
+
+router.post('/connections/:id/disconnect', async (req, res, next) => {
+    try {
+        const number = await ownedNumber(req, res); if (!number) return;
+        res.json(req.body.removeSession ? await whatsapp.logout(number.number) : await whatsapp.disconnect(number.number));
     } catch (e) { next(e); }
 });
 

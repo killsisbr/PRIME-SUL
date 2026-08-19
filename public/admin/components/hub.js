@@ -1,5 +1,6 @@
 export async function init({ container }) {
     const api = window.api;
+    const esc = window.escapeHtml;
 
     async function loadStats() {
         try {
@@ -29,7 +30,7 @@ export async function init({ container }) {
             const numbers = await api('/campaigns/numbers');
             const sel = document.getElementById('hc-number');
             sel.innerHTML = numbers.filter(n => n.status === 'ativo').map(n =>
-                `<option value="${n.id}">${n.number} (${n.messages_sent} enviadas)</option>`).join('')
+                `<option value="${n.id}">${esc(n.label || ('Triagem #' + n.id))}</option>`).join('')
                 || '<option value="">Nenhum número ativo — cadastre em Números Anti-Ban</option>';
         } catch (e) { console.error(e); }
     }
@@ -42,10 +43,10 @@ export async function init({ container }) {
         }
         list.innerHTML = campaigns.map(c => `
             <div class="hub-campaign-row" data-id="${c.id}">
-                <span class="hub-campaign-code">${c.name}</span>
+                <span class="hub-campaign-code">${esc(c.name)}</span>
                 <div class="hub-campaign-detail">
                     <strong>${c.total_target} alvos • ${c.total_sent} enviados • ${c.total_yes} confirmados</strong>
-                    <span>${c.message ? c.message.slice(0, 80) : 'Mensagem padrão do bot'}${c.message && c.message.length > 80 ? '…' : ''}</span>
+                    <span>${esc(c.message ? c.message.slice(0, 80) : 'Mensagem padrão do bot')}${c.message && c.message.length > 80 ? '…' : ''}</span>
                 </div>
                 <span class="hub-campaign-status ${c.status}">${c.status.toUpperCase()}</span>
                 <div class="hub-campaign-actions">
@@ -74,7 +75,14 @@ export async function init({ container }) {
 
     document.getElementById('btn-hub-campaigns-card').onclick = () => openModal('hub-campaigns-modal');
     document.getElementById('btn-hub-campaigns').onclick = () => openModal('hub-campaigns-modal');
-    document.getElementById('btn-hub-create-campaign').onclick = () => { openModal('hub-campaign-editor-modal'); loadNumbers(); };
+    document.getElementById('btn-hub-create-campaign').onclick = () => {
+        if (typeof window.openCampaignEditor === 'function') window.openCampaignEditor();
+        else openModal('hub-campaign-editor-modal');
+    };
+    document.getElementById('btn-inline-add-campaign').onclick = () => {
+        if (typeof window.openCampaignEditor === 'function') window.openCampaignEditor();
+        else openModal('hub-campaign-editor-modal');
+    };
     document.getElementById('btn-close-hub-campaigns').onclick = () => closeModal('hub-campaigns-modal');
     document.getElementById('btn-close-hub-campaigns-footer').onclick = () => closeModal('hub-campaigns-modal');
     document.getElementById('btn-close-campaign-editor').onclick = () => closeModal('hub-campaign-editor-modal');

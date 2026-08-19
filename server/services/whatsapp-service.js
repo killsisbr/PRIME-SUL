@@ -177,6 +177,16 @@ function getQR(number) {
     return bot ? bot.qr || null : null;
 }
 
+async function setArchived(botNumber, phone, archive) {
+    const bot = bots.get(botNumber);
+    if (!bot || bot.status !== 'connected' || typeof bot.sock.chatModify !== 'function') return false;
+    await bot.sock.chatModify({ archive, lastMessages: [] }, `${phone}@s.whatsapp.net`);
+    return true;
+}
+
+function archiveChat(botNumber, phone) { return setArchived(botNumber, phone, true); }
+function unarchiveChat(botNumber, phone) { return setArchived(botNumber, phone, false); }
+
 // Cores de fundo dos status (mesmo mapeamento do painel)
 const STATUS_COLORS = {
     teal: '#075e54', purple: '#833ab4', blue: '#1e3c72',
@@ -329,4 +339,4 @@ function status() {
     return out;
 }
 
-module.exports = { enabled, connect, disconnect, logout, sendMessage, postStatus, onMessage, onConnected, getQR, status, healthCheck, cleanupSessions };
+module.exports = { enabled, connect, disconnect, logout, sendMessage, archiveChat, unarchiveChat, postStatus, onMessage, onConnected, getQR, status, healthCheck, cleanupSessions };

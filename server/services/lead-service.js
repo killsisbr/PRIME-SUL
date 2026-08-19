@@ -6,11 +6,36 @@ const stageConfig = require('./stage-config-service');
 
 const ALLOWED_ORIGEM = ['SITE', 'SIMULACAO', 'INDICACAO'];
 const ALLOWED_PRIORIDADE = ['alta', 'media', 'baixa'];
-const EDITABLE_FIELDS = ['name', 'phone', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade', 'score'];
+const EDITABLE_FIELDS = ['name', 'phone', 'cpf', 'tags', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade', 'score'];
 // Campos que alteram o score automático
 const SCORE_FIELDS = ['renda', 'valor_desejado', 'limite_est', 'origem', 'prioridade', 'city', 'name'];
 
-async function createLead({ seller_id, name, phone, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
+// Limpa CPF (mantém só dígitos) e normaliza tags (minúsculas, separadas por vírgula)
+function cleanCpf(v) {
+    const digits = String(v || '').replace(/\D/g, '');
+    return digits.length >= 8 ? digits : null;
+}
+function cleanTags(v) {
+    return String(v || '')
+        .split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(Boolean)
+        .slice(0, 10)
+        .join(',');
+}
+
+async function triggerStageAutomation(lead, status, sellerId) {
+    if (!lead || !['novo', 'contato'].includes(status)) return;
+    try {
+        const cfg = await stageConfig.get(status, sellerId, lead.organization_id || 1);
+        if (cfg.auto_send && cfg.message) {
+            const result = await campaignService.sendToLead(lead, cfg.message, sellerId, cfg.number_id ? [cfg.number_id] : []);
+            console.log(result.sent ? `[auto-send] Lead #${lead.id} → campanha ${result.campaign_id}` : `[auto-send] Lead #${lead.id} → ${result.reason}`);
+        }
+    } catch (e) { console.warn(`[auto-send] Lead #${lead.id} — erro:`, e.message); }
+}
+
+async function createLead({ seller_id, organization_id = 1, name, phone, cpf, tags, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
     const normalized = normalizePhone(phone);
     if (!normalized) {
         const e = new Error('Telefone inválido');
@@ -22,8 +47,29 @@ async function createLead({ seller_id, name, phone, city, origem = 'SITE', limit
         e.status = 400;
         throw e;
     }
+    origem = String(origem || 'SITE').toUpperCase();
+    if (!ALLOWED_ORIGEM.includes(origem)) {
+        const e = new Error('Origem inválida'); e.status = 400; throw e;
+    }
+    const cleanCpfValue = cleanCpf(cpf);
+    const cleanTagsValue = cleanTags(tags);
 
-    const existing = await db.get('SELECT * FROM leads WHERE phone = ?', [normalized]);
+    const optedOut = await db.get('SELECT id FROM opt_outs WHERE organization_id = ? AND phone = ?', [organization_id, normalized]);
+    if (optedOut) { const e = new Error('Contato bloqueado por opt-out'); e.status = 409; e.code = 'OPTED_OUT'; throw e; }
+
+    const seller = await db.get('SELECT max_leads FROM sellers WHERE id=? AND organization_id=? AND active=1', [seller_id, organization_id]);
+    if (!seller) { const e = new Error('Vendedor inválido'); e.status = 403; throw e; }
+
+    async function findByDuplicate() {
+        const phoneHit = await db.get('SELECT * FROM leads WHERE organization_id = ? AND phone = ?', [organization_id, normalized]);
+        if (phoneHit) return phoneHit;
+        if (cleanCpfValue) {
+            const cpfHit = await db.get('SELECT * FROM leads WHERE organization_id = ? AND cpf = ?', [organization_id, cleanCpfValue]);
+            if (cpfHit) return cpfHit;
+        }
+        return null;
+    }
+    const existing = await findByDuplicate();
     if (existing) {
         if (existing.seller_id !== seller_id) {
             const e = new Error('LEAD_JA_CADASTRADO');
@@ -34,15 +80,19 @@ async function createLead({ seller_id, name, phone, city, origem = 'SITE', limit
         }
         return { lead: existing, duplicated: false, already_mine: true };
     }
+    if (seller.max_leads > 0) {
+        const total = await db.get('SELECT COUNT(*) c FROM leads WHERE seller_id=?', [seller_id]);
+        if (total.c >= seller.max_leads) { const e = new Error('Limite de leads do vendedor atingido'); e.status = 409; e.code = 'LEAD_LIMIT'; throw e; }
+    }
 
     const score = scoreService.computeScore({
         name: name.trim(), city, origem: origem.toUpperCase(), limite_est,
         renda, valor_desejado, prioridade, status: 'novo'
     });
     const result = await db.run(
-        `INSERT INTO leads (seller_id, name, phone, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [seller_id, name.trim(), normalized, city || null, origem.toUpperCase(), limite_est || null,
+        `INSERT INTO leads (organization_id, seller_id, name, phone, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [organization_id, seller_id, name.trim(), normalized, cleanCpfValue, cleanTagsValue, city || null, origem, limite_est || null,
          renda || null, valor_desejado || null, obs || null, prioridade, score]
     );
     const lead = await db.get('SELECT * FROM leads WHERE id = ?', [result.lastID]);
@@ -50,10 +100,11 @@ async function createLead({ seller_id, name, phone, city, origem = 'SITE', limit
         'INSERT INTO lead_history (lead_id, seller_id, from_status, to_status) VALUES (?, ?, NULL, ?)',
         [result.lastID, seller_id, lead.status]
     );
+    await triggerStageAutomation(lead, lead.status, seller_id);
     return { lead, duplicated: false, already_mine: false };
 }
 
-async function listLeads({ seller_id, status, search, origem, prioridade, cidade, data_de, data_ate, score_min, score_max }) {
+async function listLeads({ seller_id, status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max }) {
     let sql = `
         SELECT l.*, s.name AS seller_name
         FROM leads l
@@ -71,6 +122,10 @@ async function listLeads({ seller_id, status, search, origem, prioridade, cidade
     if (prioridade) {
         sql += ' AND l.prioridade = ?';
         params.push(prioridade.toLowerCase());
+    }
+    if (tag) {
+        sql += " AND (',' || l.tags || ',') LIKE ?";
+        params.push(`%,${String(tag).toLowerCase()},%`);
     }
     if (cidade) {
         sql += ' AND l.city LIKE ?';
@@ -93,8 +148,14 @@ async function listLeads({ seller_id, status, search, origem, prioridade, cidade
         params.push(data_ate);
     }
     if (search) {
-        sql += ' AND (l.name LIKE ? OR l.phone LIKE ? OR l.city LIKE ?)';
-        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        const s = String(search).trim();
+        if (/^\d{8,11}$/.test(s)) {
+            sql += ' AND (l.cpf = ? OR l.phone LIKE ? OR l.name LIKE ? OR l.city LIKE ?)';
+            params.push(s, `%${s}%`, `%${s}%`, `%${s}%`);
+        } else {
+            sql += ' AND (l.name LIKE ? OR l.phone LIKE ? OR l.city LIKE ?)';
+            params.push(`%${s}%`, `%${s}%`, `%${s}%`);
+        }
     }
     sql += ' ORDER BY l.updated_at DESC';
     return db.all(sql, params);
@@ -155,6 +216,21 @@ async function updateLead(id, seller_id, fields) {
         } else if (f === 'origem') {
             updates.push('origem = ?');
             params.push(String(fields[f]).toUpperCase());
+        } else if (f === 'cpf') {
+            const c = cleanCpf(fields[f]);
+            if (c && c !== lead.cpf) {
+                const dup = await db.get('SELECT id FROM leads WHERE cpf = ? AND id != ? AND organization_id = ?', [c, id, lead.organization_id || 1]);
+                if (dup) {
+                    const e = new Error('CPF já cadastrado em outro lead');
+                    e.status = 409;
+                    throw e;
+                }
+            }
+            updates.push('cpf = ?');
+            params.push(c);
+        } else if (f === 'tags') {
+            updates.push('tags = ?');
+            params.push(cleanTags(fields[f]));
         } else if (f === 'prioridade') {
             updates.push('prioridade = ?');
             params.push(String(fields[f]).toLowerCase());
@@ -202,6 +278,11 @@ async function updateStatus(id, seller_id, status) {
         'INSERT INTO lead_history (lead_id, seller_id, from_status, to_status) VALUES (?, ?, ?, ?)',
         [id, seller_id, lead.status, status]
     );
+    if (status === 'bloqueado') {
+        await db.run('INSERT OR IGNORE INTO opt_outs (organization_id,phone,reason) VALUES (?,?,?)',
+            [lead.organization_id || 1, lead.phone, 'Bloqueado manualmente no CRM']);
+        await db.run("UPDATE followups SET status='cancelled' WHERE lead_id=? AND status='scheduled'", [id]);
+    }
 
     // Recalcula score (estágio influencia o score)
     const fresh = await getLead(id, seller_id);
@@ -209,27 +290,51 @@ async function updateStatus(id, seller_id, status) {
     await db.run('UPDATE leads SET score = ? WHERE id = ?', [next, id]);
 
     // Auto-disparo configurado na coluna de destino
-    if (fresh) {
-        try {
-            const cfg = await stageConfig.get(status);
-            if (cfg.auto_send && cfg.message) {
-                const r = await campaignService.sendToLead(fresh, cfg.message, seller_id);
-                if (r.sent) console.log(`[auto-send] Lead #${id} → disparo automático iniciado (campanha ${r.campaign_id})`);
-                else console.log(`[auto-send] Lead #${id} → ignorado (${r.reason})`);
-            }
-        } catch (e) {
-            console.warn(`[auto-send] Lead #${id} — erro:`, e.message);
-        }
-    }
+    await triggerStageAutomation(fresh, status, seller_id);
 
     return getLead(id, seller_id);
 }
 
 async function getHistory(id, seller_id) {
+    // O lead já foi verificado como pertencente ao usuário na rota; retorna todo o histórico
+    // da organização (inclui transferências registradas por outros vendedores/admin).
+    const lead = await getLead(id, seller_id);
+    if (!lead) return [];
     return db.all(
-        'SELECT * FROM lead_history WHERE lead_id = ? AND seller_id = ? ORDER BY id DESC',
-        [id, seller_id]
+        `SELECT lh.*, s.name AS actor_name
+         FROM lead_history lh
+         LEFT JOIN sellers s ON s.id = lh.seller_id
+         WHERE lh.lead_id = ? AND s.organization_id = ?
+         ORDER BY lh.id DESC`,
+        [id, lead.organization_id || 1]
     );
+}
+
+// Transferência de lead entre vendedores (somente admin)
+async function transferLead(id, { to_seller_id, admin_id, organization_id }) {
+    const lead = await db.get(
+        'SELECT * FROM leads WHERE id = ? AND organization_id = ?',
+        [id, organization_id]
+    );
+    if (!lead) return null;
+    if (lead.seller_id === to_seller_id) return { lead, transferred: false };
+    const from_seller_id = lead.seller_id;
+
+    const target = await db.get('SELECT id, name FROM sellers WHERE id = ? AND organization_id = ? AND active = 1', [to_seller_id, organization_id]);
+    if (!target) {
+        const e = new Error('Vendedor de destino inválido');
+        e.status = 400;
+        throw e;
+    }
+
+    await db.run('UPDATE leads SET seller_id = ?, updated_at = datetime(\'now\') WHERE id = ?', [to_seller_id, id]);
+    await db.run(
+        `INSERT INTO lead_history (lead_id, seller_id, from_status, to_status)
+         VALUES (?, ?, ?, ?)`,
+        [id, admin_id, lead.status, `transferido:${from_seller_id}->${to_seller_id}`]
+    );
+    const fresh = await db.get('SELECT * FROM leads WHERE id = ?', [id]);
+    return { lead: fresh, transferred: true, target_name: target.name };
 }
 
 async function countsBySeller(seller_id) {
@@ -290,4 +395,4 @@ async function funnelBySeller(seller_id) {
     };
 }
 
-module.exports = { createLead, listLeads, getLead, updateLead, updateStatus, getHistory, countsBySeller, funnelBySeller };
+module.exports = { createLead, listLeads, getLead, updateLead, updateStatus, getHistory, countsBySeller, funnelBySeller, transferLead };

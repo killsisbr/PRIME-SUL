@@ -31,6 +31,7 @@
             <option value="70">Score ≥ 70</option>
             <option value="50">Score ≥ 50</option>
         </select>
+        <input type="text" id="kbx-tag" class="kbx-select" style="max-width:160px;" placeholder="Tag (ex.: quente)" title="Filtrar por tag">
         <span class="kbx-count" id="kbx-total">0 leads</span>
         <button type="button" class="btn-retro" id="kbx-new" style="padding:8px 14px; font-size:.72rem;"><i class="fas fa-plus"></i> NOVO LEAD</button>
     </div>
@@ -58,6 +59,16 @@
             <div class="v2-form-group">
                 <label>Telefone <span style="color:var(--bad);">*</span></label>
                 <input type="text" id="leadNew-phone" class="ps-input" placeholder="(11) 99999-0000">
+            </div>
+            <div class="ps-grid-2">
+                <div class="v2-form-group">
+                    <label>CPF <span style="font-weight:600; color:var(--text-muted);">(identificador anti-duplicidade)</span></label>
+                    <input type="text" id="leadNew-cpf" class="ps-input" placeholder="000.000.000-00" maxlength="14">
+                </div>
+                <div class="v2-form-group">
+                    <label>Tags <span style="font-weight:600; color:var(--text-muted);">(separadas por vírgula)</span></label>
+                    <input type="text" id="leadNew-tags" class="ps-input" placeholder="quente, prioridade">
+                </div>
             </div>
             <div class="ps-grid-2">
                 <div class="v2-form-group">

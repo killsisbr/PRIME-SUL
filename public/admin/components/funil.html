@@ -27,6 +27,10 @@
             <div class="fl-legend" id="fl-legend"></div>
         </section>
         <aside class="fl-panel">
+            <div class="fl-panel-title"><i class="fas fa-calendar-check"></i> RETORNOS DE HOJE</div>
+            <div class="fl-returns" id="fl-returns">
+                <div class="fl-return-empty"><i class="fas fa-circle-check"></i> Nenhum retorno pendente para hoje.</div>
+            </div>
             <div class="fl-panel-title"><i class="fas fa-chart-simple"></i> DETALHAMENTO</div>
             <div class="fl-detail" id="fl-detail"></div>
             <div class="fl-panel-title"><i class="fas fa-broom"></i> GARGALO</div>
@@ -35,50 +39,228 @@
     </div>
 </div>
 
-<!-- ============ POPUP: LEADS DO ESTÁGIO (filtrado) ============ -->
-<div class="v2-submodal-overlay" id="flpOverlay" style="display:none;">
-    <div class="v2-submodal" style="max-width:880px;">
+<!-- ============ POPUP: AUTOMAÇÕES E FERRAMENTAS DO ESTÁGIO ============ -->
+<div class="v2-submodal-overlay" id="flaOverlay" style="display:none;">
+    <div class="v2-submodal fla-modal fla-console-modal">
         <div class="v2-submodal-header">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span class="flp-dot" id="flp-dot"></span>
+            <div>
+                <span class="fla-eyebrow">AUTOMAÇÕES DO FUNIL</span>
+                <h3>ETAPA <span id="fla-stage">NOVO</span></h3>
+                <p>Prepare a etapa, configure as ações e acompanhe o que está pronto para uso.</p>
+            </div>
+            <button type="button" class="btn-close-submodal" id="fla-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body fla-console">
+            <section class="fla-command-stage">
+                <div class="fla-stage-top"><span id="fla-ready-label">VERIFICANDO ETAPA</span><i class="fas fa-wand-magic-sparkles"></i></div>
+                <div class="fla-stage-copy">
+                    <small>STATUS DA AUTOMAÇÃO</small>
+                    <h2 id="fla-ready-title">CARREGANDO...</h2>
+                    <p id="fla-ready-desc">Verificando mensagem, número de envio e ativação.</p>
+                </div>
+                <div class="fla-stage-actions">
+                    <button type="button" class="fla-primary-action" id="fla-open-auto"><i class="fas fa-bolt"></i> CONFIGURAR AGORA</button>
+                    <button type="button" class="fla-ghost-action" id="fla-open-send"><i class="fas fa-paper-plane"></i> DISPARAR</button>
+                </div>
+                <div class="fla-impact-strip">
+                    <div><b id="fla-stat-auto">-</b><span>AUTOMAÇÃO</span></div>
+                    <div><b id="fla-stat-msg">-</b><span>MENSAGEM</span></div>
+                    <div><b id="fla-stat-number">-</b><span>NÚMERO</span></div>
+                </div>
+            </section>
+            <section class="fla-launchpad">
+                <button type="button" class="fla-tool-card auto-tool" id="fla-card-auto"><span class="fla-card-index">01</span><span class="fla-tool-icon orange"><i class="fas fa-bolt"></i></span><span class="fla-tool-copy"><small>ENTRADA NA ETAPA</small><strong>Mensagem automática</strong><em>Escolha o texto, template e número usado ao receber o lead.</em></span><b>CONFIGURAR <i class="fas fa-arrow-right"></i></b></button>
+                <button type="button" class="fla-tool-card send-tool" id="fla-card-send"><span class="fla-card-index">02</span><span class="fla-tool-icon green"><i class="fas fa-paper-plane"></i></span><span class="fla-tool-copy"><small>AÇÃO IMEDIATA</small><strong>Disparar mensagem</strong><em>Envie agora para os leads que já estão nesta etapa.</em></span><b>CRIAR DISPARO <i class="fas fa-arrow-right"></i></b></button>
+                <button type="button" class="fla-tool-card move-tool" id="fla-card-move"><span class="fla-card-index">03</span><span class="fla-tool-icon blue"><i class="fas fa-right-left"></i></span><span class="fla-tool-copy"><small>ORGANIZAÇÃO</small><strong>Mover leads</strong><em>Avance ou reorganize contatos desta etapa em lote.</em></span><b>MOVIMENTAR <i class="fas fa-arrow-right"></i></b></button>
+                <button type="button" class="fla-tool-card score-tool" id="fla-card-score"><span class="fla-card-index">04</span><span class="fla-tool-icon dark"><i class="fas fa-gauge-high"></i></span><span class="fla-tool-copy"><small>QUALIFICAÇÃO</small><strong>Recalcular score</strong><em>Atualize a prioridade comercial usando os dados atuais.</em></span><b>RECALCULAR <i class="fas fa-arrow-right"></i></b></button>
+                <div class="fla-utility-strip"><span><i class="fas fa-lightbulb"></i> Use mensagens curtas, contexto claro e envie apenas para leads com consentimento.</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="v2-submodal-overlay fla-editor-overlay" id="flaAutoModal" style="display:none;"><div class="v2-submodal fla-editor"><div class="v2-submodal-header"><div><span class="fla-eyebrow">RECURSO 01</span><h3>MENSAGEM AUTOMÁTICA</h3><p>Será enviada quando o lead entrar nesta etapa.</p></div><button class="btn-close-submodal" data-fla-close="flaAutoModal"><i class="fas fa-times"></i></button></div><div class="v2-submodal-body fla-editor-body"><div class="fla-section-head"><div><i class="fas fa-wand-magic-sparkles"></i><strong>ATIVAR AUTOMAÇÃO</strong><span>Você pode pausar sem perder a configuração</span></div><label class="fla-switch"><input type="checkbox" id="fla-auto"><span></span></label></div><label class="fla-label" for="fla-auto-msg">Mensagem <small>Use <b>{nome}</b> para personalizar</small></label><textarea id="fla-auto-msg" class="ps-textarea" rows="5" maxlength="4000" placeholder="Olá {nome}! Podemos continuar sua simulação?"></textarea><div class="fla-row"><select id="fla-auto-template" class="ps-select"><option value="">Aplicar um template...</option></select><select id="fla-auto-number" class="ps-select"><option value="">Número automático disponível</option></select></div><div class="fla-preview" id="fla-preview"></div></div><footer class="fla-editor-footer"><button class="btn-retro btn-secondary-retro" data-fla-close="flaAutoModal">CANCELAR</button><button class="btn-retro" id="fla-save"><i class="fas fa-save"></i> SALVAR AUTOMAÇÃO</button></footer></div></div>
+
+<div class="v2-submodal-overlay fla-editor-overlay" id="flaSendModal" style="display:none;">
+    <div class="send-modal">
+        <header class="send-header">
+            <div>
+                <span class="send-eyebrow">NOVA CAMPANHA</span>
+                <h3>CRIAR DISPARO EM MASSA</h3>
+            </div>
+            <button type="button" class="send-close" data-fla-close="flaSendModal"><i class="fas fa-times"></i></button>
+        </header>
+
+        <div class="send-body">
+            <div class="send-form">
+                <label class="send-label">NOME DA CAMPANHA</label>
+                <input type="text" id="fla-send-name" class="send-input" placeholder="Ex: Leads quentes semana 34" maxlength="80">
+
+                <label class="send-label">MENSAGEM DO BOT <small>(USE {'{NOME}'} PARA O PRIMEIRO NOME)</small></label>
+                <textarea id="fla-send-msg" class="send-textarea" rows="5" maxlength="4000" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea>
+
+                <div class="send-preview-phone">
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-header">
+                            <div class="phone-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="phone-contact"><span>Prime Sul</span><small>online</small></div>
+                        </div>
+                        <div class="phone-chat" id="send-phone-chat">
+                            <div class="phone-msg incoming">
+                                <span id="send-preview-text">Olá! Você pediu uma simulação de crédito...</span>
+                                <small>14:30</small>
+                            </div>
+                        </div>
+                        <div class="phone-input-bar">
+                            <i class="fas fa-microphone"></i>
+                            <span>Mensagem</span>
+                            <i class="fas fa-paper-plane"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="send-row">
+                    <div class="send-field">
+                        <label class="send-label">NÚMERO DO BOT</label>
+                        <select id="fla-send-number" class="send-select">
+                            <option value="">Número automático disponível</option>
+                        </select>
+                    </div>
+                    <div class="send-field">
+                        <label class="send-label">LIMITE</label>
+                        <input type="number" id="fla-send-limit" class="send-input" min="1" max="10000" placeholder="Todos">
+                    </div>
+                </div>
+
+                <div class="send-filters-box">
+                    <div class="send-filters-head"><i class="fas fa-filter"></i> FILTROS DO ALVO</div>
+                    <div class="send-chips" id="send-stage-chips"></div>
+                    <div class="send-row">
+                        <input type="text" id="fla-send-origem" class="send-input" placeholder="Origem (ex: SITE)">
+                        <select id="fla-send-prio" class="send-select">
+                            <option value="">Prioridade: todas</option>
+                            <option value="alta">★ Alta</option>
+                            <option value="media">★ Média</option>
+                            <option value="baixa">★ Baixa</option>
+                        </select>
+                        <input type="text" id="fla-send-cidade" class="send-input" placeholder="Cidade (ex: porto)">
+                    </div>
+                </div>
+
+                <div class="send-count" id="send-count"><i class="fas fa-users"></i> <b>0</b> lead(s) serão selecionados</div>
+            </div>
+        </div>
+
+        <footer class="send-footer">
+            <button type="button" class="send-btn cancel" data-fla-close="flaSendModal">CANCELAR</button>
+            <button type="button" class="send-btn create" id="fla-send"><i class="fas fa-rocket"></i> CRIAR</button>
+        </footer>
+    </div>
+</div>
+
+<div class="v2-submodal-overlay fla-editor-overlay" id="flaMoveModal" style="display:none;"><div class="v2-submodal fla-editor fla-editor-small"><div class="v2-submodal-header"><div><span class="fla-eyebrow">RECURSO 03</span><h3>MOVER LEADS</h3><p>Escolha o destino e a quantidade a movimentar.</p></div><button class="btn-close-submodal" data-fla-close="flaMoveModal"><i class="fas fa-times"></i></button></div><div class="v2-submodal-body fla-editor-body"><div class="fla-row"><select id="fla-move-to" class="ps-select"><option value="novo">Novo</option><option value="contato">Em contato</option><option value="confirmado">Confirmado</option><option value="concluido">Concluído</option><option value="bloqueado">Bloqueado</option></select><input type="number" id="fla-move-limit" class="ps-input" min="1" placeholder="Limite (todos)"></div></div><footer class="fla-editor-footer"><button class="btn-retro btn-secondary-retro" data-fla-close="flaMoveModal">CANCELAR</button><button class="btn-retro" id="fla-move"><i class="fas fa-right-left"></i> MOVER LEADS</button></footer></div></div>
+
+<div class="v2-submodal-overlay fla-editor-overlay" id="flaScoreModal" style="display:none;"><div class="v2-submodal fla-editor fla-editor-small"><div class="v2-submodal-header"><div><span class="fla-eyebrow">RECURSO 04</span><h3>RECALCULAR SCORE</h3><p>Atualize a qualificação dos contatos desta etapa.</p></div><button class="btn-close-submodal" data-fla-close="flaScoreModal"><i class="fas fa-times"></i></button></div><div class="v2-submodal-body fla-editor-body"><label class="fla-label" for="fla-score-limit">Quantidade de leads <small>Deixe vazio para processar todos</small></label><input type="number" id="fla-score-limit" class="ps-input" min="1" placeholder="Todos os leads"></div><footer class="fla-editor-footer"><button class="btn-retro btn-secondary-retro" data-fla-close="flaScoreModal">CANCELAR</button><button class="btn-retro" id="fla-score"><i class="fas fa-gauge-high"></i> RECALCULAR</button></footer></div></div>
+
+<div class="v2-submodal-overlay fla-editor-overlay fla-progress-overlay" id="flaProgressModal" style="display:none;"><div class="v2-submodal fla-editor fla-editor-small"><div class="v2-submodal-header"><div><span class="fla-eyebrow">PROCESSAMENTO</span><h3 id="fla-job-title">AGUARDE</h3></div><button class="btn-close-submodal" data-fla-close="flaProgressModal"><i class="fas fa-times"></i></button></div><div class="v2-submodal-body"><section class="fla-job" id="fla-job"><div class="fla-job-head"><strong>PROGRESSO</strong><span id="fla-job-status">0%</span></div><div class="fla-progress"><i id="fla-job-bar"></i></div><p id="fla-job-detail"></p></section></div></div></div>
+
+<!-- ============ POPUP: HUB OPERACIONAL DO ESTÁGIO ============ -->
+<div class="v2-submodal-overlay" id="flpOverlay" style="display:none;">
+    <div class="flp-hud">
+        <!-- LADO ESQUERDO: PAINEL DARK -->
+        <aside class="flp-stage-panel" id="flp-stage-panel">
+            <div class="flp-stage-top-row">
+                <div class="flp-stage-icon" id="flp-stage-icon"><i class="fas fa-filter"></i></div>
+                <span class="flp-hud-badge" id="flp-hud-status"><i class="fas fa-circle"></i> CENTRAL ATIVA</span>
+            </div>
+            <small class="flp-stage-eyebrow" id="flp-stage-eyebrow">GESTÃO DO ESTÁGIO</small>
+            <h2 class="flp-stage-title" id="flp-stage-title">NOVO</h2>
+            <p class="flp-stage-desc" id="flp-stage-desc">Organize a base, priorize oportunidades e avance cada contato pelo funil sem perder contexto.</p>
+            <button type="button" class="flp-stage-cta" id="flp-open-all"><i class="fas fa-arrow-right"></i> ABRIR PAINEL COMPLETO</button>
+            <div class="flp-stage-bottom-tags" id="flp-stage-tags"></div>
+            <div class="flp-stage-footer">
+                <span class="flp-esc-hint">ESC PARA FECHAR</span>
+            </div>
+        </aside>
+
+        <!-- LADO DIREITO: RECURSOS -->
+        <main class="flp-sellers-area">
+            <div class="flp-sellers-header">
                 <div>
-                    <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">LEADS DO ESTÁGIO</span>
-                    <h3 id="flp-label" style="color:var(--ink);">NOVO</h3>
+                    <small class="flp-sellers-eyebrow" id="flp-sellers-eyebrow">EQUIPE</small>
+                    <h3 id="flp-sellers-title">VENDEDORES</h3>
+                    <p id="flp-sellers-sub">Gerencie a equipe e acompanhe o desempenho nesta etapa.</p>
                 </div>
             </div>
-            <button type="button" class="btn-close-submodal" id="flp-close"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="v2-submodal-body flp-body">
-            <div class="flp-filters">
-                <div class="flp-search"><i class="fas fa-search"></i><input type="text" id="flp-search" placeholder="Buscar por nome, telefone, cidade..."></div>
-                <select id="flp-origem" class="ps-select">
-                    <option value="">TODAS ORIGENS</option>
-                    <option value="SITE">Site</option>
-                    <option value="SIMULACAO">Simulação</option>
-                    <option value="INDICACAO">Indicação</option>
-                </select>
-                <select id="flp-prio" class="ps-select">
-                    <option value="">TODAS PRIORIDADES</option>
-                    <option value="alta">★ Alta</option>
-                    <option value="media">★ Média</option>
-                    <option value="baixa">★ Baixa</option>
-                </select>
-                <select id="flp-score" class="ps-select" title="Score mínimo">
-                    <option value="">TODOS SCORES</option>
-                    <option value="70">Score ≥ 70</option>
-                    <option value="50">Score ≥ 50</option>
-                </select>
-                <input type="text" id="flp-cidade" class="ps-input" placeholder="Cidade">
-                <input type="date" id="flp-de" class="ps-input" title="Cadastro de">
-                <input type="date" id="flp-ate" class="ps-input" title="Cadastro até">
-                <button type="button" class="flp-clear" id="flp-clear" title="Limpar filtros"><i class="fas fa-eraser"></i> LIMPAR</button>
+            <div class="flp-sellers-grid" id="flp-sellers-grid"></div>
+            <div class="flp-sellers-tip"><i class="fas fa-lightbulb"></> Selecione um vendedor para ver seus leads ou use os recursos acima para gerenciar a etapa.</div>
+            <div class="flp-sellers-footer">
+                <span class="flp-sellers-count" id="flp-sellers-count">0 vendedores</span>
+                <button type="button" class="flp-hud-close" id="flp-close"><i class="fas fa-times"></i> FECHAR (ESC)</button>
             </div>
-            <div class="flp-summary" id="flp-summary"></div>
-            <div class="flp-list" id="flp-list"></div>
+        </main>
+    </div>
+</div>
+
+<!-- ============ SUB-POPUP: FICHA DO VENDEDOR ============ -->
+<div class="v2-submodal-overlay" id="flpSellerOverlay" style="display:none;">
+    <div class="flp-seller-shell">
+        <header class="flp-seller-header">
+            <div class="flp-seller-header-left">
+                <button type="button" class="flp-back-btn" id="flp-seller-back"><i class="fas fa-arrow-left"></i></button>
+                <div class="flp-seller-avatar" id="flp-seller-avatar">AB</div>
+                <div>
+                    <small class="flp-seller-eyebrow">FICHA DO VENDEDOR</small>
+                    <h3 id="flp-seller-name">—</h3>
+                </div>
+            </div>
+            <div class="flp-seller-header-right">
+                <span class="flp-seller-status" id="flp-seller-status">ATIVO</span>
+                <button type="button" class="flp-close-btn" id="flp-seller-close"><i class="fas fa-times"></i></button>
+            </div>
+        </header>
+
+        <div class="flp-seller-body">
+            <div class="flp-seller-info-row" id="flp-seller-info"></div>
+            <div class="flp-seller-pipeline" id="flp-seller-pipeline"></div>
+            <div class="flp-seller-filters">
+                <div class="flp-search-wrap"><i class="fas fa-search"></i><input type="text" id="flp-s-search" placeholder="Buscar leads deste vendedor..."></div>
+                <select id="flp-s-prio" class="flp-pill-select"><option value="">TODAS</option><option value="alta">★ Alta</option><option value="media">★ Média</option><option value="baixa">★ Baixa</option></select>
+                <button type="button" class="flp-clear-btn" id="flp-s-clear" title="Limpar"><i class="fas fa-eraser"></i></button>
+            </div>
+            <div class="flp-seller-leads" id="flp-seller-leads"></div>
         </div>
-        <footer class="ctp-footer">
-            <span class="flp-total" id="flp-total">0 leads</span>
-            <button type="button" class="btn-retro" id="flp-done"><i class="fas fa-check"></i> FECHAR</button>
+
+        <footer class="flp-seller-footer">
+            <span class="flp-seller-total" id="flp-seller-total">0 leads</span>
+            <div class="flp-seller-actions">
+                <button type="button" class="flp-action-btn secondary" id="flp-s-transfer-all"><i class="fas fa-right-left"></i> TRANSFERIR EM LOTE</button>
+                <button type="button" class="flp-hud-close" id="flp-seller-done"><i class="fas fa-check"></i> FECHAR</button>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<!-- ============ POPUP: TRANSFERIR LEAD (admin) ============ -->
+<div class="v2-submodal-overlay" id="flTransferOverlay" style="display:none;">
+    <div class="v2-submodal fla-editor fla-editor-small">
+        <div class="v2-submodal-header">
+            <div>
+                <span class="fla-eyebrow">ADMIN</span>
+                <h3>TRANSFERIR LEAD</h3>
+                <p id="flt-lead-info">Escolha o vendedor de destino.</p>
+            </div>
+            <button type="button" class="btn-close-submodal" id="flt-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body fla-editor-body">
+            <label class="fla-label" for="flt-seller">Vendedor de destino</label>
+            <select id="flt-seller" class="ps-select"></select>
+            <p style="font-size:.7rem; font-weight:600; color:var(--text-muted); margin-top:10px;">A transferência ficará registrada no histórico do lead com identificação do administrador.</p>
+        </div>
+        <footer class="fla-editor-footer">
+            <button class="btn-retro btn-secondary-retro" id="flt-cancel">CANCELAR</button>
+            <button class="btn-retro" id="flt-confirm"><i class="fas fa-right-left"></i> TRANSFERIR</button>
         </footer>
     </div>
 </div>

@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "node --watch server/server.js",
-    "seed": "node server/database/seed.js"
+    "seed": "node server/database/seed.js",
+    "test": "node --test --test-concurrency=1",
+    "check": "node scripts/check.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.20",
@@ -15,6 +17,6 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.3",
     "qrcode": "^1.5.4",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^6.0.1"
   }
 }

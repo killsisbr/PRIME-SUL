@@ -6,6 +6,7 @@ const _pollers = new Map();
 export async function init() {
     const api = window.api;
     const toast = window.toast;
+    const esc = window.escapeHtml;
 
     function fmtNum(n) {
         const s = String(n).replace(/\D/g, '');
@@ -48,14 +49,14 @@ export async function init() {
             if (conn === 'connected' || conn === 'connecting') actions.push(`<button class="bt-action warn" data-act="desconectar" data-number="${n.number}"><i class="fas fa-unlink"></i> DESCONECTAR</button>`);
             if (n.status !== 'ativo') actions.push(`<button class="bt-action ok" data-act="reativar" data-id="${n.id}" data-number="${n.number}"><i class="fas fa-rotate-left"></i> REATIVAR</button>`);
             if (n.status !== 'banido') actions.push(`<button class="bt-action danger" data-act="banir" data-id="${n.id}"><i class="fas fa-skull"></i> BANIR</button>`);
-            if (conn === 'offline') actions.push(`<button class="bt-action danger" data-act="remover" data-number="${n.number}"><i class="fas fa-trash"></i> REMOVER</button>`);
+            if (conn === 'offline') actions.push(`<button class="bt-action danger" data-act="remover" data-number="${n.number}"><i class="fas fa-trash"></i> REMOVER SESSÃO</button>`);
 
             return `
             <div class="bt-card" data-number="${n.number}">
                 <div class="bt-card-head">
                     <div>
-                        <span class="bt-num">${fmtNum(n.number)}</span>
-                        <span class="bt-label">${n.label || 'sem etiqueta'}</span>
+                        <span class="bt-num">${esc(fmtNum(n.number))}</span>
+                        <span class="bt-label">${esc(n.label || 'sem etiqueta')}</span>
                     </div>
                     <div class="bt-badges">
                         <span class="bt-badge conn-${conn}"><i class="fas fa-circle"></i> ${CONN_LABEL[conn]}</span>
@@ -113,7 +114,7 @@ export async function init() {
             stopPolling();
             render(data);
         } catch (e) {
-            document.getElementById('bt-grid').innerHTML = `<div class="ps-empty" style="color:var(--bad); grid-column:1/-1;">${e.message}</div>`;
+            document.getElementById('bt-grid').innerHTML = `<div class="ps-empty" style="color:var(--bad); grid-column:1/-1;">${esc(e.message)}</div>`;
         }
     }
 

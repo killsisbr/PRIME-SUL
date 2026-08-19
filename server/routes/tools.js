@@ -6,12 +6,13 @@ const campaignService = require('../services/campaign-service');
 const scoreService = require('../services/score-service');
 const stageConfig = require('../services/stage-config-service');
 const jobQueue = require('../services/job-queue-service');
+const followupService = require('../services/followup-service');
 
 const router = express.Router();
 router.use(auth);
 
-const HOT_STATUSES = ['novo', 'contato'];
 const ALL_STATUSES = ['novo', 'contato', 'confirmado', 'concluido', 'bloqueado', 'duplicado'];
+const MESSAGE_STATUSES = ['novo', 'contato'];
 
 // ---------- Jobs (fila persistente) ----------
 
@@ -56,9 +57,21 @@ router.post('/jobs/:id/cancel', async (req, res, next) => {
 
 // ---------- Configuração por coluna (auto-ferramentas) ----------
 
+// Retornos de hoje + atrasados e próximos (follow-ups)
+router.get('/followups', async (req, res, next) => {
+    try {
+        const days = Number(req.query.days) || 7;
+        const [today, upcoming] = await Promise.all([
+            followupService.listToday(req.user.id),
+            followupService.listUpcoming(req.user.id, days)
+        ]);
+        res.json({ today, upcoming });
+    } catch (e) { next(e); }
+});
+
 router.get('/stage-config', async (req, res, next) => {
     try {
-        res.json(await stageConfig.getMap());
+        res.json(await stageConfig.getMap(req.user.id, req.user.organization_id));
     } catch (e) { next(e); }
 });
 
@@ -66,7 +79,7 @@ router.put('/stage-config', async (req, res, next) => {
     try {
         const { status, config } = req.body;
         if (!ALL_STATUSES.includes(status)) return res.status(400).json({ error: 'Status inválido' });
-        res.json(await stageConfig.save(status, config || {}));
+        res.json(await stageConfig.saveForSeller(status, config || {}, req.user.id, req.user.organization_id));
     } catch (e) { next(e); }
 });
 
@@ -124,9 +137,11 @@ router.post('/move', async (req, res, next) => {
 router.post('/send', async (req, res, next) => {
     try {
         const { status, message, limit, number_id } = req.body;
+        if (!MESSAGE_STATUSES.includes(status || 'novo')) return res.status(400).json({ error: 'Disparo automático permitido somente em Novo ou Em contato' });
         if (!message || !message.trim()) return res.status(400).json({ error: 'Mensagem obrigatória' });
         const campaign = await campaignService.createCampaign({
             seller_id: req.user.id,
+            organization_id: req.user.organization_id,
             name: `[COLUNA ${String(status || 'novo').toUpperCase()}] Disparo manual`,
             message,
             number_ids: number_id ? [Number(number_id)] : [],
