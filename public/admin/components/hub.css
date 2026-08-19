@@ -79,36 +79,6 @@
 .hub-utility-strip > span i { color: var(--hub-orange); }
 .hub-utility-strip button { padding: 6px 8px; color: var(--hub-ink); border: 2px solid var(--hub-ink); border-radius: 7px; background: #fff; font-size: .53rem; font-weight: 900; cursor: pointer; font-family: 'Outfit', sans-serif; }
 
-.hub-workspace-modal { z-index: 13050; }
-.hub-submodal { width: min(1050px, 94vw); max-width: none; border-radius: 22px; box-shadow: 12px 12px 0 var(--hub-coral); }
-.hub-submodal .v2-submodal-header { flex: 0 0 auto; padding: 15px 22px; background: var(--hub-cream); }
-.hub-submodal .v2-submodal-header h3 { margin: 2px 0 0; font-size: 1.85rem; line-height: 1; }
-.hub-submodal .v2-submodal-header p { margin: 4px 0 0; color: #756d67; font-size: .68rem; font-weight: 700; }
-.hub-submodal .btn-close-submodal { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 2px solid var(--hub-ink); border-radius: 50%; background: #fff; }
-.hub-coupon-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 22px; border-bottom: 2px solid #ddd1c6; background: #fff; }
-.hub-coupon-toolbar > div { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 6px; min-width: 110px; }
-.hub-coupon-toolbar b { color: var(--hub-coral); font: 1.35rem 'Bebas Neue', sans-serif; }
-.hub-coupon-toolbar span { color: #7d746d; font-size: .55rem; font-weight: 900; }
-.hub-coupon-toolbar .btn-retro { margin-left: auto; }
-.hub-campaign-list { display: grid; align-content: start; gap: 10px; min-height: 260px; padding: 18px 22px !important; }
-.hub-loading, .hub-empty { display: grid; place-items: center; gap: 8px; min-height: 230px; color: #786f68; border: 2px dashed #bcaea2; border-radius: 14px; font-weight: 800; }
-.hub-empty i { color: var(--hub-orange); font-size: 1.8rem; }
-.hub-campaign-row { display: grid; grid-template-columns: minmax(125px, auto) 1fr auto auto; align-items: center; gap: 14px; padding: 12px 14px; border: 3px solid var(--hub-ink); border-radius: 13px; background: #fff; box-shadow: 3px 3px 0 var(--hub-ink); }
-.hub-campaign-code { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; color: #fff; border-radius: 7px; background: var(--hub-dark); font: 1rem 'Bebas Neue', sans-serif; letter-spacing: 1.4px; }
-.hub-campaign-detail strong, .hub-campaign-detail span { display: block; }
-.hub-campaign-detail strong { font-size: .76rem; }.hub-campaign-detail span { margin-top: 2px; color: #7b7169; font-size: .62rem; font-weight: 700; }
-.hub-campaign-status { padding: 5px 8px; border: 2px solid; border-radius: 999px; font-size: .55rem; font-weight: 900; }
-.hub-campaign-status.running { color: #12813b; border-color: #12813b; background: #e3faea; }.hub-campaign-status.paused { color: #9c3024; border-color: #c74838; background: #ffe5e0; }.hub-campaign-status.done { color: #181716; border-color: #181716; background: #e8e4df; }.hub-campaign-status.draft { color: #7c5c10; border-color: #b7892c; background: #fff5c9; }
-.hub-campaign-actions { display: flex; gap: 6px; }
-.hub-icon-btn { display: grid; place-items: center; width: 32px; height: 32px; color: var(--hub-ink); border: 2px solid var(--hub-ink); border-radius: 7px; background: #fff; cursor: pointer; }
-.hub-icon-btn.start { color: #fff; background: #25d366; }.hub-icon-btn.toggle { background: var(--hub-yellow); }
-.hub-submodal-footer { display: flex; flex: 0 0 auto; justify-content: flex-end; gap: 10px; padding: 12px 22px; border-top: 3px solid var(--hub-ink); background: var(--hub-cream); }
-
-.hub-editor-overlay { z-index: 13100; }
-.hub-editor-submodal { width: min(760px, 94vw); }
-.hub-campaign-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 14px; padding: 18px 22px !important; }
-.hub-wide { grid-column: 1 / -1; }
-
 @media (max-width: 900px) {
     #dynamicModalBody:has(.hub-v2) { padding: 10px !important; }
     .hub-shell-header { display: none; }

@@ -15,7 +15,7 @@ app.use((req, res, next) => {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' blob:; connect-src 'self'");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' blob: https://cdnjs.cloudflare.com; connect-src 'self'");
     next();
 });
 app.use(express.json({ limit: '256kb' }));
@@ -33,6 +33,9 @@ app.use('/api/tools', require('./routes/tools'));
 app.use('/api/handoffs', require('./routes/handoffs'));
 app.use('/api/templates', require('./routes/templates'));
 app.use('/api/public', require('./routes/public'));
+
+// Imagens enviadas (status de marketing) — data/ fica fora do git, não junto do front estático
+app.use('/uploads', express.static(path.join(__dirname, '..', 'data', 'uploads')));
 
 // Front estático
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -53,6 +56,11 @@ async function bootstrap() {
     await db.migrate();
     console.log('[db] schema pronto');
 
+    // Pausa temporária de bots (runtime, persistida em settings) — carrega estado salvo no boot
+    const settings = require('./services/settings-service');
+    const savedSettings = await settings.get();
+    whatsapp.setRuntimeEnabled(savedSettings.cfg_bot_enabled !== 'false');
+
     // Registra fluxo anti-ban de confirmação
     botFlow.register();
 
@@ -71,14 +79,20 @@ async function bootstrap() {
         const mainNumber = process.env.BOT_MAIN_NUMBER;
         const active = await db.all("SELECT * FROM bot_numbers WHERE status = 'ativo'");
         for (const n of active) {
-            await whatsapp.connect(n.number, n.label);
+            try { await whatsapp.connect(n.number, n.label); }
+            catch (e) { console.error(`[whatsapp] falha ao conectar ${n.number} no boot:`, e.message); }
         }
         if (mainNumber && !active.some(n => n.number === mainNumber)) {
-            await antiBan.registerNumber(mainNumber, 'bot-principal');
-            await whatsapp.connect(mainNumber, 'bot-principal');
+            try {
+                await antiBan.registerNumber(mainNumber, 'bot-principal');
+                await whatsapp.connect(mainNumber, 'bot-principal');
+            } catch (e) { console.error(`[whatsapp] falha ao registrar/conectar BOT_MAIN_NUMBER (${mainNumber}):`, e.message); }
         }
         const sellerNumbers = await db.all('SELECT * FROM seller_numbers WHERE active=1');
-        for (const n of sellerNumbers) await whatsapp.connect(n.number, `vendedor-${n.seller_id}`);
+        for (const n of sellerNumbers) {
+            try { await whatsapp.connect(n.number, `vendedor-${n.seller_id}`); }
+            catch (e) { console.error(`[whatsapp] falha ao conectar vendedor ${n.number} no boot:`, e.message); }
+        }
     } else {
         console.log('[whatsapp] BOT_ENABLED=false — bots desligados (dry-run).');
     }
@@ -92,6 +106,7 @@ async function bootstrap() {
     setInterval(async () => {
         try { await antiBan.ensureFresh(); } catch (e) { console.error('[anti-ban] refresh:', e.message); }
         try { await campaignService.resumePausedFromLimit(); } catch (e) { console.error('[campaign] resume:', e.message); }
+        try { await campaignService.processScheduled(); } catch (e) { console.error('[campaign] scheduled:', e.message); }
         try { await marketingService.processDue(); } catch (e) { console.error('[marketing] processDue:', e.message); }
         try { await followupService.processDue(); } catch (e) { console.error('[followup] processDue:', e.message); }
         try { await handoffService.processDue(); } catch (e) { console.error('[handoff] processDue:', e.message); }

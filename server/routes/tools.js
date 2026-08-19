@@ -13,6 +13,9 @@ router.use(auth);
 
 const ALL_STATUSES = ['novo', 'contato', 'confirmado', 'concluido', 'bloqueado', 'duplicado'];
 const MESSAGE_STATUSES = ['novo', 'contato'];
+const MANUAL_SEND_LIMIT = Number(process.env.MANUAL_SEND_LIMIT) || 6;
+const MANUAL_SEND_WINDOW_MS = Number(process.env.MANUAL_SEND_WINDOW_MS) || 60 * 1000;
+const operatorRateLimits = new Map();
 
 // ---------- Jobs (fila persistente) ----------
 
@@ -139,6 +142,19 @@ router.post('/send', async (req, res, next) => {
         const { status, message, limit, number_id } = req.body;
         if (!MESSAGE_STATUSES.includes(status || 'novo')) return res.status(400).json({ error: 'Disparo automático permitido somente em Novo ou Em contato' });
         if (!message || !message.trim()) return res.status(400).json({ error: 'Mensagem obrigatória' });
+
+        const now = Date.now();
+        const recent = (operatorRateLimits.get(req.user.id) || []).filter(ts => now - ts < MANUAL_SEND_WINDOW_MS);
+        if (recent.length >= MANUAL_SEND_LIMIT) {
+            operatorRateLimits.set(req.user.id, recent);
+            return res.status(429).json({
+                error: 'Limite de disparo manual atingido. Aguarde alguns segundos e tente novamente.',
+                retry_after_seconds: Math.max(1, Math.ceil((MANUAL_SEND_WINDOW_MS - (now - recent[0])) / 1000))
+            });
+        }
+        recent.push(now);
+        operatorRateLimits.set(req.user.id, recent);
+
         const campaign = await campaignService.createCampaign({
             seller_id: req.user.id,
             organization_id: req.user.organization_id,

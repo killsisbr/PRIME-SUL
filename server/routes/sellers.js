@@ -21,7 +21,10 @@ router.get('/', adminOnly, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
-// Vendedores com stats por estágio (admin)
+// Relatório de performance por vendedor (admin): funil real de leads (novo/contato/
+// confirmado/concluido/bloqueado — os status que existem de fato no schema; a versão
+// anterior desse endpoint usava estágios de um funil diferente que nunca existiu aqui
+// e sempre voltava zerado), envios/resposta/conversão e números WhatsApp ativos.
 router.get('/with-stats', adminOnly, async (req, res, next) => {
     try {
         const rows = await db.all(`
@@ -29,14 +32,21 @@ router.get('/with-stats', adminOnly, async (req, res, next) => {
                    (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id) AS total_leads,
                    (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'novo') AS novo,
                    (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'contato') AS contato,
-                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'proposta') AS proposta,
-                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'fechamento') AS fechamento,
-                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'ganho') AS ganho,
-                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'perdido') AS perdido,
-                   (SELECT COALESCE(SUM(l.limite_est), 0) FROM leads l WHERE l.seller_id = s.id AND l.status = 'ganho') AS total_fechado
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'confirmado') AS confirmado,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'concluido') AS concluido,
+                   (SELECT COUNT(*) FROM leads l WHERE l.seller_id = s.id AND l.status = 'bloqueado') AS bloqueado,
+                   (SELECT COUNT(sd.id) FROM sends sd JOIN leads l2 ON l2.id = sd.lead_id
+                        WHERE l2.seller_id = s.id AND sd.status IN ('sent','confirmado','recusado')) AS total_sends,
+                   (SELECT COUNT(sd.id) FROM sends sd JOIN leads l2 ON l2.id = sd.lead_id
+                        WHERE l2.seller_id = s.id AND sd.status IN ('confirmado','recusado')) AS responded,
+                   (SELECT COUNT(*) FROM bot_numbers bn WHERE bn.seller_id = s.id AND bn.status = 'ativo') AS active_numbers
             FROM sellers s WHERE s.organization_id = ? AND s.role != 'admin' ORDER BY s.name
         `, [req.user.organization_id]);
-        res.json(rows);
+        res.json(rows.map(r => ({
+            ...r,
+            response_rate: r.total_sends ? Math.round((r.responded / r.total_sends) * 1000) / 10 : 0,
+            conversion_rate: r.total_leads ? Math.round((r.concluido / r.total_leads) * 1000) / 10 : 0
+        })));
     } catch (e) { next(e); }
 });
 

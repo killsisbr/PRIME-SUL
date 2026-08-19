@@ -45,6 +45,19 @@ async function registerNumber(number, label, organizationId = 1, sellerId = null
     return row;
 }
 
+// Cria (se ainda não existir) o número interno de um slot fixo — sem exigir
+// que o admin/vendedor digite um telefone real antecipadamente. O telefone de
+// fato conectado só é descoberto depois do scan do QR (ver whatsapp-service).
+async function registerSlot(organizationId, sellerId, slotIndex, label) {
+    const number = `slot-${organizationId}-${sellerId || 'org'}-${slotIndex}`;
+    await ensureFresh();
+    await db.run(
+        'INSERT OR IGNORE INTO bot_numbers (organization_id, seller_id, number, label, slot_index) VALUES (?, ?, ?, ?, ?)',
+        [organizationId, sellerId, number, label || `WhatsApp ${slotIndex}`, slotIndex]
+    );
+    return db.get('SELECT * FROM bot_numbers WHERE organization_id = ? AND number = ?', [organizationId, number]);
+}
+
 async function pickBestNumber(organizationId = 1, sellerId = null) {
     await ensureFresh();
     const limit = await currentLimit();
@@ -52,27 +65,69 @@ async function pickBestNumber(organizationId = 1, sellerId = null) {
         SELECT * FROM bot_numbers
         WHERE organization_id = ? AND status = 'ativo'
           AND (seller_id IS NULL OR seller_id = ?)
-          AND messages_sent < ?
+          AND messages_sent < COALESCE(daily_limit_override, ?)
         ORDER BY messages_sent ASC, id ASC
         LIMIT 1
     `, [organizationId, sellerId, limit]);
 }
 
-async function markSent(number_id) {
-    await db.run("UPDATE bot_numbers SET messages_sent = messages_sent + 1, messages_reset_at=date('now') WHERE id = ?", [number_id]);
-    const n = await db.get('SELECT * FROM bot_numbers WHERE id = ?', [number_id]);
+// Escolhe o número menos usado e já incrementa o contador no mesmo UPDATE
+// (via subquery), evitando que duas chamadas concorrentes (campanha,
+// follow-up, handoff, todos no mesmo setInterval) escolham o mesmo número
+// antes de qualquer uma delas registrar o uso — o que estourava o limite
+// diário em silêncio antes do cooldown ser acionado.
+async function reserveNumber(organizationId = 1, sellerId = null) {
+    await ensureFresh();
     const limit = await currentLimit();
-    if (n.messages_sent >= limit) {
+    const n = await db.get(`
+        UPDATE bot_numbers
+        SET messages_sent = messages_sent + 1, messages_reset_at = date('now')
+        WHERE id = (
+            SELECT id FROM bot_numbers
+            WHERE organization_id = ? AND status = 'ativo'
+              AND (seller_id IS NULL OR seller_id = ?)
+              AND messages_sent < COALESCE(daily_limit_override, ?)
+            ORDER BY messages_sent ASC, id ASC
+            LIMIT 1
+        )
+        RETURNING *
+    `, [organizationId, sellerId, limit]);
+    if (!n) return null;
+
+    const effectiveLimit = n.daily_limit_override ?? limit;
+    if (n.messages_sent >= effectiveLimit) {
         const cooldownHours = await currentCooldownHours();
         const until = new Date(Date.now() + cooldownHours * 3600 * 1000).toISOString();
-        await db.run(
-            "UPDATE bot_numbers SET status = 'resfriado', cooled_until = ? WHERE id = ?",
-            [until, number_id]
-        );
-        botEvents.log(n.number, 'cooldown', `Atingiu ${limit} mensagens — resfriado até ${until}`, n.label);
-        console.log(`[anti-ban] Número ${n.number} atingiu ${limit} msgs — resfriado até ${until}`);
+        await db.run("UPDATE bot_numbers SET status = 'resfriado', cooled_until = ? WHERE id = ?", [until, n.id]);
+        botEvents.log(n.number, 'cooldown', `Atingiu ${effectiveLimit} mensagens — resfriado até ${until}`, n.label);
+        console.log(`[anti-ban] Número ${n.number} atingiu ${effectiveLimit} msgs — resfriado até ${until}`);
+        n.status = 'resfriado';
+        n.cooled_until = until;
     }
     return n;
+}
+
+// Define (ou remove, com null) o limite diário próprio deste número — sobrepõe
+// o global (cfg_daily_limit) enquanto estiver definido.
+async function setDailyLimitOverride(number_id, organizationId, value) {
+    const limit = value === null || value === '' ? null : Math.max(1, Math.floor(Number(value)) || 1);
+    await db.run(
+        'UPDATE bot_numbers SET daily_limit_override = ? WHERE id = ? AND organization_id = ?',
+        [limit, number_id, organizationId]
+    );
+    const n = await db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [number_id, organizationId]);
+    if (n) botEvents.log(n.number, 'limit_override', limit ? `Limite diário próprio ajustado para ${limit}` : 'Limite diário próprio removido — voltou a usar o global', n.label);
+    return n;
+}
+
+// Devolve a reserva quando o envio não se concretiza de fato (bot offline,
+// erro de rede etc.) — sem isso, tentativas falhas consumiriam cota do
+// número à toa.
+async function releaseNumber(number_id) {
+    await db.run(
+        "UPDATE bot_numbers SET messages_sent = MAX(messages_sent - 1, 0) WHERE id = ?",
+        [number_id]
+    );
 }
 
 async function markBanned(number_id) {
@@ -105,16 +160,20 @@ async function setStatus(number_id, status, organizationId = 1, sellerId = undef
     return db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [number_id, organizationId]);
 }
 
+// Mantido em sync com campaign-service.js#TARGETABLE_STATUSES
 async function shouldSend(lead) {
-    return ['novo', 'contato'].includes(lead.status);
+    return ['novo', 'contato', 'confirmado', 'concluido'].includes(lead.status);
 }
 
 module.exports = {
     registerNumber,
+    registerSlot,
     pickBestNumber,
-    markSent,
+    reserveNumber,
+    releaseNumber,
     markBanned,
     setStatus,
+    setDailyLimitOverride,
     shouldSend,
     ensureFresh,
     currentLimit,

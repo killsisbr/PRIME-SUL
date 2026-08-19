@@ -1,6 +1,7 @@
 const TYPE_META = {
     connect_queued: { icon: 'fa-hourglass-half', color: 'var(--info)', label: 'Conexão iniciada' },
     qr:            { icon: 'fa-qrcode', color: 'var(--violet)', label: 'QR gerado' },
+    qr_timeout:    { icon: 'fa-hourglass-end', color: 'var(--warning)', label: 'QR expirou sem scan' },
     connected:     { icon: 'fa-plug', color: 'var(--ok)', label: 'Bot conectado' },
     disconnected:  { icon: 'fa-unlink', color: 'var(--warning)', label: 'Desconectado' },
     send_ok:       { icon: 'fa-paper-plane', color: 'var(--ok)', label: 'Mensagem enviada' },
@@ -10,6 +11,7 @@ const TYPE_META = {
     cooldown:      { icon: 'fa-snowflake', color: 'var(--info)', label: 'Cooldown' },
     reactivated:   { icon: 'fa-rotate-left', color: 'var(--ok)', label: 'Reativado' },
     daily_limit:   { icon: 'fa-gauge-high', color: 'var(--warning)', label: 'Limite diário' },
+    limit_override: { icon: 'fa-sliders', color: 'var(--info)', label: 'Limite do número ajustado' },
     banned:        { icon: 'fa-skull', color: 'var(--bad)', label: 'Banido' }
 };
 const TYPE_FALLBACK = { icon: 'fa-circle-info', color: 'var(--text-muted)', label: 'Evento' };

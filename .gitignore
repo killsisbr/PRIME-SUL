@@ -30,6 +30,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.claude/
+.jarvis/
 
 # Test
 coverage/

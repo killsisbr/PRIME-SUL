@@ -9,8 +9,8 @@
 
     <main class="hub-console">
         <section class="hub-command-stage">
-            <div class="hub-stage-top"><span>ESTRATEGIA DA SEMANA</span><i class="fas fa-bolt"></i></div>
-            <div class="hub-stage-copy"><small>COMECE PELO MAIS RAPIDO</small><h2>1.000 LEADS.<br><strong>30% DE "SIM".</strong></h2><p>Crie uma campanha com o bot principal, filtre os interessados e repasse apenas os confirmados aos vendedores.</p></div>
+            <div class="hub-stage-top"><span>VISÃO EXECUTIVA</span><i class="fas fa-bolt"></i></div>
+            <div class="hub-stage-copy"><small>COMECE PELO ESSENCIAL</small><h2>MENOS RUÍDO.<br><strong>MAIS CONTROLE.</strong></h2><p>Use esta central para ir direto ao que importa: campanhas, anti-ban, leads e configurações. Cada área explica claramente o que faz antes de abrir as ferramentas.</p></div>
             <div class="hub-stage-actions">
                 <button type="button" class="hub-primary-action" id="btn-hub-create-campaign"><i class="fas fa-plus"></i> CRIAR CAMPANHA</button>
                 <button type="button" class="hub-ghost-action" id="btn-hub-campaigns"><i class="fas fa-paper-plane"></i> GERENCIAR</button>
@@ -31,57 +31,23 @@
             </button>
             <button type="button" class="hub-tool-card numbers-tool" id="btn-hub-numbers">
                 <span class="hub-card-index">02</span><span class="hub-tool-icon red"><i class="fas fa-shield-halved"></i></span>
-                <span class="hub-tool-copy"><small>ANTI-BAN</small><strong>Números descartáveis</strong><em>Limites diários, resfriamento e status de cada número.</em></span>
+                <span class="hub-tool-copy"><small>ANTI-BAN</small><strong>Números descartáveis</strong><em>Gerencie limites diários, resfriamento e risco antes de disparar.</em></span>
                 <b>CONFIGURAR <i class="fas fa-arrow-right"></i></b>
             </button>
             <button type="button" class="hub-tool-card leads-tool" id="btn-hub-leads">
                 <span class="hub-card-index">03</span><span class="hub-tool-icon blue"><i class="fas fa-users"></i></span>
-                <span class="hub-tool-copy"><small>BASE</small><strong>Leads quentes</strong><em>Contatos que pediram simulação, prontos para o disparo.</em></span>
+                <span class="hub-tool-copy"><small>BASE</small><strong>Leads quentes</strong><em>Veja contatos prontos para contato, com contexto e próximos passos.</em></span>
                 <b>VER LEADS <i class="fas fa-arrow-right"></i></b>
             </button>
             <button type="button" class="hub-tool-card config-tool" id="btn-hub-config">
                 <span class="hub-card-index">04</span><span class="hub-tool-icon dark"><i class="fas fa-cog"></i></span>
-                <span class="hub-tool-copy"><small>REGRA</small><strong>Configuração</strong><em>Templates de mensagem, limites anti-ban e parceira BB.</em></span>
+                <span class="hub-tool-copy"><small>REGRA</small><strong>Configuração</strong><em>Ajuste templates, limites e comportamento automático sem caçar menus.</em></span>
                 <b>CONFIGURAR <i class="fas fa-arrow-right"></i></b>
             </button>
             <div class="hub-utility-strip">
-                <span><i class="fas fa-lightbulb"></i> Confirmação "SIM" repassa automaticamente ao bot do vendedor.</span>
+                <span><i class="fas fa-lightbulb"></i> Confirmação "SIM" repassa automaticamente ao bot do vendedor. Cada card abaixo explica sua função em uma linha.</span>
                 <button type="button" id="btn-hub-sellers"><i class="fas fa-user-tie"></i> VENDEDORES</button>
             </div>
         </section>
     </main>
-
-    <!-- SUBMODAL: CAMPANHAS -->
-    <div class="v2-submodal-overlay hub-workspace-modal" id="hub-campaigns-modal" style="display:none;">
-        <div class="v2-submodal hub-submodal">
-            <div class="v2-submodal-header"><div><span class="hub-modal-step">CENTRAL DE DISPARO</span><h3>CAMPANHAS</h3><p>Crie, acompanhe e dispare mensagens em massa com o bot.</p></div><button type="button" class="btn-close-submodal" id="btn-close-hub-campaigns"><i class="fas fa-times"></i></button></div>
-            <div class="hub-coupon-toolbar">
-                <div><b id="hub-manager-active-count">0</b><span>ATIVAS AGORA</span></div>
-                <div><b id="hub-manager-total-count">0</b><span>CAMPANHAS</span></div>
-                <div><b id="hub-manager-sent-count">0</b><span>ENVIADOS</span></div>
-                <div><b id="hub-manager-confirm-sum">0</b><span>CONFIRMADOS</span></div>
-                <button type="button" class="btn-retro" id="btn-inline-add-campaign"><i class="fas fa-plus"></i> NOVA CAMPANHA</button>
-            </div>
-            <div class="v2-submodal-body hub-campaign-list" id="inline-campaign-list"><div class="hub-loading"><i class="fas fa-spinner fa-spin"></i> Carregando campanhas...</div></div>
-            <footer class="hub-submodal-footer"><button type="button" class="btn-retro btn-secondary-retro" id="btn-close-hub-campaigns-footer">Voltar</button></footer>
-        </div>
-    </div>
-
-    <!-- SUBMODAL: NOVA CAMPANHA -->
-    <div class="v2-submodal-overlay hub-workspace-modal hub-editor-overlay" id="hub-campaign-editor-modal" style="display:none;">
-        <div class="v2-submodal hub-submodal hub-editor-submodal">
-            <div class="v2-submodal-header"><div><span class="hub-modal-step" id="hub-editor-step">NOVA CAMPANHA</span><h3 id="hub-editor-title">CRIAR CAMPANHA</h3><p>Defina a mensagem e os números do bot.</p></div><button type="button" class="btn-close-submodal" id="btn-close-campaign-editor"><i class="fas fa-times"></i></button></div>
-            <form id="hub-campaign-form">
-                <div class="v2-submodal-body hub-campaign-form-grid">
-                    <div class="v2-form-group hub-wide"><label for="hc-name">Nome da campanha</label><input type="text" id="hc-name" required placeholder="EX: Leads quentes semana 34"></div>
-                    <div class="v2-form-group hub-wide"><label for="hc-message">Mensagem do bot</label><textarea id="hc-message" rows="4" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea></div>
-                    <div class="v2-form-group"><label>Número do bot</label><select id="hc-number"><option value="">Selecione um número ativo...</option></select></div>
-                </div>
-                <footer class="hub-submodal-footer">
-                    <button type="button" class="btn-retro btn-secondary-retro" id="btn-inline-cancel-campaign">Cancelar</button>
-                    <button type="submit" class="btn-retro" id="btn-inline-save-campaign"><i class="fas fa-save"></i> Criar campanha</button>
-                </footer>
-            </form>
-        </div>
-    </div>
 </div>

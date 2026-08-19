@@ -33,3 +33,34 @@
         </form>
     </div>
 </div>
+
+<!-- Modal números do vendedor -->
+<div class="v2-submodal-overlay" id="sellerNumbersModal" style="display:none;">
+    <div class="v2-submodal" style="max-width:640px;">
+        <div class="v2-submodal-header">
+            <div><span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">NÚMEROS DO VENDEDOR</span><h3 id="snm-seller-name">—</h3></div>
+            <button type="button" class="btn-close-submodal" id="snm-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body">
+            <div id="snm-list"><div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando...</div></div>
+            <form id="snm-add-form" class="snm-add-row">
+                <input type="text" id="snm-new-number" class="ps-input" placeholder="Novo número (5511999997777)" required>
+                <input type="text" id="snm-new-label" class="ps-input" placeholder="Rótulo (opcional)">
+                <button type="submit" class="btn-retro"><i class="fas fa-plus"></i> ADICIONAR</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal QR do número -->
+<div class="v2-submodal-overlay" id="sellerQrModal" style="display:none;">
+    <div class="v2-submodal" style="max-width:380px;">
+        <div class="v2-submodal-header">
+            <div><span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">CONEXÃO WHATSAPP</span><h3>ESCANEAR QR</h3></div>
+            <button type="button" class="btn-close-submodal" id="snq-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body" style="text-align:center;" id="snq-body">
+            <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Conectando...</div>
+        </div>
+    </div>
+</div>

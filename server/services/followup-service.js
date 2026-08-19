@@ -8,15 +8,51 @@ const DEFAULT_DAYS = '3,7,14,30';
 const DEFAULT_MSG = 'Olá {nome}, tudo bem? Você pediu uma simulação de crédito e ainda não finalizou. Posso te encaminhar a proposta? Responda SIM para continuar.';
 const FOLLOWUP_STATUSES = ['novo', 'contato'];
 const BATCH_SIZE = 10;
+const DEFAULT_WINDOW_START = '09:00';
+const DEFAULT_WINDOW_END = '18:00';
+const DEFAULT_WINDOW_DAYS = '1,2,3,4,5';
 
+// Fora do MVP por hora: desligado por padrão até ser reativado explicitamente via cfg_followup_enabled=true.
 async function enabled() {
     const s = await settings.get();
-    return s.cfg_followup_enabled !== 'false';
+    return s.cfg_followup_enabled === 'true';
 }
 
 async function daysList() {
     const s = await settings.get();
     return (s.cfg_followup_days || DEFAULT_DAYS).split(',').map(Number).filter(d => Number.isFinite(d) && d > 0);
+}
+
+function parseTimeParts(value, fallbackHour, fallbackMinute) {
+    if (!value || typeof value !== 'string') return { hour: fallbackHour, minute: fallbackMinute };
+    const [h, m] = value.split(':').map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return { hour: fallbackHour, minute: fallbackMinute };
+    return { hour: Math.min(23, Math.max(0, Math.floor(h))), minute: Math.min(59, Math.max(0, Math.floor(m))) };
+}
+
+async function isWithinFollowupWindow(now = new Date()) {
+    const s = await settings.get();
+    const allowedDays = new Set(
+        String(s.cfg_followup_window_days || DEFAULT_WINDOW_DAYS)
+            .split(',')
+            .map(Number)
+            .filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
+    );
+    if (allowedDays.size && !allowedDays.has(now.getDay())) return false;
+
+    const start = parseTimeParts(s.cfg_followup_window_start || DEFAULT_WINDOW_START, 9, 0);
+    const end = parseTimeParts(s.cfg_followup_window_end || DEFAULT_WINDOW_END, 18, 0);
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const startMinutes = start.hour * 60 + start.minute;
+    const endMinutes = end.hour * 60 + end.minute;
+
+    if (startMinutes === endMinutes) return true;
+    if (startMinutes < endMinutes) {
+        return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    }
+    // Janela atravessa a meia-noite.
+    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
 }
 
 // Agenda follow-ups para leads sem resposta (inativos há N dias) — roda a cada ~10min
@@ -63,9 +99,13 @@ async function buildMessage(f) {
 // Processa follow-ups vencidos (agora — roda a cada 60s)
 async function processDue() {
     if (!await enabled()) return { sent: 0 };
+    if (!await isWithinFollowupWindow()) {
+        console.log('[followup] fora da janela comercial — envio adiado');
+        return { sent: 0, deferred: true };
+    }
 
     const due = await db.all(`
-        SELECT f.*, l.name, l.phone, l.status AS lead_status
+        SELECT f.*, l.name, l.phone, l.status AS lead_status, l.organization_id AS lead_org_id
         FROM followups f
         JOIN leads l ON l.id = f.lead_id
         WHERE f.status = 'scheduled' AND f.due_at <= datetime('now')
@@ -81,14 +121,20 @@ async function processDue() {
             continue;
         }
 
-        const num = await antiBan.pickBestNumber();
+        // Reserva atomicamente (pick + incremento no mesmo UPDATE) — evita que
+        // follow-up e campanha, rodando no mesmo ciclo, escolham o mesmo número
+        // antes de qualquer um registrar o uso.
+        const num = await antiBan.reserveNumber();
         if (!num) {
             console.warn('[followup] limite diário atingido em todos os números — aguardando próximo ciclo');
             break;
         }
 
         const msg = await buildMessage(f);
-        const res = await whatsapp.sendMessage(num.number, f.phone, msg);
+        const res = await whatsapp.sendMessage(num.number, f.phone, msg, {
+            organizationId: f.organization_id || f.lead_org_id || 1,
+            sellerId: f.seller_id
+        });
         if (res.sent) {
             await db.run(
                 "UPDATE followups SET status = 'sent', sent_at = datetime('now'), message = ?, number_id = ? WHERE id = ?",
@@ -99,12 +145,13 @@ async function processDue() {
                  VALUES (NULL, ?, ?, 'sent', ?, datetime('now'))`,
                 [f.lead_id, num.id, msg]
             );
-            await antiBan.markSent(num.id);
             botEvents.log(num.number, 'send_ok', `Follow-up #${f.bucket} ${f.name} → ${f.phone}`, num.label);
             sent++;
-        } else if (res.reason === 'not_connected') {
-            break; // bot offline — tenta no próximo ciclo
         } else {
+            await antiBan.releaseNumber(num.id); // não saiu de fato — devolve a cota reservada
+            if (res.reason === 'not_connected') {
+                break; // bot offline — tenta no próximo ciclo
+            }
             await db.run("UPDATE followups SET status = 'skipped' WHERE id = ?", [f.id]);
             botEvents.log(num.number, 'send_fail', `Follow-up ${f.name} (${res.reason})`, num.label);
         }

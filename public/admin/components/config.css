@@ -1,0 +1,24 @@
+/* ============ CONFIGURAÇÃO — abas ============ */
+
+.cfg-tabbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.cfg-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 2.5px solid var(--dark);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--dark);
+    font: 800 .68rem var(--font-body);
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.cfg-tab:hover { transform: translateY(-1px); }
+.cfg-tab.active { background: var(--primary); color: #fff; box-shadow: 3px 3px 0 var(--dark); }
+
+.cfg-tabpanel .ps-card:last-child { margin-bottom: 0; }
+
+.cfg-footer { display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 14px; border-top: 2px dashed rgba(0,0,0,.12); }
+.cfg-footer .ps-btn-save { margin: 0; }

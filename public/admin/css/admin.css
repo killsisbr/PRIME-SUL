@@ -404,6 +404,8 @@ body.admin-body {
 }
 
 .btn-retro:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--dark); background: var(--primary); color: #fff; }
+.btn-retro:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: 4px 4px 0 var(--dark); background: var(--card); color: var(--text); }
+.btn-retro:disabled:hover { transform: none; box-shadow: 4px 4px 0 var(--dark); background: var(--card); color: var(--text); }
 .btn-retro:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--dark); }
 .btn-secondary-retro { background: var(--card); color: var(--text); }
 .btn-secondary-retro:hover { background: var(--bg); color: var(--dark); }

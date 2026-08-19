@@ -13,6 +13,12 @@
         <div><b id="mk-falhas">0</b><span>FALHAS</span></div>
     </div>
 
+    <div class="mk-view-toggle">
+        <button type="button" class="mk-view-btn active" data-view="lista"><i class="fas fa-list"></i> LISTA</button>
+        <button type="button" class="mk-view-btn" data-view="semana"><i class="fas fa-calendar-week"></i> SEMANA</button>
+    </div>
+
+    <div class="mk-week" id="mk-week" hidden></div>
     <div class="mk-list" id="mk-list">
         <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando status...</div>
     </div>
@@ -60,8 +66,13 @@
                         <label class="mk-type"><input type="radio" name="mk-type" value="link"><i class="fas fa-link"></i> Link</label>
                     </div>
 
-                    <label class="mk-label" id="mk-media-label" style="display:none;">URL da Imagem</label>
-                    <input type="url" id="mk-media" class="mk-input" style="display:none;" placeholder="https://sua-imagem.jpg">
+                    <label class="mk-label" id="mk-media-label" style="display:none;">Imagem</label>
+                    <div class="mk-upload-row" id="mk-upload-row" style="display:none;">
+                        <button type="button" class="mk-upload-btn" id="mk-upload-btn"><i class="fas fa-upload"></i> ESCOLHER IMAGEM</button>
+                        <span class="mk-upload-name" id="mk-upload-name">Nenhuma imagem selecionada</span>
+                    </div>
+                    <input type="file" id="mk-media-file" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;">
+                    <input type="hidden" id="mk-media">
 
                     <label class="mk-label">Cor de Fundo</label>
                     <div class="mk-colors" id="mk-colors">

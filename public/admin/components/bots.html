@@ -1,26 +1,34 @@
 <div class="bt-root">
-    <div class="ps-head" style="margin-bottom:14px;">
-        <div>
-            <div class="ps-head-title"><i class="fab fa-whatsapp" style="color: var(--ok);"></i> BOTS WHATSAPP</div>
-            <p class="ps-head-desc">Conecte os números com QR code e acompanhe a proteção anti-ban em tempo real.</p>
-        </div>
-        <span class="bt-env" id="bt-env">—</span>
-    </div>
+    <div class="bt-shell">
+        <aside class="bt-hero">
+            <div class="bt-hero-top">
+                <span class="bt-hero-icon"><i class="fab fa-whatsapp"></i></span>
+                <span class="bt-env" id="bt-env">—</span>
+            </div>
+            <small class="bt-hero-eyebrow">CONEXÃO WHATSAPP</small>
+            <h2 class="bt-hero-headline">CONECTE.<br><span>MONITORE. VENDA.</span></h2>
+            <p class="bt-hero-desc">Escaneie o QR Code, acompanhe a saúde das sessões e deixe seus números prontos pra operar.</p>
 
-    <div class="bt-stats">
-        <div><b id="bt-total">0</b><span>NÚMEROS</span></div>
-        <div><b id="bt-conectados">0</b><span>CONECTADOS</span></div>
-        <div><b id="bt-limite">—</b><span>LIMITE / DIA</span></div>
-        <div><b id="bt-cooldown">—</b><span>COOLDOWN</span></div>
-    </div>
+            <div class="bt-hero-toggle" id="bt-hero-toggle-wrap">
+                <label class="bt-switch"><input type="checkbox" id="bt-toggle" checked><span></span></label>
+                <div>
+                    <strong id="bt-toggle-label">BOTS ATIVOS</strong>
+                    <span id="bt-toggle-desc">Pausar temporariamente todas as conexões da empresa</span>
+                </div>
+            </div>
 
-    <div class="bt-add">
-        <input type="text" id="bt-num" class="bt-input" placeholder="Número (DDI+DDD+telefone) ex: 5511999999999">
-        <input type="text" id="bt-label" class="bt-input" placeholder="Etiqueta ex: bot-principal" style="flex:0 0 180px;">
-        <button type="button" class="bt-add-btn" id="bt-add-btn"><i class="fas fa-plus"></i> ADICIONAR E CONECTAR</button>
-    </div>
+            <div class="bt-hero-metrics">
+                <div><b id="bt-total">0</b><span>NÚMEROS</span></div>
+                <div><b id="bt-conectados">0</b><span>CONECTADOS</span></div>
+                <div><b id="bt-limite">—</b><span>LIMITE/DIA</span></div>
+                <div><b id="bt-cooldown">—</b><span>COOLDOWN</span></div>
+            </div>
+        </aside>
 
-    <div class="bt-grid" id="bt-grid">
-        <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando bots...</div>
+        <main class="bt-content">
+            <div class="bt-grid" id="bt-grid">
+                <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando bots...</div>
+            </div>
+        </main>
     </div>
 </div>

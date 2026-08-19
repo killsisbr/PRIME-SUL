@@ -99,10 +99,64 @@ export async function init() {
 
     async function refresh() {
         try {
-            render(await api('/marketing/posts'));
+            const posts = await api('/marketing/posts');
+            _mk.posts = posts;
+            render(posts);
+            renderWeek(posts);
         } catch (e) {
             document.getElementById('mk-list').innerHTML = `<div class="ps-empty" style="color:var(--bad);">${escapeHtml(e.message)}</div>`;
         }
+    }
+
+    // ============ VISÃO SEMANAL ============
+    // Segunda a domingo da semana atual — usa scheduled_at (agendado) ou sent_at
+    // (já publicado) pra encaixar o post no dia certo.
+    const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+    function parseUtc(s) {
+        return new Date(String(s).replace(' ', 'T') + 'Z');
+    }
+
+    function startOfWeek(d) {
+        const day = d.getDay(); // 0=domingo
+        const monday = new Date(d);
+        monday.setDate(d.getDate() - ((day + 6) % 7));
+        monday.setHours(0, 0, 0, 0);
+        return monday;
+    }
+
+    function renderWeek(posts) {
+        const box = document.getElementById('mk-week');
+        const monday = startOfWeek(new Date());
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
+        });
+
+        const byDay = days.map(() => []);
+        for (const p of posts) {
+            const ref = p.sent_at || p.scheduled_at;
+            if (!ref) continue;
+            const d = parseUtc(ref);
+            const idx = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(monday.getFullYear(), monday.getMonth(), monday.getDate())) / 86400000);
+            if (idx >= 0 && idx < 7) byDay[idx].push(p);
+        }
+
+        const todayKey = new Date().toDateString();
+        box.innerHTML = days.map((d, i) => {
+            const isToday = d.toDateString() === todayKey;
+            const items = byDay[i].sort((a, b) => (a.sent_at || a.scheduled_at).localeCompare(b.sent_at || b.scheduled_at));
+            return `
+            <div class="mk-week-day ${isToday ? 'today' : ''}">
+                <div class="mk-week-head"><span>${WEEKDAYS[d.getDay()]}</span><b>${d.getDate()}</b></div>
+                <div class="mk-week-items">
+                    ${items.length ? items.map(p => {
+                        const s = STATUS_META[p.status] || STATUS_META.scheduled;
+                        const t = parseUtc(p.sent_at || p.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                        return `<div class="mk-week-item ${s.cls}" data-id="${p.id}" title="${escapeHtml(p.title)}"><span class="mk-week-time">${t}</span>${escapeHtml(p.title)}</div>`;
+                    }).join('') : '<div class="mk-week-empty">—</div>'}
+                </div>
+            </div>`;
+        }).join('');
     }
 
     async function fillNumbers() {
@@ -130,6 +184,8 @@ export async function init() {
         document.getElementById('mk-title-input').value = '';
         document.getElementById('mk-message').value = '';
         document.getElementById('mk-media').value = '';
+        document.getElementById('mk-media-file').value = '';
+        document.getElementById('mk-upload-name').textContent = 'Nenhuma imagem selecionada';
         document.getElementById('mk-schedule').value = '';
         document.getElementById('mk-recurring').checked = false;
         document.getElementById('mk-font').value = '2';
@@ -150,6 +206,7 @@ export async function init() {
         document.getElementById('mk-title-input').value = p.title || '';
         document.getElementById('mk-message').value = p.message || '';
         document.getElementById('mk-media').value = p.media_url || '';
+        document.getElementById('mk-upload-name').textContent = p.media_url ? p.media_url.split('/').pop() : 'Nenhuma imagem selecionada';
         document.getElementById('mk-schedule').value = toLocalInput(p.scheduled_at);
         document.getElementById('mk-recurring').checked = !!p.recurring;
         document.getElementById('mk-font').value = p.font || '2';
@@ -175,7 +232,7 @@ export async function init() {
         _mk.type = type;
         document.querySelectorAll('.mk-type').forEach(el => el.classList.toggle('active', el.querySelector('input').value === type));
         const isImage = type === 'image';
-        document.getElementById('mk-media').style.display = isImage ? '' : 'none';
+        document.getElementById('mk-upload-row').style.display = isImage ? '' : 'none';
         document.getElementById('mk-media-label').style.display = isImage ? '' : 'none';
         updatePreview();
     }
@@ -272,7 +329,28 @@ export async function init() {
     document.querySelectorAll('.mk-color').forEach(c => c.onclick = () => setActiveColor(c.dataset.color));
     document.getElementById('mk-font').onchange = updatePreview;
     document.getElementById('mk-message').oninput = updateCharCount;
-    document.getElementById('mk-media').oninput = updatePreview;
+
+    document.getElementById('mk-upload-btn').onclick = () => document.getElementById('mk-media-file').click();
+    document.getElementById('mk-media-file').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const nameEl = document.getElementById('mk-upload-name');
+        nameEl.textContent = 'Enviando...';
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const res = await fetch('/api/marketing/upload', { method: 'POST', body: fd });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Erro ao enviar imagem');
+            document.getElementById('mk-media').value = data.url;
+            nameEl.textContent = file.name;
+            updatePreview();
+        } catch (err) {
+            nameEl.textContent = 'Nenhuma imagem selecionada';
+            document.getElementById('mk-media').value = '';
+            toast(err.message, 'err');
+        }
+    };
     document.getElementById('mk-drawer').addEventListener('click', e => {
         const em = e.target.closest('.mk-emoji');
         if (!em) return;
@@ -346,6 +424,20 @@ export async function init() {
         } finally {
             btn.disabled = false;
         }
+    });
+
+    document.querySelectorAll('.mk-view-btn').forEach(b => b.onclick = () => {
+        document.querySelectorAll('.mk-view-btn').forEach(x => x.classList.toggle('active', x === b));
+        const isWeek = b.dataset.view === 'semana';
+        document.getElementById('mk-week').hidden = !isWeek;
+        document.getElementById('mk-list').hidden = isWeek;
+    });
+
+    document.getElementById('mk-week').addEventListener('click', e => {
+        const item = e.target.closest('.mk-week-item');
+        if (!item) return;
+        const p = (_mk.posts || []).find(x => x.id === Number(item.dataset.id));
+        if (p) editPost(p);
     });
 
     await fillNumbers();

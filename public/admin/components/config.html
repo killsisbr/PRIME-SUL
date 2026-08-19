@@ -8,68 +8,72 @@
         </div>
     </div>
 
-    <div class="ps-alert ps-alert-warn">
-        <i class="fas fa-triangle-exclamation"></i>
-        <div><strong>Segurança em primeiro lugar</strong><span class="ps-alert-sub">Mensagens em massa seguem as boas práticas anti-ban: volume diário limitado por número descartável e repasse apenas para quem confirmou.</span></div>
+    <div class="ps-alert ps-alert-info">
+        <i class="fas fa-circle-info"></i>
+        <div><strong>Leitura rápida</strong><span class="ps-alert-sub">Cada aba separa um assunto: parceria, mensagens e proteção anti-ban. Assim você não precisa caçar o mesmo ajuste em mais de um lugar.</span></div>
     </div>
 
-    <!-- PARCEIRA BB -->
-    <div class="ps-card">
-        <div class="ps-card-title"><i class="fas fa-bank" style="color: var(--ink);"></i> Parceira Banco do Brasil</div>
-        <div class="ps-grid-2">
-            <div class="ps-field"><label for="cfgCnpj">CNPJ da Empresa</label><input type="text" class="ps-input" id="cfgCnpj" placeholder="00.000.000/0001-00"></div>
-            <div class="ps-field"><label for="cfgParceiro">Código do Parceiro BB</label><input type="text" class="ps-input" id="cfgParceiro" placeholder="Ex: PARC-0001"></div>
+    <div class="cfg-tabbar" id="cfgTabbar">
+        <button type="button" class="cfg-tab active" data-cfg-tab="bb"><i class="fas fa-bank"></i> PARCERIA BB</button>
+        <button type="button" class="cfg-tab" data-cfg-tab="msg"><i class="fas fa-comment-dots"></i> MENSAGENS</button>
+        <button type="button" class="cfg-tab" data-cfg-tab="antiban"><i class="fas fa-shield-halved"></i> ANTI-BAN</button>
+    </div>
+
+    <div class="cfg-tabpanel" data-cfg-panel="bb">
+        <div class="ps-alert ps-alert-warn">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div><strong>Segurança em primeiro lugar</strong><span class="ps-alert-sub">Mensagens em massa seguem as boas práticas anti-ban: volume diário limitado por número descartável e repasse apenas para quem confirmou.</span></div>
         </div>
-        <div class="ps-grid-2">
-            <div class="ps-field"><label for="cfgProdutos">Produtos oferecidos</label><select class="ps-select" id="cfgProdutos">
-                <option value="consignado">Consignado</option>
-                <option value="emprestimo">Empréstimo Pessoal</option>
-                <option value="financiamento">Financiamento</option>
-            </select></div>
-            <div class="ps-field"><label for="cfgAmbiente">Ambiente BB</label><select class="ps-select" id="cfgAmbiente">
-                <option value="homologacao">Homologação (Testes)</option>
-                <option value="producao">Produção</option>
-            </select></div>
+        <div class="ps-card">
+            <div class="ps-card-title"><i class="fas fa-bank" style="color: var(--ink);"></i> Parceira Banco do Brasil</div>
+            <div class="ps-grid-2">
+                <div class="ps-field"><label for="cfgCnpj">CNPJ da Empresa</label><input type="text" class="ps-input" id="cfgCnpj" placeholder="00.000.000/0001-00"></div>
+                <div class="ps-field"><label for="cfgParceiro">Código do Parceiro BB</label><input type="text" class="ps-input" id="cfgParceiro" placeholder="Ex: PARC-0001"></div>
+            </div>
+            <div class="ps-grid-2">
+                <div class="ps-field"><label for="cfgProdutos">Produtos oferecidos</label><select class="ps-select" id="cfgProdutos">
+                    <option value="consignado">Consignado</option>
+                    <option value="emprestimo">Empréstimo Pessoal</option>
+                    <option value="financiamento">Financiamento</option>
+                </select></div>
+                <div class="ps-field"><label for="cfgAmbiente">Ambiente BB</label><select class="ps-select" id="cfgAmbiente">
+                    <option value="homologacao">Homologação (Testes)</option>
+                    <option value="producao">Produção</option>
+                </select></div>
+            </div>
         </div>
     </div>
 
-    <!-- TEMPLATES -->
-    <div class="ps-card">
-        <div class="ps-card-title"><i class="fas fa-comment-dots" style="color: var(--brand);"></i> Templates de Mensagem</div>
-        <div class="ps-field"><label for="cfgTemplate">Mensagem inicial do bot (usa {nome})</label><textarea class="ps-textarea" id="cfgTemplate" rows="3">Olá {nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.</textarea></div>
-        <p class="ps-hint">Variáveis: <code>{nome}</code> é substituído pelo primeiro nome do lead no disparo.</p>
+    <div class="cfg-tabpanel" data-cfg-panel="msg" hidden>
+        <div class="ps-card">
+            <div class="ps-card-title"><i class="fas fa-comment-dots" style="color: var(--brand);"></i> Templates de Mensagem</div>
+            <div class="ps-field"><label for="cfgTemplate">Mensagem inicial do bot (usa {nome})</label><textarea class="ps-textarea" id="cfgTemplate" rows="5">Olá {nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.</textarea></div>
+            <p class="ps-hint">Variáveis: <code>{nome}</code> é substituído pelo primeiro nome do lead no disparo.</p>
+        </div>
     </div>
 
-    <!-- ANTI-BAN -->
-    <div class="ps-card">
-        <div class="ps-card-title"><i class="fas fa-shield-halved" style="color: var(--bad);"></i> Limites Anti-Ban</div>
-        <div class="ps-grid-3">
-            <div class="ps-field"><label for="cfgDailyLimit">Msgs por número / dia</label><input type="number" class="ps-input" id="cfgDailyLimit" value="40" min="1"></div>
-            <div class="ps-field"><label for="cfgDelay">Delay entre envios (ms)</label><input type="number" class="ps-input" id="cfgDelay" value="15000" min="1000"></div>
-            <div class="ps-field"><label for="cfgBatch">Lote por ciclo</label><input type="number" class="ps-input" id="cfgBatch" value="50" min="1"></div>
+    <div class="cfg-tabpanel" data-cfg-panel="antiban" hidden>
+        <div class="ps-card">
+            <div class="ps-card-title"><i class="fas fa-shield-halved" style="color: var(--bad);"></i> Limites Anti-Ban</div>
+            <div class="ps-grid-3">
+                <div class="ps-field"><label for="cfgDailyLimit">Msgs por número / dia</label><input type="number" class="ps-input" id="cfgDailyLimit" value="40" min="1"></div>
+                <div class="ps-field"><label for="cfgDelay">Delay entre envios (ms)</label><input type="number" class="ps-input" id="cfgDelay" value="15000" min="1000"></div>
+                <div class="ps-field"><label for="cfgBatch">Lote por ciclo</label><input type="number" class="ps-input" id="cfgBatch" value="50" min="1"></div>
+                <div class="ps-field"><label for="cfgWaSlots">WhatsApp por operador (slots)</label><input type="number" class="ps-input" id="cfgWaSlots" value="2" min="1" max="10"></div>
+            </div>
+            <p class="ps-hint">Pausar/retomar os bots agora é feito direto no módulo <b>Meu WhatsApp</b> (efeito imediato, sem precisar salvar aqui).</p>
         </div>
 
-        <div class="ps-toggle-row">
-            <input type="checkbox" id="cfgBotEnabled">
-            <label for="cfgBotEnabled">Ativar Bots WhatsApp (requer QR Code)</label>
+        <div class="ps-card">
+            <div class="ps-card-title"><i class="fas fa-rotate" style="color: var(--brand);"></i> Recontato em Campanhas</div>
+            <p class="ps-hint">Por padrão, um lead que já recebeu uma campanha nunca entra em outra campanha de novo (mesmo em outra etapa). Se quiser permitir reenviar depois de um tempo, defina abaixo quantos dias esperar.</p>
+            <div class="ps-grid-3">
+                <div class="ps-field"><label for="cfgRecontactDays">Dias mínimos antes de recontatar (0 = nunca)</label><input type="number" class="ps-input" id="cfgRecontactDays" value="0" min="0"></div>
+            </div>
         </div>
+    </div>
 
+    <footer class="cfg-footer">
         <button class="ps-btn-save" onclick="saveFiscalSettings()"><i class="fas fa-save"></i> SALVAR CONFIGURAÇÕES</button>
-    </div>
-
-    <!-- FOLLOW-UP AUTOMÁTICO -->
-    <div class="ps-card">
-        <div class="ps-card-title"><i class="fas fa-rotate-right" style="color: var(--brand);"></i> Follow-up Automático</div>
-        <p class="ps-hint">Reenvia uma mensagem para leads que pediram simulação mas não responderam. O bot reage como se fosse a primeira abordagem, respeitando os limites anti-ban.</p>
-
-        <div class="ps-grid-2">
-            <div class="ps-field"><label for="cfgFollowupDays">Dias sem resposta para reenviar (separados por vírgula)</label><input type="text" class="ps-input" id="cfgFollowupDays" placeholder="3,7,14,30"></div>
-            <div class="ps-field"><label for="cfgFollowupMsg">Mensagem do follow-up (usa {nome})</label><textarea class="ps-textarea" id="cfgFollowupMsg" rows="3">Olá {nome}, tudo bem? Você pediu uma simulação de crédito e ainda não finalizou. Posso te encaminhar a proposta? Responda SIM para continuar.</textarea></div>
-        </div>
-
-        <div class="ps-toggle-row">
-            <input type="checkbox" id="cfgFollowupEnabled">
-            <label for="cfgFollowupEnabled">Ativar follow-up automático</label>
-        </div>
-    </div>
+    </footer>
 </div>

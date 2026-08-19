@@ -3,7 +3,8 @@ const QRCode = require('qrcode');
 const db = require('../database/db');
 const whatsapp = require('../services/whatsapp-service');
 const antiBan = require('../services/anti-ban-service');
-const { auth } = require('../middleware/auth');
+const settings = require('../services/settings-service');
+const { auth, adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
 router.use(auth);
@@ -20,16 +21,35 @@ router.get('/status', async (req, res, next) => {
         const now = new Date().toISOString();
         res.json({
             enabled: whatsapp.enabled(),
+            envEnabled: whatsapp.envEnabled(),
+            runtimeEnabled: whatsapp.isRuntimeEnabled(),
             cooldown_hours: await antiBan.currentCooldownHours(),
             daily_limit: await antiBan.currentLimit(),
             bots: visibleBots,
+            wa_slots_limit: await settings.getNumber('cfg_wa_slots', 2),
             numbers: numbers.map(n => ({
                 ...n,
                 connection: bots[n.number]?.status || 'offline',
                 waitingQr: bots[n.number]?.waitingQr || false,
+                realNumber: bots[n.number]?.realNumber || n.real_number || null,
+                pushName: bots[n.number]?.pushName || n.push_name || null,
                 cooled_expired: n.cooled_until ? n.cooled_until <= now : false
             }))
         });
+    } catch (e) { next(e); }
+});
+
+// Pausa/retoma os bots em runtime (sem precisar reiniciar o servidor). Admin apenas —
+// é um controle de todo o ambiente, não só do vendedor que está na tela.
+router.post('/toggle', adminOnly, async (req, res, next) => {
+    try {
+        const value = !!req.body.enabled;
+        await db.run(
+            'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+            ['cfg_bot_enabled', value ? 'true' : 'false']
+        );
+        whatsapp.setRuntimeEnabled(value);
+        res.json({ enabled: whatsapp.enabled(), envEnabled: whatsapp.envEnabled(), runtimeEnabled: whatsapp.isRuntimeEnabled() });
     } catch (e) { next(e); }
 });
 
@@ -45,6 +65,38 @@ router.post('/connect', async (req, res, next) => {
         }
         await whatsapp.connect(number, label);
         res.json({ ok: true, number, status: 'connecting' });
+    } catch (e) { next(e); }
+});
+
+// Conecta um slot fixo (sem digitar número) — cada organização/vendedor tem
+// direito a `cfg_wa_slots` WhatsApp (padrão 2); o telefone real só é conhecido
+// depois do scan do QR.
+router.post('/slots/:index/connect', async (req, res, next) => {
+    try {
+        const index = Number(req.params.index);
+        const limit = await settings.getNumber('cfg_wa_slots', 2);
+        if (!Number.isInteger(index) || index < 1 || index > limit) {
+            return res.status(400).json({ error: `Slot inválido (disponíveis: 1 a ${limit})` });
+        }
+        const organizationId = req.user.organization_id;
+        const sellerId = req.user.role === 'admin' ? null : req.user.id;
+        const row = await antiBan.registerSlot(organizationId, sellerId, index, `WhatsApp ${index}`);
+        if (!whatsapp.enabled()) {
+            return res.json({ ok: true, number: row.number, status: 'queued', message: 'Ative BOT_ENABLED no .env e reinicie para conectar.' });
+        }
+        await whatsapp.connect(row.number, row.label);
+        res.json({ ok: true, number: row.number, status: 'connecting' });
+    } catch (e) { next(e); }
+});
+
+// Ajusta o limite diário de UM número específico (admin apenas) — null/vazio
+// remove o override e volta a usar o limite global (cfg_daily_limit).
+router.patch('/numbers/:id/limit', adminOnly, async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        const n = await antiBan.setDailyLimitOverride(id, req.user.organization_id, req.body.daily_limit_override);
+        if (!n) return res.status(404).json({ error: 'Número não encontrado' });
+        res.json(n);
     } catch (e) { next(e); }
 });
 

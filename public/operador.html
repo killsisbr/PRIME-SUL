@@ -9,9 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/js/anime.min.js"></script>
     <link rel="stylesheet" href="/css/tokens.css">
+    <link rel="stylesheet" href="/css/wa-widget.css">
     <link rel="stylesheet" href="/admin/css/admin.css">
     <link rel="stylesheet" href="/admin/css/components.css">
+    <link rel="stylesheet" href="/admin/components/leads.css">
+    <script src="/js/wa-widget.js"></script>
 </head>
 <body class="admin-body">
 
@@ -147,7 +151,7 @@
         const MODULES = [
             { name: 'hub', title: 'Hub de Disparo', icon: 'fa-rocket', color: '#ff7417', desc: 'Estratégia anti-ban', badge: 'HUB', border: '#ff7417', bot: true },
             { name: 'funil', title: 'Funil de Vendas', icon: 'fa-filter', color: '#3b82f6', desc: 'Conversão por estágio', badge: 'FUNIL', border: '#3b82f6' },
-            { name: 'bots', title: 'Meu WhatsApp', icon: 'fa-mobile-screen-button', color: '#10b981', desc: 'Conectar números e escanear QR', badge: 'WA', border: '#10b981', bot: true },
+            { name: 'bots', title: 'Meu WhatsApp', icon: 'fa-mobile-screen-button', color: '#10b981', desc: 'Conectar números e escanear QR', badge: 'WA', border: '#10b981' },
             { name: 'leads', title: 'Leads', icon: 'fa-users', color: '#3b82f6', desc: 'Minha lista de contatos' },
             { name: 'campanhas', title: 'Campanhas', icon: 'fa-paper-plane', color: '#10b981', desc: 'Disparo em massa' }
         ];
@@ -197,7 +201,7 @@
         let activeModule = null;
         let _isOpening = false;
 
-        async function openToolV2(componentName, title) {
+        async function openToolV2(componentName, title, afterInit) {
             if (_isOpening) return;
             _isOpening = true;
             const overlay = document.getElementById('dynamicModalOverlay');
@@ -205,6 +209,19 @@
             const titleEl = document.getElementById('dynamicModalTitle');
             overlay.classList.add('active');
             overlay.style.display = 'flex';
+
+            // Destrói o módulo anterior antes de montar o novo (evita vazar timers/intervals
+            // ao navegar direto de um módulo para outro, ex: Hub/Funil -> Campanhas)
+            if (activeComponent) {
+                const oldCss = document.getElementById(`v2-css-spec-${activeComponent}`);
+                if (oldCss) oldCss.remove();
+                activeComponent = null;
+            }
+            if (activeModule && typeof activeModule.destroy === 'function') {
+                try { activeModule.destroy(); } catch (e) { console.error(e); }
+                activeModule = null;
+            }
+
             body.innerHTML = '<div class="v2-loading-placeholder"><i class="fas fa-spinner fa-spin"></i> Carregando módulo...</div>';
 
             const cssId = `v2-css-spec-${componentName}`;
@@ -237,10 +254,16 @@
                 }
                 activeComponent = componentName;
                 activeModule = module;
+                let api = {};
                 if (module && typeof module.init === 'function') {
-                    await module.init({ container: body });
+                    api = (await module.init({ container: body })) || {};
                 }
                 window.buildModuleHud?.(body, componentName, title);
+                if (typeof afterInit === 'function') {
+                    const workspace = body.querySelector('.module-hud-workspace');
+                    if (workspace) workspace.classList.add('active');
+                    afterInit(api);
+                }
             } catch (err) {
                 console.error('[Operador] Erro ao instanciar módulo:', err);
                 body.innerHTML = `

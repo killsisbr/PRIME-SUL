@@ -17,8 +17,11 @@ function numId(id) {
     return Number.isFinite(n) ? n : id;
 }
 
-// Status que o disparo em massa atinge por padrão (leads quentes)
-const HOT_STATUSES = ['novo', 'contato'];
+// Status que podem ser alvo de campanha (bloqueado/duplicado nunca entram).
+// Mantido em sync com anti-ban-service.js#shouldSend.
+const TARGETABLE_STATUSES = ['novo', 'contato', 'confirmado', 'concluido'];
+// Quando a campanha não especifica status, mantém o comportamento padrão histórico (leads quentes)
+const DEFAULT_STATUSES = ['novo', 'contato'];
 
 // Message de entrada do bot principal (anti-ban): pergunta se pode encaminhar a simulação
 function buildMainMessage(lead) {
@@ -34,21 +37,34 @@ function personalize(msg, lead) {
 }
 
 // Constrói WHERE dinâmico para selecionar os leads-alvo da campanha
-function buildTargetWhere(sellerId, filters = {}) {
+async function buildTargetWhere(sellerId, filters = {}) {
     const clauses = ['l.seller_id = ?'];
     const params = [sellerId];
 
     const rawStatuses = Array.isArray(filters.status) ? filters.status : (filters.status ? [filters.status] : []);
-    const statuses = rawStatuses.filter(s => HOT_STATUSES.includes(s));
-    clauses.push(`l.status IN (${(statuses.length ? statuses : HOT_STATUSES).map(() => '?').join(',')})`);
-    for (const s of statuses.length ? statuses : HOT_STATUSES) params.push(s);
+    const statuses = rawStatuses.filter(s => TARGETABLE_STATUSES.includes(s));
+    const effective = statuses.length ? statuses : DEFAULT_STATUSES;
+    clauses.push(`l.status IN (${effective.map(() => '?').join(',')})`);
+    for (const s of effective) params.push(s);
 
     if (filters.origem) { clauses.push('l.origem = ?'); params.push(filters.origem); }
     if (filters.prioridade) { clauses.push('l.prioridade = ?'); params.push(filters.prioridade); }
     if (filters.cidade) { clauses.push('l.city LIKE ?'); params.push(`%${filters.cidade}%`); }
 
-    // Não envia para quem já recebeu envio de alguma campanha
-    clauses.push('NOT EXISTS (SELECT 1 FROM sends s WHERE s.lead_id = l.id AND s.campaign_id IS NOT NULL)');
+    // Recontato: por padrão (cfg_recontact_days = 0) um lead que já recebeu qualquer
+    // campanha nunca é re-selecionado. Se o admin configurar um número de dias em
+    // Configuração > Anti-Ban, o lead volta a ficar elegível depois desse prazo.
+    const recontactDays = await settings.getNumber('cfg_recontact_days', 0);
+    if (recontactDays > 0) {
+        clauses.push(`NOT EXISTS (
+            SELECT 1 FROM sends s WHERE s.lead_id = l.id AND s.campaign_id IS NOT NULL
+            AND s.status IN ('sent','confirmado','recusado')
+            AND s.sent_at >= datetime('now', ?)
+        )`);
+        params.push(`-${Math.floor(recontactDays)} days`);
+    } else {
+        clauses.push('NOT EXISTS (SELECT 1 FROM sends s WHERE s.lead_id = l.id AND s.campaign_id IS NOT NULL)');
+    }
     clauses.push('NOT EXISTS (SELECT 1 FROM opt_outs o WHERE o.organization_id = l.organization_id AND o.phone = l.phone)');
 
     let limit = null;
@@ -60,7 +76,7 @@ function buildTargetWhere(sellerId, filters = {}) {
 }
 
 async function countTargets(sellerId, filters = {}) {
-    const { where, params } = buildTargetWhere(sellerId, filters);
+    const { where, params } = await buildTargetWhere(sellerId, filters);
     const row = await db.get(`SELECT COUNT(*) AS c FROM leads l WHERE ${where}`, params);
     return row ? row.c : 0;
 }
@@ -76,21 +92,42 @@ async function pickNumbers(number_ids, organizationId = 1, sellerId = null) {
     return db.all("SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND status = 'ativo' ORDER BY seller_id IS NULL, id ASC LIMIT 1", [organizationId, sellerId]);
 }
 
-async function createCampaign({ seller_id, organization_id = 1, name, message, number_ids, filters = {} }) {
+// Lista (não só conta) os leads que batem com os filtros — usado pra deixar o vendedor
+// ver e desmarcar leads individuais antes de criar a campanha.
+async function listTargets(sellerId, filters = {}) {
+    const { where, params, limit } = await buildTargetWhere(sellerId, filters);
+    const cap = limit ? Math.min(limit, 500) : 500;
+    return db.all(
+        `SELECT l.id, l.name, l.phone, l.city, l.origem, l.score, l.prioridade FROM leads l WHERE ${where} ORDER BY l.created_at ASC LIMIT ${cap}`,
+        params
+    );
+}
+
+async function createCampaign({ seller_id, organization_id = 1, name, message, number_ids, filters = {}, scheduled_at = null, lead_ids = null, template_id = null }) {
     const numbers = await pickNumbers(number_ids, organization_id, seller_id);
     if (!numbers.length) throw new Error('Nenhum número ativo disponível');
 
-    const { where, params, limit } = buildTargetWhere(seller_id, filters);
-    const targets = await db.all(
-        `SELECT * FROM leads l WHERE ${where} ORDER BY l.created_at ASC${limit ? ' LIMIT ' + limit : ''}`,
-        params
-    );
+    let targets;
+    if (Array.isArray(lead_ids) && lead_ids.length) {
+        // Seleção explícita (curada na UI) — restrita aos leads do próprio vendedor, por segurança.
+        const ids = [...new Set(lead_ids.map(Number).filter(Boolean))];
+        targets = await db.all(
+            `SELECT * FROM leads WHERE seller_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
+            [seller_id, ...ids]
+        );
+    } else {
+        const { where, params, limit } = await buildTargetWhere(seller_id, filters);
+        targets = await db.all(
+            `SELECT * FROM leads l WHERE ${where} ORDER BY l.created_at ASC${limit ? ' LIMIT ' + limit : ''}`,
+            params
+        );
+    }
     if (!targets.length) throw new Error('Nenhum lead corresponde aos filtros escolhidos');
 
     const result = await db.run(
-        `INSERT INTO campaigns (organization_id, seller_id, number_id, name, message, status, total_target, filters)
-         VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)`,
-        [organization_id, seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), targets.length, JSON.stringify(filters || {})]
+        `INSERT INTO campaigns (organization_id, seller_id, number_id, name, message, status, total_target, filters, scheduled_at, template_id)
+         VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`,
+        [organization_id, seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), targets.length, JSON.stringify(filters || {}), scheduled_at || null, template_id || null]
     );
 
     for (const lead of targets) {
@@ -100,6 +137,40 @@ async function createCampaign({ seller_id, organization_id = 1, name, message, n
         );
     }
     return db.get('SELECT * FROM campaigns WHERE id = ?', [result.lastID]);
+}
+
+async function updateCampaign(id, { name, message }, sellerId, role, organizationId) {
+    id = numId(id);
+    const campaign = await getAuthorizedCampaign(id, sellerId, role, organizationId);
+    if (campaign.status === 'running') { const e = new Error('Pause a campanha antes de editar'); e.status = 409; throw e; }
+    const nextName = (name ?? campaign.name).trim();
+    const nextMessage = (message ?? campaign.message).trim();
+    if (!nextName) throw new Error('Nome obrigatório');
+    await db.run('UPDATE campaigns SET name = ?, message = ? WHERE id = ?', [nextName, nextMessage, id]);
+    return db.get('SELECT * FROM campaigns WHERE id = ?', [id]);
+}
+
+async function deleteCampaign(id, sellerId, role, organizationId) {
+    id = numId(id);
+    const campaign = await getAuthorizedCampaign(id, sellerId, role, organizationId);
+    if (campaign.status === 'running') { const e = new Error('Pause ou cancele a campanha antes de excluir'); e.status = 409; throw e; }
+    await db.run('DELETE FROM sends WHERE campaign_id = ?', [id]);
+    await db.run('DELETE FROM campaigns WHERE id = ?', [id]);
+    return { deleted: true };
+}
+
+// Inicia campanhas agendadas cuja hora já chegou (chamado periodicamente)
+async function processScheduled() {
+    const due = await db.all(
+        "SELECT * FROM campaigns WHERE status = 'draft' AND scheduled_at IS NOT NULL AND scheduled_at <= datetime('now')"
+    );
+    for (const c of due) {
+        try {
+            await startCampaign(c.id);
+            console.log(`[campaign] ${c.name} — iniciada automaticamente (agendamento)`);
+        } catch (e) { console.error(`[campaign] ${c.name} — falha ao iniciar agendamento:`, e.message); }
+    }
+    return due.length;
 }
 
 // Campanha direta: envia para uma lista explícita de leads (auto-disparo por coluna)
@@ -208,8 +279,19 @@ async function processCampaign(campaign, job) {
 
             const lead = await db.get('SELECT * FROM leads WHERE id = ?', [send.lead_id]);
 
-            // Anti-ban: rotação entre números — sempre escolhe o menos usado hoje
-            const botNumber = await antiBan.pickBestNumber(campaign.organization_id || 1, campaign.seller_id);
+            // Anti-ban: só envia para leads quentes (checa antes de reservar número,
+            // pra não gastar cota de nenhum bot com lead inelegível)
+            if (!antiBan.shouldSend(lead)) {
+                await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
+                progress.falhou++;
+                progress.done++;
+                continue;
+            }
+
+            // Anti-ban: rotação entre números — reserva atomicamente o menos usado hoje
+            // (pick + incremento no mesmo UPDATE, sem janela pra outra campanha/follow-up
+            // concorrente escolher o mesmo número antes do contador subir)
+            const botNumber = await antiBan.reserveNumber(campaign.organization_id || 1, campaign.seller_id);
             if (!botNumber) {
                 console.warn(`[campaign] ${campaign.name} — limite diário atingido em todos os números, pausando`);
                 const campNum = await db.get('SELECT number, label FROM bot_numbers WHERE id = ?', [campaign.number_id]);
@@ -221,26 +303,21 @@ async function processCampaign(campaign, job) {
             }
             await db.run('UPDATE sends SET number_id = ? WHERE id = ?', [botNumber.id, send.id]);
 
-            // Anti-ban: só envia para leads quentes
-            if (!antiBan.shouldSend(lead)) {
-                await db.run("UPDATE sends SET status = 'falhou' WHERE id = ?", [send.id]);
-                progress.falhou++;
-                progress.done++;
-                continue;
-            }
-
             let msg = campaign.message ? personalize(campaign.message, lead) : buildMainMessage(lead);
 
-            const res = await whatsapp.sendMessage(botNumber.number, lead.phone, msg);
+            const res = await whatsapp.sendMessage(botNumber.number, lead.phone, msg, {
+                organizationId: campaign.organization_id,
+                sellerId: campaign.seller_id
+            });
             if (res.sent) {
                 await db.run(
                     `UPDATE sends SET status = 'sent', wa_message = ?, sent_at = datetime('now') WHERE id = ?`,
                     [msg, send.id]
                 );
-                await antiBan.markSent(botNumber.id);
                 botEvents.log(botNumber.number, 'send_ok', `${lead.name} → ${lead.phone}`, botNumber.label);
                 progress.sent++;
             } else {
+                await antiBan.releaseNumber(botNumber.id); // não saiu de fato — devolve a cota reservada
                 if (res.reason === 'not_connected') {
                     console.warn(`[campaign] ${campaign.name} — bot offline, pausando (auto-resume na reconexão)`);
                     botEvents.log(botNumber.number, 'paused', `Bot offline — campanha "${campaign.name}" pausada`, botNumber.label);
@@ -381,13 +458,18 @@ function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 module.exports = {
     createCampaign,
+    updateCampaign,
+    deleteCampaign,
     sendToLead,
     countTargets,
+    listTargets,
     startCampaign,
     pauseCampaign,
     cancelCampaign,
     retryCampaign,
     resumePausedFromOffline,
     resumePausedFromLimit,
-    recoverInterrupted
+    recoverInterrupted,
+    processScheduled,
+    TARGETABLE_STATUSES
 };

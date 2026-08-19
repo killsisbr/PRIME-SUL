@@ -54,6 +54,14 @@ router.post('/targets/count', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Lista os leads reais que a campanha atingiria com os filtros informados
+router.post('/targets/list', async (req, res, next) => {
+    try {
+        const leads = await campaignService.listTargets(req.user.id, req.body || {});
+        res.json({ leads });
+    } catch (e) { next(e); }
+});
+
 // Lista campanhas do vendedor com progresso agregado dos envios
 router.get('/', async (req, res, next) => {
     try {
@@ -93,7 +101,7 @@ router.get('/', async (req, res, next) => {
 // Cria campanha
 router.post('/', async (req, res, next) => {
     try {
-        const { name, message, number_ids, filters } = req.body;
+        const { name, message, number_ids, filters, scheduled_at, lead_ids, template_id } = req.body;
         if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
         const campaign = await campaignService.createCampaign({
             seller_id: req.user.id,
@@ -101,9 +109,29 @@ router.post('/', async (req, res, next) => {
             name,
             message,
             number_ids: number_ids || [],
-            filters: filters || {}
+            filters: filters || {},
+            scheduled_at: scheduled_at || null,
+            lead_ids: Array.isArray(lead_ids) ? lead_ids : null,
+            template_id: template_id ? Number(template_id) : null
         });
         res.status(201).json(campaign);
+    } catch (e) { next(e); }
+});
+
+// Edita nome/mensagem (bloqueado enquanto a campanha está rodando)
+router.put('/:id', async (req, res, next) => {
+    try {
+        const { name, message } = req.body;
+        const campaign = await campaignService.updateCampaign(req.params.id, { name, message }, req.user.id, req.user.role, req.user.organization_id);
+        res.json(campaign);
+    } catch (e) { next(e); }
+});
+
+// Exclui campanha (bloqueado enquanto está rodando)
+router.delete('/:id', async (req, res, next) => {
+    try {
+        await campaignService.deleteCampaign(req.params.id, req.user.id, req.user.role, req.user.organization_id);
+        res.json({ ok: true });
     } catch (e) { next(e); }
 });
 

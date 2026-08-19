@@ -39,7 +39,10 @@ async function processDue() {
             await db.run(`UPDATE handoffs SET status='sending', seller_number_id=?, attempts=?, updated_at=datetime('now') WHERE id=?`, [number.id, attempt, h.id]);
             await whatsapp.connect(number.number, `vendedor-${h.seller_id}`);
             const message = (process.env.BOT_SELLER_WELCOME || DEFAULT_MESSAGE).replace(/\{nome\}/g, (h.name || 'Cliente').split(' ')[0]);
-            const result = await whatsapp.sendMessage(number.number, h.phone, message);
+            const result = await whatsapp.sendMessage(number.number, h.phone, message, {
+                organizationId: h.organization_id,
+                sellerId: h.seller_id
+            });
             if (result.sent) {
                 await db.run(`UPDATE handoffs SET status='sent', error=NULL, sent_at=datetime('now'), updated_at=datetime('now') WHERE id=?`, [h.id]);
                 await whatsapp.archiveChat(number.number, h.phone).catch(() => {});

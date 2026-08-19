@@ -43,13 +43,19 @@ const LEAD_MIGRATIONS = {
 const NUMBER_MIGRATIONS = {
     cooled_until: 'TEXT',
     messages_reset_at: 'TEXT',
-    seller_id: 'INTEGER'
+    seller_id: 'INTEGER',
+    slot_index: 'INTEGER',   // posição do slot fixo (1..cfg_wa_slots) — null para números cadastrados manualmente
+    real_number: 'TEXT',     // WhatsApp de fato vinculado após o scan do QR (pode diferir do "number" interno do slot)
+    push_name: 'TEXT',
+    daily_limit_override: 'INTEGER' // limite diário próprio deste número — nulo = usa cfg_daily_limit global
 };
 
 const CAMPAIGN_MIGRATIONS = {
     error: 'TEXT',
     filters: 'TEXT',
-    organization_id: 'INTEGER NOT NULL DEFAULT 1'
+    organization_id: 'INTEGER NOT NULL DEFAULT 1',
+    scheduled_at: 'TEXT',
+    template_id: 'INTEGER' // qual message_templates gerou a mensagem (nulo = escrita livre) — habilita relatório de resposta/conversão por template
 };
 
 const SELLER_MIGRATIONS = { organization_id: 'INTEGER NOT NULL DEFAULT 1' };

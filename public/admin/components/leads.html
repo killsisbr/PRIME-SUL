@@ -1,180 +1,264 @@
-<div class="kbx-root">
-    <div class="ps-head" style="margin-bottom:12px;">
-        <div>
-            <div class="ps-head-title"><i class="fas fa-users" style="color: var(--info);"></i> MEUS LEADS</div>
-            <p class="ps-head-desc">Arraste os cards entre as colunas para mudar o status.</p>
+<div class="ld-root">
+    <!-- ============ TOP HEADER & STATS ============ -->
+    <div class="ld-header">
+        <div class="ld-brand">
+            <span class="ld-brand-icon"><i class="fas fa-users"></i></span>
+            <div>
+                <small>CARTEIRA COMERCIAL</small>
+                <h2>Leads & Clientes</h2>
+                <p>Gestão completa da base de contatos com inteligência comercial.</p>
+            </div>
         </div>
-        <button type="button" class="ps-icon-btn" id="kbx-reload" title="Atualizar" style="width:40px; height:40px; font-size:.95rem; background:var(--secondary);">
-            <i class="fas fa-rotate-right"></i>
-        </button>
+        <div class="ld-stats">
+            <div class="ld-stat">
+                <span class="fl-stat-icon blue"><i class="fas fa-address-book"></i></span>
+                <div>
+                    <b id="lv-stat-total">0</b>
+                    <span>TOTAL BASE</span>
+                </div>
+            </div>
+            <div class="ld-stat">
+                <span class="fl-stat-icon green"><i class="fas fa-calendar-day"></i></span>
+                <div>
+                    <b id="lv-stat-hoje">0</b>
+                    <span>HOJE</span>
+                </div>
+            </div>
+            <div class="ld-stat">
+                <span class="fl-stat-icon orange"><i class="fas fa-fire"></i></span>
+                <div>
+                    <b id="lv-stat-quentes">0</b>
+                    <span>SCORE ≥ 70</span>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="kbx-toolbar">
-        <div class="kbx-search">
-            <i class="fas fa-search"></i>
-            <input type="text" id="kbx-search" placeholder="Buscar por nome, telefone, cidade...">
+    <!-- ============ ACTION BAR & FILTROS ============ -->
+    <div class="ld-action-bar">
+        <button type="button" class="btn-retro" id="ld-btn-new">
+            <i class="fas fa-plus"></i> NOVO LEAD
+        </button>
+        <button type="button" class="btn-retro btn-secondary-retro" id="ld-btn-ocr">
+            <i class="fas fa-wand-magic-sparkles" style="color:var(--primary);"></i> AUTO-PREENCHER COM IA (OCR)
+        </button>
+        <button type="button" class="btn-retro btn-secondary-retro" id="kbx-tools-btn" disabled title="Escolha um status nos filtros para ver as ferramentas de etapa">
+            <i class="fas fa-bolt"></i> AÇÕES EM MASSA
+        </button>
+        <div class="ld-right-actions" style="margin-left:auto;">
+            <button type="button" class="fl-refresh" id="kbx-reload" title="Atualizar base"><i class="fas fa-rotate-right"></i></button>
         </div>
-        <select id="kbx-origem" class="kbx-select">
+    </div>
+
+    <!-- ============ FILTROS DE BUSCA ============ -->
+    <div class="ld-filter-bar">
+        <div class="fl-search-box" style="flex:2; min-width:240px;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="kbx-search" placeholder="Buscar por nome, telefone, CPF, cidade...">
+        </div>
+        <select id="kbx-status" class="fl-select-pill">
+            <option value="">TODOS OS STATUS</option>
+            <option value="novo">Novo</option>
+            <option value="contato">Em contato</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="concluido">Concluído</option>
+            <option value="bloqueado">Bloqueado</option>
+        </select>
+        <select id="kbx-origem" class="fl-select-pill">
             <option value="">TODAS ORIGENS</option>
             <option value="SITE">Site</option>
             <option value="SIMULACAO">Simulação</option>
             <option value="INDICACAO">Indicação</option>
         </select>
-        <select id="kbx-prio" class="kbx-select">
+        <select id="kbx-prio" class="fl-select-pill">
             <option value="">TODAS PRIORIDADES</option>
             <option value="alta">★ Alta</option>
             <option value="media">★ Média</option>
             <option value="baixa">★ Baixa</option>
         </select>
-        <select id="kbx-score" class="kbx-select" title="Filtrar por score mínimo">
+        <select id="kbx-score" class="fl-select-pill">
             <option value="">TODOS SCORES</option>
             <option value="70">Score ≥ 70</option>
             <option value="50">Score ≥ 50</option>
         </select>
-        <input type="text" id="kbx-tag" class="kbx-select" style="max-width:160px;" placeholder="Tag (ex.: quente)" title="Filtrar por tag">
-        <span class="kbx-count" id="kbx-total">0 leads</span>
-        <button type="button" class="btn-retro" id="kbx-new" style="padding:8px 14px; font-size:.72rem;"><i class="fas fa-plus"></i> NOVO LEAD</button>
+        <input type="text" id="kbx-tag" class="fl-select-pill" style="max-width:140px;" placeholder="Tag (ex: quente)">
+        <span class="ld-count-badge" id="kbx-total">0 leads</span>
     </div>
 
-    <div class="kbx-board" id="kbx-board">
-        <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando leads...</div>
+    <!-- ============ LISTA REVOLUTIONARY DE LEADS ============ -->
+    <div class="ld-list" id="kbx-board">
+        <div class="fl-drawer-loading"><i class="fas fa-spinner fa-spin"></i> Carregando lista de leads...</div>
     </div>
 </div>
 
-<!-- ============ NOVO LEAD ============ -->
-<div class="v2-submodal-overlay" id="leadNewOverlay" style="display:none;">
-    <div class="v2-submodal" style="max-width:560px;">
-        <div class="v2-submodal-header">
+<!-- ============ MODAL ANIMADO: NOVO LEAD + IA VISION OCR (100% ISOLADO / SEM SCROLL INTERNO) ============ -->
+<div class="ld-nl-overlay" id="ldAddOverlay" style="display:none;">
+    <div class="ld-nl-modal" id="ld-add-shell">
+        <div class="ld-nl-header">
             <div>
-                <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">LEADS</span>
-                <h3>NOVO LEAD</h3>
+                <span class="ld-nl-eyebrow">CADASTRO DE CLIENTE</span>
+                <h3>NOVO LEAD COM IA VISION</h3>
+                <p>Preencha manualmente ou envie um documento (CNH, RG, Holerite, PDF) para leitura via IA.</p>
             </div>
-            <button type="button" class="btn-close-submodal" id="leadNew-close"><i class="fas fa-times"></i></button>
+            <button type="button" class="ld-nl-close" id="ld-add-close"><i class="fas fa-times"></i></button>
         </div>
-        <div class="v2-submodal-body">
-            <div class="v2-form-group">
-                <label>Nome <span style="color:var(--bad);">*</span></label>
-                <input type="text" id="leadNew-name" class="ps-input" placeholder="Nome completo">
-            </div>
-            <div class="v2-form-group">
-                <label>Telefone <span style="color:var(--bad);">*</span></label>
-                <input type="text" id="leadNew-phone" class="ps-input" placeholder="(11) 99999-0000">
-            </div>
-            <div class="ps-grid-2">
-                <div class="v2-form-group">
-                    <label>CPF <span style="font-weight:600; color:var(--text-muted);">(identificador anti-duplicidade)</span></label>
-                    <input type="text" id="leadNew-cpf" class="ps-input" placeholder="000.000.000-00" maxlength="14">
+
+        <div class="ld-nl-body">
+            <!-- DROPZONE IA VISION OCR -->
+            <div class="ld-ocr-box" id="ldOcrBox">
+                <input type="file" id="ldOcrFileInput" accept="image/*,.pdf" style="display:none;">
+                <div class="ld-ocr-content" id="ldOcrTrigger">
+                    <div class="ld-ocr-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div>
+                        <strong>SOLTE UMA IMAGEM OU PDF AQUI (OU CLIQUE PARA ENVIAR)</strong>
+                        <p>A IA Vision analisa CNH, RG ou comprovante e preenche Nome, CPF, Telefone e Renda automaticamente! Também aceita colar (Ctrl+V) uma imagem copiada.</p>
+                    </div>
+                    <button type="button" class="ld-nl-btn ld-nl-btn-secondary" style="margin-left:auto;"><i class="fas fa-upload"></i> LER DOCUMENTO</button>
                 </div>
-                <div class="v2-form-group">
-                    <label>Tags <span style="font-weight:600; color:var(--text-muted);">(separadas por vírgula)</span></label>
-                    <input type="text" id="leadNew-tags" class="ps-input" placeholder="quente, prioridade">
+                <div class="ld-ocr-loading" id="ldOcrLoading" style="display:none;">
+                    <i class="fas fa-brain fa-spin"></i>
+                    <span>PROCESSANDO DOCUMENTO VIA IA VISION (OCR)...</span>
                 </div>
-            </div>
-            <div class="ps-grid-2">
-                <div class="v2-form-group">
-                    <label>Origem</label>
-                    <select id="leadNew-origem" class="ps-select">
-                        <option value="SITE">Site</option>
-                        <option value="SIMULACAO">Simulação</option>
-                        <option value="INDICACAO">Indicação</option>
-                    </select>
-                </div>
-                <div class="v2-form-group">
-                    <label>Prioridade</label>
-                    <select id="leadNew-prio" class="ps-select">
-                        <option value="media">★ Média</option>
-                        <option value="alta">★ Alta</option>
-                        <option value="baixa">★ Baixa</option>
-                    </select>
+                <div class="ld-ocr-preview" id="ldOcrPreview" style="display:none;">
+                    <button type="button" class="ld-ocr-thumb-btn" id="ldOcrThumbBtn" title="Clique pra ver em tamanho maior">
+                        <img id="ldOcrThumb" class="ld-ocr-thumb" alt="Documento enviado">
+                        <i class="fas fa-file-pdf ld-ocr-thumb-pdf" id="ldOcrThumbPdf" style="display:none;"></i>
+                    </button>
+                    <div class="ld-ocr-preview-info">
+                        <strong id="ldOcrFileName">documento</strong>
+                        <span>Clique na miniatura pra conferir o documento em tamanho maior</span>
+                    </div>
+                    <button type="button" class="ld-nl-btn ld-nl-btn-secondary" id="ldOcrChange"><i class="fas fa-rotate"></i> TROCAR</button>
                 </div>
             </div>
-            <div class="ps-grid-2">
-                <div class="v2-form-group">
-                    <label>Cidade</label>
-                    <input type="text" id="leadNew-city" class="ps-input" placeholder="Cidade">
+
+            <!-- FORMULÁRIO DE CADASTRO -->
+            <form id="ld-add-form" class="ld-nl-form" onsubmit="return false;">
+                <div class="ld-nl-row">
+                    <div class="ld-nl-field" style="flex:2; min-width:200px;">
+                        <label class="ld-nl-label" for="add-name">Nome Completo *</label>
+                        <input type="text" id="add-name" class="ld-nl-input" required placeholder="Ex: João da Silva">
+                    </div>
+                    <div class="ld-nl-field" style="flex:1; min-width:140px;">
+                        <label class="ld-nl-label" for="add-phone">Telefone / WhatsApp *</label>
+                        <input type="text" id="add-phone" class="ld-nl-input" required placeholder="Ex: 11999999999">
+                    </div>
                 </div>
-                <div class="v2-form-group">
-                    <label>Limite estimado (R$)</label>
-                    <input type="text" id="leadNew-limite" class="ps-input" placeholder="Ex.: 50.000">
+
+                <div class="ld-nl-row">
+                    <div class="ld-nl-field" style="flex:1; min-width:140px;">
+                        <label class="ld-nl-label" for="add-cpf">CPF</label>
+                        <input type="text" id="add-cpf" class="ld-nl-input" placeholder="000.000.000-00">
+                    </div>
+                    <div class="ld-nl-field" style="flex:1; min-width:140px;">
+                        <label class="ld-nl-label" for="add-prio">Prioridade</label>
+                        <select id="add-prio" class="ld-nl-select">
+                            <option value="alta">★ Alta</option>
+                            <option value="media" selected>★ Média</option>
+                            <option value="baixa">★ Baixa</option>
+                        </select>
+                    </div>
+                    <div class="ld-nl-field" style="flex:1; min-width:140px;">
+                        <label class="ld-nl-label" for="add-origem">Origem</label>
+                        <select id="add-origem" class="ld-nl-select">
+                            <option value="SITE">SITE</option>
+                            <option value="SIMULACAO">SIMULACAO</option>
+                            <option value="INDICACAO">INDICACAO</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="v2-form-group">
-                <label>Observações</label>
-                <textarea id="leadNew-obs" class="ps-textarea" rows="2" placeholder="Detalhes do lead"></textarea>
-            </div>
+
+                <div class="ld-nl-row">
+                    <div class="ld-nl-field" style="flex:1; min-width:140px;">
+                        <label class="ld-nl-label" for="add-city">Cidade / Estado</label>
+                        <input type="text" id="add-city" class="ld-nl-input" placeholder="Ex: Porto Alegre - RS">
+                    </div>
+                    <div class="ld-nl-field" style="flex:1; min-width:140px;">
+                        <label class="ld-nl-label" for="add-renda">Renda Declarada (R$)</label>
+                        <input type="number" step="0.01" id="add-renda" class="ld-nl-input" placeholder="0.00">
+                    </div>
+                    <div class="ld-nl-field" style="flex:1; min-width:140px;">
+                        <label class="ld-nl-label" for="add-limite">Limite Estimado (R$)</label>
+                        <input type="number" step="0.01" id="add-limite" class="ld-nl-input" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="ld-nl-row">
+                    <div class="ld-nl-field" style="flex:1; min-width:200px;">
+                        <label class="ld-nl-label" for="add-tags">Tags <small>Separadas por vírgula</small></label>
+                        <input type="text" id="add-tags" class="ld-nl-input" placeholder="ex: urgente, aposentado, consignado">
+                    </div>
+                    <div class="ld-nl-field" style="flex:1; min-width:200px;">
+                        <label class="ld-nl-label" for="add-obs">Observações Iniciais</label>
+                        <input type="text" id="add-obs" class="ld-nl-input" placeholder="Anotações sobre o cliente...">
+                    </div>
+                </div>
+            </form>
         </div>
-        <footer class="ctp-footer">
-            <button type="button" class="btn-retro btn-secondary-retro" id="leadNew-cancel"><i class="fas fa-times"></i> CANCELAR</button>
-            <button type="button" class="btn-retro" id="leadNew-save"><i class="fas fa-save"></i> SALVAR LEAD</button>
+
+        <footer class="ld-nl-footer">
+            <button type="button" class="ld-nl-btn ld-nl-btn-secondary" id="ld-add-cancel">CANCELAR</button>
+            <button type="button" class="ld-nl-btn" id="ld-add-save"><i class="fas fa-plus"></i> SALVAR LEAD</button>
         </footer>
     </div>
 </div>
 
-<!-- ============ FERRAMENTAS DE COLUNA ============ -->
+<!-- ============ LIGHTBOX: DOCUMENTO EM TAMANHO MAIOR ============ -->
+<div class="ld-lightbox" id="ldLightbox" style="display:none;">
+    <button type="button" class="ld-lightbox-close" id="ldLightboxClose"><i class="fas fa-times"></i></button>
+    <img id="ldLightboxImg" class="ld-lightbox-img" alt="Documento em tamanho maior">
+</div>
+
+<!-- ============ FERRAMENTAS DE ETAPA ============ -->
 <div class="v2-submodal-overlay" id="ctoolsOverlay" style="display:none;">
-    <div class="v2-submodal" style="max-width:760px;">
+    <div class="v2-submodal fla-modal" style="width:min(780px,94vw);">
         <div class="v2-submodal-header">
             <div>
-                <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">FERRAMENTAS DE COLUNA</span>
-                <h3>COLUNA <span id="ctools-status" style="color:var(--primary);">NOVO</span></h3>
+                <span class="fla-eyebrow">AÇÕES EM MASSA DA ETAPA</span>
+                <h3>ETAPA <span id="ctools-status" style="color:var(--primary);">NOVO</span></h3>
+                <p>Execute disparos de mensagens ou mova múltiplos leads ao mesmo tempo.</p>
             </div>
             <button type="button" class="btn-close-submodal" id="ctools-close"><i class="fas fa-times"></i></button>
         </div>
-        <div class="v2-submodal-body">
-            <div class="ctools-section">
-                <div class="ctools-section-title"><i class="fas fa-bolt"></i> AÇÕES EM MASSA</div>
-                <div class="ctools-actions">
-                    <div class="ctools-action" id="ctools-send-wrap">
-                        <div class="ctools-action-title"><i class="fas fa-paper-plane"></i> DISPARAR MENSAGEM <span class="ctools-hint">(cria campanha e inicia o envio)</span></div>
-                        <div class="v2-form-group">
-                            <label>Mensagem do bot <span style="font-weight:600; color:var(--text-muted);">(use <b>{nome}</b> para o primeiro nome)</span></label>
-                            <textarea id="ctools-msg" class="ps-textarea" rows="2" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea>
-                        </div>
-                        <div class="ctools-row">
-                            <input type="number" id="ctools-limit" class="ps-input" min="1" placeholder="Limite (vazio = todos)">
-                            <select id="ctools-number" class="ps-select"><option value="">Número ativo</option></select>
-                            <button type="button" class="btn-retro" id="ctools-send"><i class="fas fa-rocket"></i> DISPARAR</button>
-                        </div>
-                    </div>
-
-                    <div class="ctools-action">
-                        <div class="ctools-action-title"><i class="fas fa-right-left"></i> MOVER PARA ESTÁGIO <span class="ctools-hint">(com histórico)</span></div>
-                        <div class="ctools-row">
-                            <select id="ctools-to" class="ps-select">
-                                <option value="novo">NOVO</option>
-                                <option value="contato">EM CONTATO</option>
-                                <option value="confirmado">CONFIRMADO</option>
-                                <option value="concluido">CONCLUÍDO</option>
-                                <option value="bloqueado">BLOQUEADO</option>
-                                <option value="duplicado">DUPLICADO</option>
-                            </select>
-                            <input type="number" id="ctools-move-limit" class="ps-input" min="1" placeholder="Limite">
-                            <button type="button" class="btn-retro btn-secondary-retro" id="ctools-move"><i class="fas fa-arrows-up-down"></i> MOVER</button>
-                        </div>
-                    </div>
-
-                    <div class="ctools-action">
-                        <div class="ctools-action-title"><i class="fas fa-gauge-high"></i> RECALCULAR SCORE</div>
-                        <div class="ctools-row">
-                            <input type="number" id="ctools-recalc-limit" class="ps-input" min="1" placeholder="Limite">
-                            <button type="button" class="btn-retro btn-secondary-retro" id="ctools-recalc"><i class="fas fa-rotate"></i> RECALCULAR</button>
-                        </div>
-                    </div>
+        <div class="v2-submodal-body fla-console">
+            <div class="ctools-section" id="ctools-send-wrap">
+                <div class="fla-section-head">
+                    <div><strong><i class="fas fa-paper-plane"></i> DISPARAR MENSAGEM EM MASSA</strong><span>Envia mensagem para todos os leads desta etapa</span></div>
+                </div>
+                <div class="fla-row" style="margin-bottom:8px;">
+                    <textarea id="ctools-msg" class="ps-textarea" rows="2" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso te ajudar?"></textarea>
+                </div>
+                <div class="fla-row">
+                    <input type="number" id="ctools-limit" class="ps-input" min="1" placeholder="Limite (vazio = todos)" style="flex:1;">
+                    <select id="ctools-number" class="ps-select" style="flex:1;"><option value="">Número ativo</option></select>
+                    <button type="button" class="btn-retro" id="ctools-send"><i class="fas fa-rocket"></i> DISPARAR</button>
                 </div>
             </div>
 
-            <div class="ctools-section">
-                <div class="ctools-section-title"><i class="fas fa-wand-magic-sparkles"></i> AUTO-DISPARO AO ENTRAR NA COLUNA</div>
-                <div class="ctools-auto">
-                    <label class="ctools-toggle">
-                        <input type="checkbox" id="ctools-auto">
-                        <span>Disparar automaticamente quando um lead cair nesta coluna</span>
-                    </label>
-                    <div class="v2-form-group">
-                        <label>Mensagem do auto-disparo</label>
-                        <textarea id="ctools-auto-msg" class="ps-textarea" rows="2" placeholder="Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar."></textarea>
-                    </div>
-                    <button type="button" class="btn-retro" id="ctools-save-auto"><i class="fas fa-save"></i> SALVAR CONFIGURAÇÃO</button>
+            <div class="ctools-section" style="margin-top:14px;">
+                <div class="fla-section-head">
+                    <div><strong><i class="fas fa-right-left"></i> MOVER LEADS DE ETAPA</strong><span>Transfere o status dos leads em lote</span></div>
+                </div>
+                <div class="fla-row">
+                    <select id="ctools-to" class="ps-select" style="flex:1;">
+                        <option value="novo">NOVO</option>
+                        <option value="contato">EM CONTATO</option>
+                        <option value="confirmado">CONFIRMADO</option>
+                        <option value="concluido">CONCLUÍDO</option>
+                        <option value="bloqueado">BLOQUEADO</option>
+                    </select>
+                    <input type="number" id="ctools-move-limit" class="ps-input" min="1" placeholder="Limite" style="flex:1;">
+                    <button type="button" class="btn-retro btn-secondary-retro" id="ctools-move"><i class="fas fa-arrows-up-down"></i> MOVER</button>
+                </div>
+            </div>
+
+            <div class="ctools-section" style="margin-top:14px;">
+                <div class="fla-section-head">
+                    <div><strong><i class="fas fa-gauge-high"></i> RECALCULAR SCORE DE CRÉDITO</strong><span>Atualiza as pontuações automaticamente</span></div>
+                </div>
+                <div class="fla-row">
+                    <input type="number" id="ctools-recalc-limit" class="ps-input" min="1" placeholder="Limite de leads" style="flex:1;">
+                    <button type="button" class="btn-retro btn-secondary-retro" id="ctools-recalc"><i class="fas fa-rotate"></i> RECALCULAR</button>
                 </div>
             </div>
         </div>
@@ -183,26 +267,28 @@
 
 <!-- ============ PROGRESSO DA AÇÃO EM MASSA ============ -->
 <div class="v2-submodal-overlay" id="ctoolsProgress" style="display:none;">
-    <div class="v2-submodal" style="max-width:560px;">
+    <div class="v2-submodal fla-modal" style="width:min(600px, 94vw);">
         <div class="v2-submodal-header">
             <div>
-                <span style="color:var(--primary); font-size:.6rem; font-weight:900; letter-spacing:1.6px;">AÇÃO EM MASSA</span>
+                <span class="fla-eyebrow">PROCESSANDO TAREFA</span>
                 <h3 id="ctp-title">PROCESSANDO...</h3>
             </div>
             <button type="button" class="btn-close-submodal" id="ctp-close"><i class="fas fa-times"></i></button>
         </div>
-        <div class="v2-submodal-body">
-            <div class="ctp-status" id="ctp-status"><i class="fas fa-spinner fa-spin"></i> Aguardando processamento...</div>
-            <div class="ctp-bar"><i id="ctp-fill" style="width:0%"></i></div>
-            <div class="ctp-metrics">
-                <div><b id="ctp-done">0</b><span>PROCESSADOS</span></div>
-                <div><b id="ctp-total">0</b><span>TOTAL</span></div>
-                <div class="ok"><b id="ctp-ok">0</b><span>OK</span></div>
-                <div class="bad"><b id="ctp-fail">0</b><span>FALHAS</span></div>
+        <div class="v2-submodal-body fla-console">
+            <div class="fla-job" id="fla-job">
+                <div class="fla-job-head"><strong id="ctp-status">Aguardando...</strong><span id="ctp-pct">0%</span></div>
+                <div class="fla-progress"><i id="ctp-fill" style="width:0%"></i></div>
+                <div class="fla-impact-strip" style="background:#fff; margin-top:8px;">
+                    <div><b id="ctp-done">0</b><span>CONCLUÍDOS</span></div>
+                    <div><b id="ctp-total">0</b><span>TOTAL</span></div>
+                    <div><b id="ctp-ok" style="color:var(--ok);">0</b><span>SUCESSO</span></div>
+                    <div><b id="ctp-fail" style="color:var(--bad);">0</b><span>FALHAS</span></div>
+                </div>
             </div>
-            <div class="ctp-log" id="ctp-log"></div>
+            <div class="ctp-log" id="ctp-log" style="margin-top:10px;"></div>
         </div>
-        <footer class="ctp-footer">
+        <footer class="fla-editor-footer">
             <button type="button" class="btn-retro btn-secondary-retro" id="ctp-cancel"><i class="fas fa-ban"></i> CANCELAR</button>
             <button type="button" class="btn-retro" id="ctp-done-btn" style="display:none;"><i class="fas fa-check"></i> CONCLUIR</button>
         </footer>

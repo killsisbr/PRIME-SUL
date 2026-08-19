@@ -12,6 +12,37 @@ router.get('/', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Relatório: quantos templates existem, quantas campanhas cada um gerou e a
+// taxa de resposta (qualquer reply) / conversão (lead chegou em "concluido")
+// de cada um. Admin apenas — é uma visão gerencial cruzando toda a organização.
+router.get('/stats', async (req, res, next) => {
+    try {
+        if (req.user.role !== 'admin') return res.status(403).json({ error: 'Somente admin' });
+        const rows = await db.all(`
+            SELECT
+                t.id, t.name, t.purpose, t.active, t.seller_id, t.created_at,
+                COUNT(DISTINCT c.id) AS campaigns_count,
+                COUNT(s.id) AS sends_count,
+                SUM(CASE WHEN s.status IN ('confirmado','recusado') THEN 1 ELSE 0 END) AS responded_count,
+                SUM(CASE WHEN s.status = 'confirmado' THEN 1 ELSE 0 END) AS confirmado_count,
+                COUNT(DISTINCT CASE WHEN l.status = 'concluido' THEN l.id END) AS converted_count
+            FROM message_templates t
+            LEFT JOIN campaigns c ON c.template_id = t.id
+            LEFT JOIN sends s ON s.campaign_id = c.id AND s.status IN ('sent','confirmado','recusado')
+            LEFT JOIN leads l ON l.id = s.lead_id
+            WHERE t.organization_id = ? AND t.active = 1
+            GROUP BY t.id
+            ORDER BY t.purpose, t.name
+        `, [req.user.organization_id]);
+
+        res.json(rows.map(r => ({
+            ...r,
+            response_rate: r.sends_count ? Math.round((r.responded_count / r.sends_count) * 1000) / 10 : 0,
+            conversion_rate: r.sends_count ? Math.round((r.converted_count / r.sends_count) * 1000) / 10 : 0
+        })));
+    } catch (e) { next(e); }
+});
+
 router.post('/', async (req, res, next) => {
     try {
         const { name, purpose, body, shared } = req.body;

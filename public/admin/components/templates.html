@@ -1,0 +1,41 @@
+<div class="tp-root">
+    <div class="ps-head" style="margin-bottom:14px;">
+        <div>
+            <div class="ps-head-title"><i class="fas fa-file-lines" style="color: var(--violet);"></i> TEMPLATES DE MENSAGEM</div>
+            <p class="ps-head-desc">Quantos templates existem, quais são, e a taxa de resposta e conversão de cada um nas campanhas.</p>
+        </div>
+        <button type="button" class="ps-btn-save" style="width:auto; padding:12px 18px;" id="tp-new"><i class="fas fa-plus"></i> NOVO TEMPLATE</button>
+    </div>
+
+    <div class="tp-stats">
+        <div><b id="tp-total">0</b><span>TEMPLATES ATIVOS</span></div>
+        <div><b id="tp-campaigns">0</b><span>CAMPANHAS GERADAS</span></div>
+        <div><b id="tp-sends">0</b><span>ENVIOS TOTAIS</span></div>
+    </div>
+
+    <div class="tp-list" id="tp-list">
+        <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando templates...</div>
+    </div>
+</div>
+
+<div class="v2-submodal-overlay" id="tpOverlay" style="display:none;">
+    <div class="v2-submodal" style="max-width:520px;">
+        <div class="v2-submodal-header">
+            <div><h3>NOVO TEMPLATE</h3><p>Mensagem reutilizável pra usar na criação de campanhas</p></div>
+            <button type="button" class="btn-close-submodal" id="tp-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body">
+            <div class="ps-field"><label for="tp-name">Nome do template</label><input type="text" class="ps-input" id="tp-name" placeholder="Ex: Abordagem inicial — crédito consignado"></div>
+            <div class="ps-field"><label for="tp-purpose">Finalidade</label>
+                <select class="ps-select" id="tp-purpose">
+                    <option value="screening">Triagem (usado em campanhas)</option>
+                    <option value="handoff">Handoff (repasse ao vendedor)</option>
+                    <option value="followup">Follow-up</option>
+                </select>
+            </div>
+            <div class="ps-field"><label for="tp-body">Mensagem (usa {nome})</label><textarea class="ps-textarea" id="tp-body" rows="5" placeholder="Olá {nome}! ..."></textarea></div>
+            <label class="ps-toggle-row"><input type="checkbox" id="tp-shared" checked><label style="margin:0;">Compartilhado (visível pra todos os vendedores)</label></label>
+            <button type="button" class="ps-btn-save" id="tp-save"><i class="fas fa-save"></i> SALVAR TEMPLATE</button>
+        </div>
+    </div>
+</div>
