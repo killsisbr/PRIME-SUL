@@ -32,7 +32,7 @@ async function seedMockData() {
             id = res.lastID;
         } else {
             id = existing.id;
-            await db.run('UPDATE sellers SET name = ?, phone = ?, role = ? WHERE id = ?', [s.name, s.phone, s.role, id]);
+            await db.run('UPDATE sellers SET name = ?, password = ?, phone = ?, role = ? WHERE id = ?', [s.name, passHash, s.phone, s.role, id]);
         }
         sellerMap[s.email] = id;
 
