@@ -35,10 +35,26 @@
                     </div>
                 </div>
                 <div class="wa-pop-actions">
+                    <button type="button" class="wa-pop-btn" id="waPopChatsListBtn" title="Lista de Conversas / Mudar de Cliente"><i class="fas fa-comments"></i></button>
                     <button type="button" class="wa-pop-btn" id="waPopToolsBtn" title="Ferramentas Auxiliares Acopladas"><i class="fas fa-toolbox"></i></button>
                     <button type="button" class="wa-pop-btn" id="waPopExtBtn" title="Abrir em nova aba WhatsApp"><i class="fas fa-arrow-up-right-from-square"></i></button>
                     <button type="button" class="wa-pop-btn" id="waPopMinBtn" title="Minimizar"><i class="fas fa-minus"></i></button>
                     <button type="button" class="wa-pop-btn" id="waPopCloseBtn" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <!-- PAINEL DE CONVERSAS / LISTA DE CLIENTES DO WHATSAPP -->
+            <div class="wa-chats-sidebar" id="waChatsSidebar" style="display:none;">
+                <div class="wa-chats-header">
+                    <h4><i class="fab fa-whatsapp" style="color:#25d366;"></i> CONVERSAS DO WHATSAPP</h4>
+                    <button type="button" class="wa-pop-btn" id="waChatsCloseBtn" title="Fechar Lista"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="wa-chats-search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="waChatsSearchInput" placeholder="Pesquisar cliente ou telefone..." autocomplete="off">
+                </div>
+                <div class="wa-chats-list" id="waChatsListContainer">
+                    <div class="wa-chats-empty"><i class="fas fa-spinner fa-spin"></i> Carregando conversas...</div>
                 </div>
             </div>
 
@@ -119,22 +135,12 @@
                         </div>
                     </div>
 
-                    <!-- TOOL 2: SIMULADOR DE CRÉDITO -->
-                    <div class="wa-tool-card">
-                        <div class="wa-tool-title"><span><i class="fas fa-calculator"></i> SIMULADOR DE PARCELA</span></div>
-                        <input type="number" id="wat-val" class="wa-tool-input" placeholder="Valor do Empréstimo (R$)">
-                        <div style="display:flex; gap:6px;">
-                            <input type="number" id="wat-prazo" class="wa-tool-input" placeholder="Prazo (meses)" value="84">
-                            <button type="button" class="btn-retro" id="wat-calc-btn" style="padding:4px 10px; font-size:.62rem;"><i class="fas fa-equals"></i></button>
-                        </div>
-                        <div id="wat-sim-res" style="font-size:.72rem; font-weight:800; color:var(--primary, #3b82f6); text-align:center; min-height:18px;"></div>
-                    </div>
-
                     <!-- TOOL 3: ANOTAÇÕES RÁPIDAS -->
                     <div class="wa-tool-card">
                         <div class="wa-tool-title"><span><i class="fas fa-note-sticky"></i> ANOTAÇÃO RÁPIDA</span></div>
                         <textarea id="wat-note" class="wa-tool-input" rows="2" placeholder="Escreva observações do lead..."></textarea>
-                        <button type="button" class="btn-retro" id="wat-save-note" style="padding:6px 12px; font-size:.65rem;"><i class="fas fa-floppy-disk"></i> SALVAR NOTA</button>
+                        <button type="button" class="btn-retro" id="wat-save-note" style="padding:6px 12px; font-size:.65rem; width:100%; justify-center;"><i class="fas fa-floppy-disk"></i> SALVAR NOTA</button>
+                        <div id="wat-notes-list" class="wa-notes-list"></div>
                     </div>
 
                     <!-- TOOL 4: RESPOSTA SUGERIDA POR IA -->
@@ -214,6 +220,32 @@
             }
         });
 
+        // Alternar Lista de Conversas do WhatsApp
+        const chatsBtn = document.getElementById('waPopChatsListBtn');
+        const chatsSidebar = document.getElementById('waChatsSidebar');
+        const chatsCloseBtn = document.getElementById('waChatsCloseBtn');
+        const chatsSearchInput = document.getElementById('waChatsSearchInput');
+
+        if (chatsBtn && chatsSidebar) {
+            chatsBtn.onclick = () => {
+                const willOpen = chatsSidebar.style.display === 'none';
+                chatsSidebar.style.display = willOpen ? 'flex' : 'none';
+                if (willOpen) {
+                    loadChatsSidebarList('');
+                }
+            };
+        }
+        if (chatsCloseBtn && chatsSidebar) {
+            chatsCloseBtn.onclick = () => {
+                chatsSidebar.style.display = 'none';
+            };
+        }
+        if (chatsSearchInput) {
+            chatsSearchInput.oninput = (e) => {
+                loadChatsSidebarList(e.target.value);
+            };
+        }
+
         // Alternar Painel de Ferramentas Acoplado
         toolsBtn.onclick = () => {
             const willOpen = toolsPanel.style.display === 'none';
@@ -277,35 +309,37 @@
             };
         });
 
-        // Tool 2: Calculadora de Simulação
-        const calcBtn = document.getElementById('wat-calc-btn');
-        if (calcBtn) {
-            calcBtn.onclick = () => {
-                const val = parseFloat(document.getElementById('wat-val').value) || 0;
-                const meses = parseInt(document.getElementById('wat-prazo').value) || 84;
-                if (!val) return;
-                const taxa = 0.018; // 1.8% a.m.
-                const pmt = (val * taxa * Math.pow(1 + taxa, meses)) / (Math.pow(1 + taxa, meses) - 1);
-                document.getElementById('wat-sim-res').textContent = `${meses}x de R$ ${pmt.toFixed(2)}`;
-            };
-        }
-
         // Tool 3: Salvar Anotação Rápida
         const saveNoteBtn = document.getElementById('wat-save-note');
         if (saveNoteBtn) {
             saveNoteBtn.onclick = async () => {
-                const note = document.getElementById('wat-note').value.trim();
+                const noteInput = document.getElementById('wat-note');
+                const note = noteInput?.value.trim();
                 if (!note || !activeLead) return;
+                saveNoteBtn.disabled = true;
                 try {
+                    let resLead = null;
                     if (window.api) {
-                        await window.api(`/leads/${activeLead.id}/notes`, {
+                        resLead = await window.api(`/leads/${activeLead.id}/notes`, {
                             method: 'POST',
-                            body: JSON.stringify({ note: `[Anotação Rápida] ${note}` })
+                            body: JSON.stringify({ note })
                         });
                     }
-                    if (window.toast) window.toast('Anotação salva!');
-                    document.getElementById('wat-note').value = '';
-                } catch (e) {}
+                    if (resLead && resLead.obs) {
+                        activeLead.obs = resLead.obs;
+                    } else {
+                        const ts = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                        const newEntry = `[${ts}] ${note}`;
+                        activeLead.obs = activeLead.obs ? `${newEntry}\n${activeLead.obs}` : newEntry;
+                    }
+                    fillLeadInfoCard(activeLead);
+                    if (window.toast) window.toast('Anotação salva com sucesso!');
+                    if (noteInput) noteInput.value = '';
+                } catch (e) {
+                    if (window.toast) window.toast(e.message || 'Erro ao salvar anotação', 'err');
+                } finally {
+                    saveNoteBtn.disabled = false;
+                }
             };
         }
 
@@ -455,6 +489,29 @@
                 obsEl.style.display = 'none';
             }
         }
+
+        // Renderiza histórico de notas salvas no painel de ferramentas
+        const notesListEl = document.getElementById('wat-notes-list');
+        if (notesListEl) {
+            if (!lead.obs || !lead.obs.trim()) {
+                notesListEl.innerHTML = '<div class="wa-notes-empty">Nenhuma anotação salva ainda.</div>';
+            } else {
+                const lines = lead.obs.split('\n').map(l => l.trim()).filter(Boolean);
+                notesListEl.innerHTML = lines.map(line => {
+                    const match = line.match(/^\[(.*?)\]\s*(.*)$/);
+                    if (match) {
+                        return `<div class="wa-note-card">
+                            <div class="wa-note-card-time"><i class="far fa-clock"></i> ${escapeHtml(match[1])}</div>
+                            <div>${escapeHtml(match[2])}</div>
+                        </div>`;
+                    }
+                    return `<div class="wa-note-card">
+                        <div class="wa-note-card-time"><i class="far fa-sticky-note"></i> Nota</div>
+                        <div>${escapeHtml(line)}</div>
+                    </div>`;
+                }).join('');
+            }
+        }
     }
 
     const WA_MONEY_FIELDS = ['renda', 'limite_est'];
@@ -541,10 +598,6 @@
         document.getElementById('waPopAvatar').textContent = initials;
         document.getElementById('waPopName').textContent = lead.name || 'Cliente';
         updateStepperUI(lead.status || 'novo');
-
-        if (document.getElementById('wat-val')) {
-            document.getElementById('wat-val').value = lead.valor_desejado || lead.limite_est || '';
-        }
 
         fillLeadInfoCard(lead);
 
@@ -639,6 +692,68 @@
 
         } catch (e) {
             msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Inicie uma nova mensagem com ${escapeHtml(lead.name)}.</div></div>`;
+        }
+    }
+
+    let allConversationsLeads = [];
+
+    async function loadChatsSidebarList(searchTerm = '') {
+        const container = document.getElementById('waChatsListContainer');
+        if (!container) return;
+
+        try {
+            const api = window.api;
+            if (!api) return;
+
+            const res = await api('/leads?limit=100').catch(() => []);
+            allConversationsLeads = Array.isArray(res) ? res : (res.leads || []);
+
+            let filtered = allConversationsLeads;
+            if (searchTerm && searchTerm.trim()) {
+                const st = searchTerm.toLowerCase().trim();
+                filtered = allConversationsLeads.filter(l =>
+                    (l.name || '').toLowerCase().includes(st) ||
+                    (l.phone || '').includes(st) ||
+                    (l.city || '').toLowerCase().includes(st)
+                );
+            }
+
+            if (!filtered.length) {
+                container.innerHTML = '<div class="wa-chats-empty">Nenhum cliente encontrado</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(l => {
+                const isCurrent = activeLead && String(activeLead.id) === String(l.id);
+                const initials = (l.name || ' ').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+                const stageLabel = (l.status || 'novo').toUpperCase();
+                const phoneStr = l.phone || '';
+
+                return `
+                <div class="wa-chat-item ${isCurrent ? 'active' : ''}" data-id="${l.id}">
+                    <div class="wa-chat-avatar">${escapeHtml(initials)}</div>
+                    <div class="wa-chat-info">
+                        <div class="wa-chat-row-top">
+                            <strong class="wa-chat-name">${escapeHtml(l.name)}</strong>
+                            <span class="wa-chat-badge">${escapeHtml(stageLabel)}</span>
+                        </div>
+                        <small class="wa-chat-sub">${escapeHtml(phoneStr)}${l.city ? ' • ' + escapeHtml(l.city) : ''}</small>
+                    </div>
+                </div>`;
+            }).join('');
+
+            container.querySelectorAll('.wa-chat-item').forEach(item => {
+                item.onclick = async () => {
+                    const leadId = item.dataset.id;
+                    const leadObj = allConversationsLeads.find(x => String(x.id) === String(leadId));
+                    if (leadObj) {
+                        await openWaFloatingWidget(leadObj);
+                        loadChatsSidebarList(searchTerm);
+                    }
+                };
+            });
+        } catch (e) {
+            container.innerHTML = '<div class="wa-chats-empty">Erro ao carregar conversas</div>';
         }
     }
 

@@ -9,8 +9,23 @@ function fmtUtc(d) {
     return d.toISOString().replace('T', ' ').slice(0, 19);
 }
 
-async function list() {
+// numberIds: null = sem restrição (admin vê todos os posts).
+// array = vendedor só vê posts sem número definido (auto) ou dos próprios números.
+async function list({ numberIds = null } = {}) {
+    if (numberIds && !numberIds.length) {
+        return db.all('SELECT * FROM marketing_posts WHERE number_id IS NULL ORDER BY created_at DESC');
+    }
+    if (numberIds) {
+        return db.all(
+            `SELECT * FROM marketing_posts WHERE number_id IS NULL OR number_id IN (${numberIds.map(() => '?').join(',')}) ORDER BY created_at DESC`,
+            numberIds
+        );
+    }
     return db.all('SELECT * FROM marketing_posts ORDER BY created_at DESC');
+}
+
+async function getById(id) {
+    return db.get('SELECT * FROM marketing_posts WHERE id = ?', [id]);
 }
 
 async function create({ title, type, message, media_url, color, font, number_id, scheduled_at, recurring }) {
@@ -105,4 +120,4 @@ async function processDue() {
     return due.length;
 }
 
-module.exports = { list, create, update, remove, sendNow, processDue };
+module.exports = { list, getById, create, update, remove, sendNow, processDue };

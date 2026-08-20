@@ -1,0 +1,314 @@
+<div class="dp-saas-root">
+    <!-- ============ HEADER PRINCIPAL ============ -->
+    <div class="dp-saas-header">
+        <div class="dp-saas-sub-info">
+            <span class="dp-saas-eyebrow"><i class="fas fa-shield-halved"></i> AUTOMAÇÃO COMERCIAL & PROGRAMAÇÃO ANTI-BAN</span>
+        </div>
+
+        <div class="dp-saas-top-actions">
+            <span class="dp-saas-status-badge">● CANAL ONLINE</span>
+            <button type="button" class="dp-saas-btn sec" id="dp-btn-manage-templates">
+                <i class="fas fa-file-signature"></i> GERIR TEMPLATES
+            </button>
+            <button type="button" class="dp-saas-btn prim" id="dp-btn-new-dispatch">
+                <i class="fas fa-rocket"></i> NOVO DISPARO
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ============ META DIÁRIA ============ -->
+    <div class="dp-saas-meta-bar">
+        <div class="dp-meta-info">
+            <i class="fas fa-bullseye"></i>
+            <div>
+                <strong>META DIÁRIA DE ENGAJAMENTO (100 LEADS / DIA)</strong>
+                <span id="dp-meta-sub">0 de 100 disparos executados para o dia de hoje</span>
+            </div>
+        </div>
+        <div class="dp-meta-progress-wrap">
+            <div class="dp-meta-progress-bar"><div class="dp-meta-progress-fill" id="dp-meta-fill" style="width:0%"></div></div>
+            <span class="dp-meta-pct" id="dp-meta-pct">0%</span>
+        </div>
+    </div>
+
+    <!-- ============ PROGRAMAÇÃO EM HORÁRIO COMERCIAL (08:00 - 18:00) ============ -->
+    <div class="dp-saas-timeline-box">
+        <div class="dp-timeline-top">
+            <div class="dp-timeline-title">
+                <i class="fas fa-business-time" style="color:#ff7417;"></i> PROGRAMAÇÃO EM HORÁRIO COMERCIAL (08:00 - 18:00)
+            </div>
+            <div class="dp-days-selector" id="dpDaysSelector">
+                <button type="button" class="dp-day-btn" data-day="1">SEG</button>
+                <button type="button" class="dp-day-btn" data-day="2">TER</button>
+                <button type="button" class="dp-day-btn active" data-day="3">QUA</button>
+                <button type="button" class="dp-day-btn" data-day="4">QUI</button>
+                <button type="button" class="dp-day-btn" data-day="5">SEX</button>
+                <button type="button" class="dp-day-btn" data-day="6">SÁB</button>
+                <button type="button" class="dp-day-btn" data-day="0">DOM</button>
+            </div>
+        </div>
+
+        <!-- RÉGUA DO HORÁRIO COMERCIAL ULTRAPRO (08H ÀS 18H) -->
+        <div class="dp-24h-bar-container">
+            <div class="dp-24h-labels">
+                <span>08:00 ☕</span>
+                <span>09:00</span>
+                <span>10:00 📈</span>
+                <span>11:00</span>
+                <span>12:00 🥪</span>
+                <span>13:00</span>
+                <span>14:00 🎯</span>
+                <span>15:00</span>
+                <span>16:00 💼</span>
+                <span>17:00</span>
+                <span>18:00 🚪</span>
+            </div>
+
+            <div class="dp-24h-track" id="dp24hTrack" title="Clique no horário desejado para agendar um disparo!">
+                <!-- LINHAS DE GRADE DA RÉGUA -->
+                <div class="dp-track-grid-lines">
+                    <span style="left:0%;"></span>
+                    <span style="left:10%;"></span>
+                    <span style="left:20%;"></span>
+                    <span style="left:30%;"></span>
+                    <span style="left:40%;"></span>
+                    <span style="left:50%;"></span>
+                    <span style="left:60%;"></span>
+                    <span style="left:70%;"></span>
+                    <span style="left:80%;"></span>
+                    <span style="left:90%;"></span>
+                    <span style="left:100%;"></span>
+                </div>
+
+                <!-- FAIXA DE AGENDAMENTOS EXISTENTES (BLOQUEIO VISUAL ANTI-BAN) -->
+                <div id="dpScheduledBlocksContainer" class="dp-sched-blocks-wrapper"></div>
+
+                <!-- CURSOR FLOATING TIME PIN AO PASSAR O MOUSE -->
+                <div class="dp-hover-time-pin" id="dpHoverTimePin" style="display:none;">
+                    <div class="dp-hover-line"></div>
+                    <div class="dp-hover-badge" id="dpHoverTimeBadge">10:00</div>
+                </div>
+
+                <!-- INDICADOR PIN AGORA -->
+                <div class="dp-now-pin" id="dpNowPin" style="left:40%;">
+                    <span>AGORA</span>
+                </div>
+            </div>
+
+            <div class="dp-24h-footer">
+                <span id="dp-24h-sub"><i class="fas fa-eye"></i> VISUALIZANDO AGENDAMENTOS DO DIA</span>
+                <small><i class="fas fa-mouse-pointer"></i> Passe o mouse para ver o horário exato e clique para agendar!</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CARD ÚNICO DE DISPAROS PROGRAMADOS ============ -->
+    <div class="dp-saas-single-card">
+        <div class="dp-cat-header dark-green" style="background:#181716; padding:10px 16px;">
+            <span style="font-size:.82rem; font-weight:900; letter-spacing:.5px;"><i class="fas fa-list-check" style="color:#ffb703;"></i> DISPAROS PROGRAMADOS PARA O DIA</span>
+            <span class="dp-saas-status-badge" id="dpDispatchesCountBadge" style="margin-left:auto;">0 AGENDADOS</span>
+        </div>
+        <div class="dp-cat-body" id="dpSingleDispatchesList" style="padding:14px;">
+            <!-- Renderizado dinamicamente via disparo.js -->
+        </div>
+    </div>
+</div>
+
+<!-- ============ SUBMODAL: COCKPIT DARK/NEON MODERN POPUP AGENDAMENTO ============ -->
+<div class="v2-submodal-overlay" id="dpScheduleModal" style="display:none; z-index:13400;">
+    <div class="v2-submodal dp-cockpit-modal">
+        <!-- HEADER COCKPIT HIGH-TECH -->
+        <div class="dp-cockpit-header">
+            <div class="dp-cockpit-header-left">
+                <span class="dp-cockpit-eyebrow"><span class="dp-pulse-dot"></span> CENTRO DE COMANDO • PROTEÇÃO ANTI-BAN & FILTRO 7 DIAS</span>
+                <h3 id="dpSchedModalTitle"><i class="fas fa-rocket" style="color:#10b981;"></i> AGENDAR NOVO DISPARO COMERCIAL</h3>
+            </div>
+            <button type="button" class="dp-cockpit-close-btn" id="dp-btn-close-sched-modal"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="dp-cockpit-body">
+            <!-- ALERTA DE COLISÃO DE HORÁRIO -->
+            <div class="dp-cockpit-collision-alert" id="dpCollisionAlert" style="display:none;">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    <strong>HORÁRIO INDISPONÍVEL PARA AGENDAMENTO!</strong>
+                    <span id="dpCollisionText">Já existe outro disparo agendado nesse intervalo. Escolha outro horário para evitar banimento!</span>
+                </div>
+            </div>
+
+            <form id="dpSchedForm" class="dp-cockpit-grid-form">
+                <input type="hidden" id="dpSchedCampaignId" value="">
+
+                <!-- COLUNA ESQUERDA: PARÂMETROS E MENSAGEM -->
+                <div class="dp-cockpit-col-left">
+                    <!-- CARD 1: HORÁRIO E CADÊNCIA -->
+                    <div class="dp-cockpit-card">
+                        <div class="dp-card-head"><i class="fas fa-sliders" style="color:#6366f1;"></i> CONFIGURAÇÕES DO ENVIO</div>
+                        <div class="dp-cockpit-row2">
+                            <div class="dp-field-group">
+                                <label><i class="far fa-clock"></i> Horário Comercial *</label>
+                                <div class="dp-input-icon-wrap">
+                                    <input type="time" class="dp-cockpit-input" id="dpSchedTime" required min="08:00" max="18:00" value="10:00">
+                                </div>
+                            </div>
+                            <div class="dp-field-group">
+                                <label><i class="fas fa-tachometer-alt"></i> Cadência Anti-Ban *</label>
+                                <select class="dp-cockpit-select" id="dpSchedCadence">
+                                    <option value="15">⚡ 15 segundos / lead (Rápido)</option>
+                                    <option value="30" selected>🛡️ 30 segundos / lead (Recomendado)</option>
+                                    <option value="45">🐢 45 segundos / lead (Conservador)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 2: MENSAGEM & TEMPLATES -->
+                    <div class="dp-cockpit-card flex-1">
+                        <div class="dp-card-head"><i class="fas fa-comment-dots" style="color:#10b981;"></i> CONTEÚDO DA MENSAGEM</div>
+                        <div class="dp-field-group">
+                            <label><i class="fas fa-wand-magic-sparkles"></i> Template Comercial Pronto</label>
+                            <select class="dp-cockpit-select" id="dpSchedTemplateSelect">
+                                <option value="">✨ Escolher Template Comercial Pronto...</option>
+                            </select>
+                        </div>
+                        <div class="dp-field-group margin-top-8">
+                            <label><i class="fas fa-pen-to-square"></i> Mensagem Personalizada *</label>
+                            <textarea class="dp-cockpit-textarea" id="dpSchedMessage" rows="3" required placeholder="Olá {nome}! Vi que solicitou uma simulação de crédito. Posso te enviar os valores agora?"></textarea>
+                        </div>
+                        <div class="dp-tag-helper-strip">
+                            <span>Inserir Variável:</span>
+                            <span class="dp-tag-chip" onclick="insertTmplVar('{nome}')">{nome}</span>
+                            <span class="dp-tag-chip" onclick="insertTmplVar('{cidade}')">{cidade}</span>
+                            <span class="dp-tag-chip" onclick="insertTmplVar('{renda}')">{renda}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUNA DIREITA: ALVOS E SEGMENTAÇÃO -->
+                <div class="dp-cockpit-col-right">
+                    <div class="dp-cockpit-card flex-1">
+                        <div class="dp-card-head-split">
+                            <div class="dp-card-head"><i class="fas fa-bullseye" style="color:#f59e0b;"></i> SEGMENTAÇÃO DE LEADS ALVO</div>
+                            <div class="dp-cockpit-badge-group">
+                                <span class="dp-cockpit-live-count"><b id="dpSchedCountVal">10</b> LEADS</span>
+                                <span class="dp-cockpit-duration" id="dpSchedDurationBadge"><i class="fas fa-stopwatch"></i> ~5 MIN</span>
+                            </div>
+                        </div>
+
+                        <!-- CONTROLE DE QUANTIDADE SLIDER & CHIPS -->
+                        <div class="dp-cockpit-slider-box">
+                            <input type="range" class="dp-cockpit-range-slider" id="dpSchedRange" min="1" max="100" value="10">
+                            <div class="dp-cockpit-preset-row">
+                                <button type="button" class="dp-preset-btn" data-val="5">5</button>
+                                <button type="button" class="dp-preset-btn active" data-val="10">10</button>
+                                <button type="button" class="dp-preset-btn" data-val="25">25</button>
+                                <button type="button" class="dp-preset-btn" data-val="50">50</button>
+                                <button type="button" class="dp-preset-btn" data-val="100">100 MAX</button>
+                            </div>
+                        </div>
+
+                        <!-- CHIPS DE FILTRO DE ETAPAS -->
+                        <div class="dp-cockpit-filter-strip">
+                            <span>ETAPAS:</span>
+                            <div class="dp-cockpit-stage-chips">
+                                <label class="dp-stage-chip-neon active"><input type="checkbox" class="dp-stage-cb" value="novo" checked> NOVO</label>
+                                <label class="dp-stage-chip-neon"><input type="checkbox" class="dp-stage-cb" value="contato"> EM CONTATO</label>
+                                <label class="dp-stage-chip-neon"><input type="checkbox" class="dp-stage-cb" value="confirmado"> CONFIRMADO</label>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE LEADS SELECIONADOS COM AÇÕES DE REMOVER E SUBSTITUIR -->
+                        <div class="dp-cockpit-leads-scroll" id="dpSchedTargetGrid">
+                            <div class="dp-loading"><i class="fas fa-spinner fa-spin"></i> Carregando alvos...</div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- FOOTER COCKPIT -->
+        <div class="dp-cockpit-footer">
+            <button type="button" class="dp-cockpit-btn danger" id="dpSchedDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Excluir Disparo</button>
+            <div style="margin-left:auto; display:flex; gap:10px;">
+                <button type="button" class="dp-cockpit-btn secondary" id="dpSchedCancelBtn">Cancelar</button>
+                <button type="submit" form="dpSchedForm" class="dp-cockpit-btn primary" id="dpSchedSubmitBtn"><i class="fas fa-paper-plane"></i> CONFIRMAR AGENDAMENTO</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ SUBPOPUP: GERENCIADOR DE TEMPLATES ============ -->
+<div class="v2-submodal-overlay" id="dpTemplateModal" style="display:none; z-index:13400;">
+    <div class="v2-submodal dp-tmpl-modal">
+        <div class="v2-submodal-header">
+            <div>
+                <span class="dp-submodal-eyebrow">SISTEMA DE TEMPLATES</span>
+                <h3 id="dpTmplModalTitle">GERENCIADOR DE TEMPLATES DO WHATSAPP</h3>
+            </div>
+            <button type="button" class="btn-close-submodal" id="dp-btn-close-tmpl-modal"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="v2-submodal-body dp-tmpl-modal-grid">
+            <div class="dp-tmpl-form-col">
+                <div class="dp-tmpl-selector-bar">
+                    <label>Selecione um Template para Editar ou Crie um Novo:</label>
+                    <div class="dp-tmpl-list-strip" id="dpTmplListStrip">
+                        <button type="button" class="dp-tmpl-chip-btn active" data-tmpl-id="new">
+                            <i class="fas fa-plus"></i> + Criar Novo
+                        </button>
+                    </div>
+                </div>
+
+                <form id="dpTmplForm" class="dp-tmpl-form">
+                    <input type="hidden" id="dpTmplId" value="">
+
+                    <div class="v2-form-group">
+                        <label>Título do Template *</label>
+                        <input type="text" class="ps-input" id="dpTmplName" required placeholder="EX: Simulação de Crédito - Primeiro Contato">
+                    </div>
+
+                    <div class="v2-form-group">
+                        <label>Mensagem do Template * <small>(Use <b>{nome}</b> para personalizar)</small></label>
+                        <textarea class="ps-textarea" id="dpTmplBody" rows="4" required placeholder="Olá {nome}! Vi que solicitou uma simulação de crédito. Posso te enviar a proposta agora?"></textarea>
+                    </div>
+
+                    <div class="dp-tmpl-actions">
+                        <button type="button" class="btn-retro btn-secondary-retro" id="dpTmplDeleteBtn" style="display:none;">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                        <button type="submit" class="btn-retro" id="dpTmplSaveBtn">
+                            <i class="fas fa-save"></i> Salvar Template
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="dp-tmpl-preview-col">
+                <div class="dp-preview-title"><i class="fab fa-whatsapp" style="color:#25d366;"></i> PRÉVIA EM TEMPO REAL</div>
+                
+                <div class="phone-frame">
+                    <div class="phone-notch"></div>
+                    <div class="phone-header">
+                        <div class="phone-avatar"><i class="fas fa-robot"></i></div>
+                        <div class="phone-contact">
+                            <span>Prime Sul Crédito</span>
+                            <small>online</small>
+                        </div>
+                    </div>
+                    <div class="phone-chat" id="dp-phone-chat">
+                        <div class="phone-msg incoming">
+                            <span id="dp-tmpl-preview-text">Olá Maria! Vi que solicitou uma simulação de crédito. Posso te enviar a proposta agora?</span>
+                            <small>14:30 <i class="fas fa-check-double" style="color:#34b7f1;"></i></small>
+                        </div>
+                    </div>
+                    <div class="phone-input-bar">
+                        <i class="fas fa-paperclip"></i>
+                        <span>Mensagem</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

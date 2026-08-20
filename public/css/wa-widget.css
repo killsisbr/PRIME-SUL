@@ -518,6 +518,46 @@
     font: 800 .56rem 'Outfit', sans-serif;
 }
 
+/* LISTA DE ANOTAÇÕES ANTERIORES DO LEAD */
+.wa-notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.wa-note-card {
+    padding: 8px 10px;
+    border: 1.5px solid var(--holo-border, #27364d);
+    border-radius: 10px;
+    background: var(--holo-surface, #0f1624);
+    color: var(--holo-text, #f8fafc);
+    font: 600 .68rem 'Outfit', sans-serif;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.wa-note-card-time {
+    font-weight: 800;
+    color: var(--holo-primary, #0ea5e9);
+    font-size: .6rem;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wa-notes-empty {
+    font: 700 .64rem 'Outfit', sans-serif;
+    color: var(--holo-muted, #94a3b8);
+    text-align: center;
+    padding: 10px 0;
+    font-style: italic;
+}
+
 .wa-info-obs {
     padding: 6px 8px;
     border: 1.5px dashed rgba(24, 23, 22, .3);
@@ -525,4 +565,135 @@
     background: #fffdf7;
     color: var(--text-soft, #78716c);
     font: 650 .64rem/1.4 'Outfit', sans-serif;
+}
+
+/* ==========================================================================
+   PAINEL DE CONVERSAS / LISTA DE CLIENTES DO WHATSAPP (.wa-chats-sidebar)
+   ========================================================================== */
+.wa-chats-sidebar {
+    position: absolute;
+    right: calc(100% + 12px);
+    top: 0;
+    width: 320px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 3.5px solid var(--ink, #181716);
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 12px 12px 0 rgba(0, 0, 0, .4);
+    overflow: hidden;
+    z-index: 15002;
+    font-family: 'Outfit', sans-serif;
+}
+
+.wa-chats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #075e54;
+    color: #fff;
+    border-bottom: 3px solid var(--ink, #181716);
+}
+
+.wa-chats-header h4 {
+    margin: 0;
+    font: 900 .82rem 'Outfit', sans-serif;
+    color: #fff;
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.wa-chats-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f0f2f5;
+    border-bottom: 2px solid var(--ink, #181716);
+}
+
+.wa-chats-search-bar i { color: #78716c; font-size: .8rem; }
+
+.wa-chats-search-bar input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font: 700 .76rem 'Outfit', sans-serif;
+    color: #181716;
+    outline: none;
+}
+
+.wa-chats-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+.wa-chats-empty {
+    padding: 24px;
+    text-align: center;
+    font: 700 .72rem 'Outfit', sans-serif;
+    color: #78716c;
+}
+
+.wa-chat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1.5px solid #f0f0f0;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.wa-chat-item:hover { background: #f5f6f8; }
+.wa-chat-item.active { background: #e7fce9; border-left: 4px solid #25d366; }
+
+.wa-chat-avatar {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--ink, #181716);
+    border-radius: 50%;
+    background: #25d366;
+    color: #fff;
+    font: 900 .78rem sans-serif;
+    flex-shrink: 0;
+}
+
+.wa-chat-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.wa-chat-row-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+
+.wa-chat-name {
+    font: 800 .78rem/1.2 'Outfit', sans-serif;
+    color: #181716;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wa-chat-badge {
+    padding: 1.5px 6px;
+    border: 1px solid var(--ink, #181716);
+    border-radius: 999px;
+    background: #ffb703;
+    color: var(--ink, #181716);
+    font: 900 .52rem 'Outfit', sans-serif;
+    flex-shrink: 0;
+}
+
+.wa-chat-sub {
+    font: 600 .66rem 'Outfit', sans-serif;
+    color: #78716c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

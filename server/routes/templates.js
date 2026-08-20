@@ -46,10 +46,11 @@ router.get('/stats', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
     try {
         const { name, purpose, body, shared } = req.body;
-        if (!name || !body || !PURPOSES.includes(purpose)) return res.status(400).json({ error: 'Template inválido' });
+        const targetPurpose = (purpose && PURPOSES.includes(purpose)) ? purpose : 'screening';
+        if (!name || !body) return res.status(400).json({ error: 'Template inválido (nome e mensagem são obrigatórios)' });
         if (shared && req.user.role !== 'admin') return res.status(403).json({ error: 'Somente admin cria template compartilhado' });
         const r = await db.run(`INSERT INTO message_templates (organization_id,seller_id,name,purpose,body) VALUES (?,?,?,?,?)`,
-            [req.user.organization_id, shared ? null : req.user.id, String(name).trim(), purpose, String(body)]);
+            [req.user.organization_id, shared ? null : req.user.id, String(name).trim(), targetPurpose, String(body)]);
         res.status(201).json(await db.get('SELECT * FROM message_templates WHERE id=?', [r.lastID]));
     } catch (e) { next(e); }
 });

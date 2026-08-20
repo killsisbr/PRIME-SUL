@@ -30,9 +30,16 @@ async function prune() {
     `, [MAX_KEPT]);
 }
 
-async function list({ number, type, since, limit = 200 }) {
+// numbers: null = sem restrição (admin); array = restringe aos números informados
+// (vendedor só vê a timeline dos próprios bots). Array vazio = nenhum resultado.
+async function list({ number, type, since, limit = 200, numbers = null }) {
     const clauses = [];
     const params = [];
+    if (numbers) {
+        if (!numbers.length) return [];
+        clauses.push(`number IN (${numbers.map(() => '?').join(',')})`);
+        params.push(...numbers);
+    }
     if (number) { clauses.push('number = ?'); params.push(number); }
     if (type) { clauses.push('type = ?'); params.push(type); }
     if (since) { clauses.push('created_at >= ?'); params.push(since); }
@@ -44,7 +51,9 @@ async function list({ number, type, since, limit = 200 }) {
     return rows;
 }
 
-async function totals() {
+async function totals({ numbers = null } = {}) {
+    if (numbers && !numbers.length) return { total: 0, sent: 0, failed: 0, banned: 0, cooldowns: 0 };
+    const where = numbers ? `WHERE number IN (${numbers.map(() => '?').join(',')})` : '';
     const row = await db.get(`
         SELECT
             COUNT(*) AS total,
@@ -52,8 +61,8 @@ async function totals() {
             SUM(CASE WHEN type = 'send_fail' THEN 1 ELSE 0 END) AS failed,
             SUM(CASE WHEN type = 'banned' THEN 1 ELSE 0 END) AS banned,
             SUM(CASE WHEN type = 'cooldown' THEN 1 ELSE 0 END) AS cooldowns
-        FROM bot_events
-    `);
+        FROM bot_events ${where}
+    `, numbers || []);
     return {
         total: row.total || 0,
         sent: row.sent || 0,

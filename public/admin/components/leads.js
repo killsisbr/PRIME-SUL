@@ -399,6 +399,8 @@ export async function init() {
 
             const body = {
                 name, phone,
+                phone2: document.getElementById('add-phone2')?.value.trim() || null,
+                phone3: document.getElementById('add-phone3')?.value.trim() || null,
                 cpf: document.getElementById('add-cpf').value.trim(),
                 prioridade: document.getElementById('add-prio').value,
                 origem: document.getElementById('add-origem').value,

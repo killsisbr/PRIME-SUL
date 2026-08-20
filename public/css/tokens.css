@@ -1,54 +1,68 @@
 /* ============ PRIME SUL Design Tokens — fonte única de verdade ============ */
 /* Carregado em todas as páginas (vendedor e admin). Paleta canônica + aliases. */
 
+/* ============ PRIME SUL Design Tokens — Paleta Clínica Holo ============ */
+/* Carregado em todas as páginas. Paleta canônica da Clínica Holo (D:\CLINICA HOLO) */
+
 :root {
-    /* --- canônico --- */
-    --ink: #181716;
-    --ink-dark: #211c18;
-    --text-body: #211c18;
-    --text-soft: #756d67;
-    --paper: #faf6f0;
-    --cream: #fff8ed;
-    --card-bg: #ffffff;
-    --brand: #ff7417;
-    --accent: #ffbd16;
-    --ok: #10b981;
-    --bad: #df4632;
-    --info: #3b82f6;
-    --violet: #8b5cf6;
+    /* --- Paleta Clínica Holo (D:\CLINICA HOLO) --- */
+    --holo-dark: #070a12;        /* Fundo Abissal Principal (Dark Void) */
+    --holo-surface: #0f1624;     /* Superfície Slate Dark */
+    --holo-card: #172134;        /* Card Deep Slate */
+    --holo-border: #27364d;      /* Borda Metálica Cyber */
+    --holo-primary: #0ea5e9;     /* Sky Cyan Elétrico */
+    --holo-mint: #22c55e;        /* Menta Vitalidade (Green) */
+    --holo-accent: #ffb800;      /* Dourado / Âmbar */
+    --holo-text: #f8fafc;        /* Texto Branco Gelo */
+    --holo-muted: #94a3b8;       /* Texto Muted Slate */
+
+    /* --- Tokens Canônicos Mapeados para Clínica Holo --- */
+    --ink: #27364d;
+    --ink-dark: #070a12;
+    --text-body: #f8fafc;
+    --text-soft: #94a3b8;
+    --paper: #070a12;            /* Fundo principal da aplicação (Dark Abissal) */
+    --cream: #0f1624;            /* Superfície de contêineres */
+    --card-bg: #172134;          /* Background de cards */
+    --brand: #0ea5e9;           /* Marca Principal: Sky Cyan Elétrico */
+    --accent: #ffb800;          /* Destaque Âmbar / Dourado */
+    --ok: #22c55e;              /* Verde Menta Sucesso */
+    --bad: #ef4444;              /* Vermelho Alerta */
+    --info: #0ea5e9;             /* Cyan Info */
+    --violet: #818cf8;
     --font-body: 'Outfit', sans-serif;
     --font-title: 'Bebas Neue', sans-serif;
     --r-sm: 12px;
     --r-md: 16px;
     --r-lg: 22px;
-    --shadow-sm: 3px 3px 0 var(--ink);
-    --shadow-md: 5px 5px 0 var(--ink);
-    --shadow-lg: 8px 8px 0 var(--ink);
+    --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 20px 45px rgba(0, 0, 0, 0.7);
 
-    /* --- aliases admin (dashboard) --- */
-    --dark: var(--ink);
-    --bg: var(--paper);
-    --card: var(--card-bg);
-    --text: var(--text-body);
-    --text-muted: var(--text-soft);
-    --primary: var(--brand);
-    --secondary: var(--accent);
-    --warning: var(--accent);
-    --success: var(--ok);
+    /* --- Aliases Admin & Dashboard --- */
+    --dark: var(--holo-border);
+    --bg: var(--holo-dark);
+    --card: var(--holo-card);
+    --text: var(--holo-text);
+    --text-muted: var(--holo-muted);
+    --primary: var(--holo-primary);
+    --secondary: var(--holo-accent);
+    --warning: var(--holo-accent);
+    --success: var(--holo-mint);
     --danger: var(--bad);
     --radius-sm: var(--r-sm);
     --radius-md: var(--r-md);
     --radius-lg: var(--r-lg);
 
-    /* --- aliases v3 (login vendedor) --- */
-    --v3-ink: var(--ink);
-    --v3-dark: var(--ink-dark);
-    --v3-cream: var(--cream);
-    --v3-orange: var(--brand);
-    --v3-yellow: var(--accent);
+    /* --- Aliases V3 --- */
+    --v3-ink: var(--holo-border);
+    --v3-dark: var(--holo-dark);
+    --v3-cream: var(--holo-surface);
+    --v3-orange: var(--holo-primary);
+    --v3-yellow: var(--holo-accent);
     --v3-coral: var(--bad);
-    --v3-green: var(--ok);
-    --v3-blue: var(--info);
+    --v3-green: var(--holo-mint);
+    --v3-blue: var(--holo-primary);
     --v3-font: var(--font-body);
     --v3-font-title: var(--font-title);
 }

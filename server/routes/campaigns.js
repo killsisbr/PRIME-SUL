@@ -157,6 +157,13 @@ router.post('/:id/cancel', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+router.post('/:id/reset', async (req, res, next) => {
+    try {
+        const result = await campaignService.resetCampaign(req.params.id, req.user.id, req.user.role, req.user.organization_id);
+        res.json(result);
+    } catch (e) { next(e); }
+});
+
 // Reenvia os envios que falharam
 router.post('/:id/retry', async (req, res, next) => {
     try {

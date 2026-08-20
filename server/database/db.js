@@ -37,7 +37,9 @@ const LEAD_MIGRATIONS = {
     prioridade: "TEXT NOT NULL DEFAULT 'media'",
     score: 'INTEGER',
     cpf: 'TEXT',
-    tags: 'TEXT'
+    tags: 'TEXT',
+    phone2: 'TEXT',
+    phone3: 'TEXT'
 };
 
 const NUMBER_MIGRATIONS = {

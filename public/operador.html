@@ -152,8 +152,7 @@
             { name: 'hub', title: 'Hub de Disparo', icon: 'fa-rocket', color: '#ff7417', desc: 'Estratégia anti-ban', badge: 'HUB', border: '#ff7417', bot: true },
             { name: 'funil', title: 'Funil de Vendas', icon: 'fa-filter', color: '#3b82f6', desc: 'Conversão por estágio', badge: 'FUNIL', border: '#3b82f6' },
             { name: 'bots', title: 'Meu WhatsApp', icon: 'fa-mobile-screen-button', color: '#10b981', desc: 'Conectar números e escanear QR', badge: 'WA', border: '#10b981' },
-            { name: 'leads', title: 'Leads', icon: 'fa-users', color: '#3b82f6', desc: 'Minha lista de contatos' },
-            { name: 'campanhas', title: 'Campanhas', icon: 'fa-paper-plane', color: '#10b981', desc: 'Disparo em massa' }
+            { name: 'disparo', title: 'Disparo Comercial', icon: 'fa-paper-plane', color: '#ff7417', desc: 'Disparar mensagens para X quantidade de leads com templates', badge: 'DISPARO', border: '#ff7417' }
         ];
         let visibleModules = MODULES.filter(m => !(BOTS_DISABLED && m.bot));
 
@@ -196,7 +195,7 @@
         });
 
         // ================= DYNAMIC MODAL =================
-        const COMPONENTS_WITH_CSS = ['hub', 'funil', 'leads', 'bots', 'campanhas'];
+        const COMPONENTS_WITH_CSS = ['hub', 'funil', 'leads', 'bots', 'disparo'];
         let activeComponent = null;
         let activeModule = null;
         let _isOpening = false;

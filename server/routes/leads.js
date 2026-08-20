@@ -84,6 +84,25 @@ router.patch('/:id', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Adiciona/atualiza anotação rápida do lead
+router.post('/:id/notes', async (req, res, next) => {
+    try {
+        const rawNote = (req.body.note ?? req.body.obs ?? req.body.text ?? '').trim();
+        if (!rawNote) return res.status(400).json({ error: 'Anotação não pode estar vazia' });
+
+        const existingLead = await leadService.getLeadById(req.params.id, req.user.id);
+        if (!existingLead) return res.status(404).json({ error: 'Lead não encontrado' });
+
+        const timestamp = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        const newEntry = `[${timestamp}] ${rawNote}`;
+
+        const updatedObs = existingLead.obs ? `${newEntry}\n${existingLead.obs}` : newEntry;
+
+        const lead = await leadService.updateLead(req.params.id, req.user.id, { obs: updatedObs });
+        res.json(lead);
+    } catch (e) { next(e); }
+});
+
 // Transferência de lead para outro vendedor (somente admin)
 router.post('/:id/transfer', adminOnly, async (req, res, next) => {
     try {

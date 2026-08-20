@@ -32,7 +32,12 @@ app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/tools', require('./routes/tools'));
 app.use('/api/handoffs', require('./routes/handoffs'));
 app.use('/api/templates', require('./routes/templates'));
+app.use('/api/sends', require('./routes/sends'));
 app.use('/api/public', require('./routes/public'));
+
+// TEMPORÁRIO — editor de site via IA (só admin). Ver server/routes/ai-editor.js
+// pra instruções de como remover isso depois.
+app.use('/api/ai-editor', require('./routes/ai-editor'));
 
 // Imagens enviadas (status de marketing) — data/ fica fora do git, não junto do front estático
 app.use('/uploads', express.static(path.join(__dirname, '..', 'data', 'uploads')));
@@ -120,10 +125,12 @@ async function bootstrap() {
     await followupService.schedule();
     await handoffService.processDue();
 
-    app.listen(PORT, process.env.HOST || '0.0.0.0', () => {
+    const wsService = require('./services/websocket-service');
+    const server = app.listen(PORT, process.env.HOST || '0.0.0.0', () => {
         console.log(`[prime-sul] rodando em http://localhost:${PORT}`);
         console.log(`[prime-sul] login: http://localhost:${PORT}/login.html`);
     });
+    wsService.init(server);
 }
 
 bootstrap().catch((err) => {

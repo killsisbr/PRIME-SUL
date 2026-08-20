@@ -6,7 +6,8 @@ const stageConfig = require('./stage-config-service');
 
 const ALLOWED_ORIGEM = ['SITE', 'SIMULACAO', 'INDICACAO'];
 const ALLOWED_PRIORIDADE = ['alta', 'media', 'baixa'];
-const EDITABLE_FIELDS = ['name', 'phone', 'cpf', 'tags', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade', 'score'];
+const EDITABLE_FIELDS = ['name', 'phone', 'phone2', 'phone3', 'cpf', 'tags', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade', 'score'];
+
 // Campos que alteram o score automático
 const SCORE_FIELDS = ['renda', 'valor_desejado', 'limite_est', 'origem', 'prioridade', 'city', 'name'];
 
@@ -35,13 +36,16 @@ async function triggerStageAutomation(lead, status, sellerId) {
     } catch (e) { console.warn(`[auto-send] Lead #${lead.id} — erro:`, e.message); }
 }
 
-async function createLead({ seller_id, organization_id = 1, name, phone, cpf, tags, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
+async function createLead({ seller_id, organization_id = 1, name, phone, phone2, phone3, cpf, tags, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
     const normalized = normalizePhone(phone);
     if (!normalized) {
-        const e = new Error('Telefone inválido');
+        const e = new Error('Telefone principal inválido');
         e.status = 400;
         throw e;
     }
+    const normPhone2 = phone2 ? (normalizePhone(phone2) || phone2.trim()) : null;
+    const normPhone3 = phone3 ? (normalizePhone(phone3) || phone3.trim()) : null;
+
     if (!ALLOWED_PRIORIDADE.includes(prioridade)) {
         const e = new Error('Prioridade inválida');
         e.status = 400;
@@ -90,9 +94,9 @@ async function createLead({ seller_id, organization_id = 1, name, phone, cpf, ta
         renda, valor_desejado, prioridade, status: 'novo'
     });
     const result = await db.run(
-        `INSERT INTO leads (organization_id, seller_id, name, phone, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [organization_id, seller_id, name.trim(), normalized, cleanCpfValue, cleanTagsValue, city || null, origem, limite_est || null,
+        `INSERT INTO leads (organization_id, seller_id, name, phone, phone2, phone3, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [organization_id, seller_id, name.trim(), normalized, normPhone2, normPhone3, cleanCpfValue, cleanTagsValue, city || null, origem, limite_est || null,
          renda || null, valor_desejado || null, obs || null, prioridade, score]
     );
     const lead = await db.get('SELECT * FROM leads WHERE id = ?', [result.lastID]);
@@ -101,6 +105,8 @@ async function createLead({ seller_id, organization_id = 1, name, phone, cpf, ta
         [result.lastID, seller_id, lead.status]
     );
     await triggerStageAutomation(lead, lead.status, seller_id);
+    const ws = require('./websocket-service');
+    ws.broadcast('lead:created', lead);
     return { lead, duplicated: false, already_mine: false };
 }
 
@@ -291,6 +297,9 @@ async function updateStatus(id, seller_id, status) {
 
     // Auto-disparo configurado na coluna de destino
     await triggerStageAutomation(fresh, status, seller_id);
+
+    const ws = require('./websocket-service');
+    ws.broadcast('lead:status_changed', { lead_id: id, status, lead: fresh });
 
     return getLead(id, seller_id);
 }
