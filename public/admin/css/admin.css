@@ -95,6 +95,27 @@ body.admin-body {
 
 .action-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--dark); }
 
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 2px solid var(--holo-border, #27364d);
+    border-radius: 12px;
+    background: var(--holo-card, #172134);
+    color: var(--text, #f8fafc);
+    font: 800 0.72rem var(--font-body, 'Outfit', sans-serif);
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.theme-toggle-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
 .action-btn .badge {
     position: absolute;
     top: -8px;
@@ -342,24 +363,35 @@ body.admin-body {
 .hud-item:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--dark); background: var(--bg); }
 .hud-item i { width: 22px; text-align: center; }
 
-/* ================= DYNAMIC MODAL ================= */
+/* ================= DYNAMIC MODAL (FULLSCREEN) ================= */
 #dynamicModalOverlay {
-    padding: 2vh 2vw;
-    align-items: flex-start;
-    justify-content: center;
-    overflow-y: auto;
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    padding: 0 !important;
+    margin: 0 !important;
+    align-items: stretch;
+    justify-content: stretch;
+    overflow: hidden;
+    z-index: 12000;
 }
 
 #dynamicModalOverlay .hud-modal {
-    width: 100%;
-    height: auto;
-    max-width: 1400px;
-    max-height: none;
-    margin: auto;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
     display: flex;
     flex-direction: column;
-    box-shadow: 20px 20px 0 var(--primary);
-    transform: translateY(-20px);
 }
 
 #dynamicModalTitle {
@@ -369,7 +401,7 @@ body.admin-body {
     color: var(--primary);
 }
 
-#dynamicModalBody { flex: 1; overflow: visible; padding: 24px; background: var(--bg); }
+#dynamicModalBody { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; padding: 18px 24px; background: var(--bg); }
 #dynamicModalBody:has(.hub-v2) { display: flex; flex-direction: column; min-height: 0; overflow: hidden !important; padding: 18px !important; }
 #dynamicModalBody > .fiscal-container { flex: 1; }
 
@@ -378,9 +410,9 @@ body.admin-body {
     gap: 12px;
     justify-content: center;
     align-items: center;
-    padding: 8px 16px;
+    padding: 6px 16px;
     background: var(--bg);
-    border-top: 3px solid var(--dark);
+    border-top: 2px solid var(--holo-border, #27364d);
 }
 
 /* ================= BOTÕES RETRO ================= */
@@ -504,34 +536,34 @@ body:has(.v2-submodal-overlay[style*="display: flex"]) { overflow: hidden; }
     mask-image: linear-gradient(to bottom, #000, transparent 85%);
 }
 
-#dynamicModalOverlay.active .hud-modal { animation: hypeModalEnter .42s cubic-bezier(.16,1,.3,1) both; }
+#dynamicModalOverlay.active .hud-modal { animation: none; }
 #dynamicModalOverlay .hud-modal {
     position: relative;
-    border-radius: 24px !important;
-    border-width: 3px;
+    border-radius: 0 !important;
+    border: none !important;
     overflow: hidden;
     background: var(--bg);
-    box-shadow: 16px 16px 0 var(--primary), 0 30px 90px rgba(0,0,0,.5) !important;
+    box-shadow: none !important;
 }
 
 .dynamic-modal-header {
     position: relative;
     align-items: center !important;
-    padding: 13px 18px !important;
-    min-height: 76px !important;
+    padding: 10px 20px !important;
+    min-height: 62px !important;
     overflow: hidden;
     background: var(--holo-surface, #0f1624) !important;
     border-bottom: 2px solid var(--holo-border, #27364d) !important;
 }
 .dynamic-modal-header::after { content:'PRIME SUL'; position:absolute; right:84px; bottom:-20px; color:rgba(255,255,255,.03); font:5rem/1 var(--font-title); letter-spacing:4px; pointer-events:none; }
 .dynamic-modal-orbit { display:grid; place-items:center; align-self:center; flex:0 0 44px; height:44px; margin-bottom:0; color:#fff; border:2px solid var(--holo-border, #27364d); border-radius:13px; background:var(--holo-primary, #0ea5e9); box-shadow:0 0 12px rgba(14,165,233,.4); transform:rotate(-4deg); }
-#dynamicModalTitle { position:relative; z-index:1; align-self:center; margin:0 !important; color:#f8fafc !important; font-size:2rem !important; }
+#dynamicModalTitle { position:relative; z-index:1; align-self:center; margin:0 !important; color:#f8fafc !important; font-size:1.8rem !important; }
 .dynamic-modal-close,.btn-close-submodal { display:grid; place-items:center; flex:0 0 40px; width:40px; height:40px; padding:0; color:#f8fafc; border:2px solid var(--holo-border, #27364d); border-radius:50%; background:var(--holo-card, #172134); box-shadow:0 4px 12px rgba(0,0,0,.4); cursor:pointer; transition:transform .18s ease,box-shadow .18s ease,background .18s ease,color .18s ease; }
 .dynamic-modal-close { position:relative; z-index:2; align-self:center; }
 .dynamic-modal-close:hover,.btn-close-submodal:hover { color:#fff; background:var(--bad, #ef4444); transform:rotate(8deg) translate(-1px,-1px); box-shadow:0 0 15px rgba(239,68,68,.5); }
 
 #dynamicModalBody { scrollbar-color:var(--holo-primary, #0ea5e9) transparent; scrollbar-width:thin; background:var(--holo-dark, #070a12) !important; }
-#dynamicModalFooter { position:relative; min-height:54px; background:var(--holo-surface, #0f1624) !important; backdrop-filter:blur(10px); border-top:2px solid var(--holo-border, #27364d) !important; }
+#dynamicModalFooter { position:relative; min-height:46px; background:var(--holo-surface, #0f1624) !important; backdrop-filter:blur(10px); border-top:2px solid var(--holo-border, #27364d) !important; }
 #dynamicModalFooter::before { content:'ESC para fechar'; position:absolute; left:18px; color:var(--holo-muted, #94a3b8); font-size:.6rem; font-weight:900; letter-spacing:1px; text-transform:uppercase; }
 
 .v2-submodal { position:relative; box-shadow:0 20px 60px rgba(0,0,0,.7); animation:hypeSubmodalEnter .36s cubic-bezier(.16,1,.3,1); }

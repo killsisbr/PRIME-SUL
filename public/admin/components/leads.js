@@ -61,7 +61,7 @@ export async function init() {
         const statusOptions = Object.entries(STATUS_LABEL).map(([k, v]) =>
             `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v}</option>`).join('');
 
-        const prioLabel = { alta: '★ Alta', media: '★ Média', baixa: '★ Baixa' }[l.prioridade] || '★ Média';
+        const prioLabel = { alta: 'Alta', media: 'Média', baixa: 'Baixa' }[l.prioridade] || 'Média';
         const avCls = AV_COLORS[(l.id || 0) % AV_COLORS.length];
         const dateFormatted = new Date((l.created_at || '').replace(' ', 'T')).toLocaleString('pt-BR');
 

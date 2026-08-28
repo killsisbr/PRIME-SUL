@@ -59,9 +59,9 @@
             </div>
 
             <div class="wa-pop-quick-bar">
-                <span class="wa-pop-quick-chip" data-quick="Olá {nome}! Tudo bem? Como posso te ajudar na sua simulação hoje?">👋 Saudação</span>
-                <span class="wa-pop-quick-chip" data-quick="Estou analisando seu limite de crédito agora. Pode aguardar um minuto?">⏱️ Aguarde</span>
-                <span class="wa-pop-quick-chip" data-quick="Seu cadastro foi aprovado com sucesso! Vamos concluir a contratação?">✅ Aprovado</span>
+                <span class="wa-pop-quick-chip" data-quick="Olá {nome}! Tudo bem? Como posso te ajudar na sua simulação hoje?"><i class="fas fa-hand"></i> Saudação</span>
+                <span class="wa-pop-quick-chip" data-quick="Estou analisando seu limite de crédito agora. Pode aguardar um minuto?"><i class="fas fa-clock"></i> Aguarde</span>
+                <span class="wa-pop-quick-chip" data-quick="Seu cadastro foi aprovado com sucesso! Vamos concluir a contratação?"><i class="fas fa-circle-check"></i> Aprovado</span>
             </div>
 
             <div class="wa-pop-messages" id="waPopMessages">
@@ -90,7 +90,7 @@
                             <span class="wa-info-score" id="wat-info-score">—</span>
                         </div>
                         <div class="wa-info-badges">
-                            <span class="wa-info-badge" id="wat-info-prio">★ Média</span>
+                            <span class="wa-info-badge" id="wat-info-prio">Média</span>
                             <span class="wa-info-badge" id="wat-info-origem">SITE</span>
                             <span class="wa-info-badge" id="wat-info-status">NOVO</span>
                         </div>
@@ -435,7 +435,7 @@
     }
 
     const WA_STATUS_LABEL = { novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO' };
-    const WA_PRIO_LABEL = { alta: '★ Alta', media: '★ Média', baixa: '★ Baixa' };
+    const WA_PRIO_LABEL = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
 
     function formatMoney(v) {
         const n = parseFloat(v);

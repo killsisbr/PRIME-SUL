@@ -89,7 +89,7 @@
                     </button>
                 </div>
 
-                <!-- FILTROS DO DRAWER -->
+                <!-- FILTROS E CONTROLES DE SELEÇÃO DO DRAWER -->
                 <div class="fl-drawer-filters">
                     <div class="fl-search-box">
                         <i class="fas fa-search"></i>
@@ -97,10 +97,24 @@
                     </div>
                     <select id="fl-drawer-prio" class="fl-select-pill">
                         <option value="">TODAS PRIORIDADES</option>
-                        <option value="alta">★ Alta</option>
-                        <option value="media">★ Média</option>
-                        <option value="baixa">★ Baixa</option>
+                        <option value="alta">Alta</option>
+                        <option value="media">Média</option>
+                        <option value="baixa">Baixa</option>
                     </select>
+                </div>
+
+                <!-- BARRA DE SELEÇÃO EM MASSA -->
+                <div class="fl-drawer-select-bar">
+                    <label class="fl-select-all-label">
+                        <input type="checkbox" id="fl-select-all-leads" class="fl-custom-check">
+                        <span>Selecionar Todos (<b id="fl-visible-lead-count">0</b>)</span>
+                    </label>
+                    <span class="fl-selected-badge" id="fl-selected-badge" style="display:none;">
+                        <i class="fas fa-check-circle"></i> <b id="fl-selected-count">0</b> selecionados
+                    </span>
+                    <button type="button" class="fl-clear-sel-btn" id="fl-clear-selection-btn" style="display:none;" title="Limpar seleção">
+                        <i class="fas fa-times"></i> Limpar
+                    </button>
                 </div>
 
                 <!-- LISTA DE CLIENTES DO ESTÁGIO -->
@@ -108,9 +122,14 @@
 
                 <div class="fl-drawer-footer">
                     <span id="fl-drawer-count">0 clientes exibidos</span>
-                    <button type="button" class="fl-btn-secondary" id="fl-drawer-close-btn">
-                        <i class="fas fa-chevron-right"></i> RECOLHER
-                    </button>
+                    <div class="fl-drawer-footer-actions">
+                        <button type="button" class="btn-retro fl-btn-dispatch" id="fl-btn-create-campaign" style="display:none;">
+                            <i class="fas fa-paper-plane"></i> CRIAR DISPARO (<span id="fl-campaign-target-count">0</span>)
+                        </button>
+                        <button type="button" class="fl-btn-secondary" id="fl-drawer-close-btn">
+                            <i class="fas fa-chevron-right"></i> RECOLHER
+                        </button>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -125,9 +144,9 @@
             </div>
             <select id="fl-crm-prio" class="fl-select-pill">
                 <option value="">TODAS PRIORIDADES</option>
-                <option value="alta">★ Alta</option>
-                <option value="media">★ Média</option>
-                <option value="baixa">★ Baixa</option>
+                <option value="alta">Alta</option>
+                <option value="media">Média</option>
+                <option value="baixa">Baixa</option>
             </select>
             <span class="fl-crm-count-badge" id="fl-crm-total-count">0 leads no CRM</span>
             <button type="button" class="btn-retro" id="fl-btn-new-lead-crm" style="padding:6px 14px; font-size:.76rem; background:#10b981; color:#fff; cursor:pointer; margin-left:auto;">
@@ -211,9 +230,9 @@
                     <div class="ld-nl-field" style="flex:1; min-width:140px;">
                         <label class="ld-nl-label" for="add-prio">Prioridade</label>
                         <select id="add-prio" class="ld-nl-select">
-                            <option value="alta">★ Alta</option>
-                            <option value="media" selected>★ Média</option>
-                            <option value="baixa">★ Baixa</option>
+                            <option value="alta">Alta</option>
+                            <option value="media" selected>Média</option>
+                            <option value="baixa">Baixa</option>
                         </select>
                     </div>
                     <div class="ld-nl-field" style="flex:1; min-width:140px;">
@@ -515,9 +534,9 @@
                     <div style="flex:1; min-width:140px;">
                         <label class="fla-label" for="fl-edit-prio">Prioridade</label>
                         <select id="fl-edit-prio" class="ps-select">
-                            <option value="alta">★ Alta</option>
-                            <option value="media">★ Média</option>
-                            <option value="baixa">★ Baixa</option>
+                            <option value="alta">Alta</option>
+                            <option value="media">Média</option>
+                            <option value="baixa">Baixa</option>
                         </select>
                     </div>
                     <div style="flex:1; min-width:140px;">
@@ -561,6 +580,62 @@
         <footer class="fla-editor-footer">
             <button type="button" class="btn-retro btn-secondary-retro" id="fl-edit-cancel">CANCELAR</button>
             <button type="button" class="btn-retro" id="fl-edit-save"><i class="fas fa-floppy-disk"></i> SALVAR ALTERAÇÕES</button>
+        </footer>
+    </div>
+</div>
+
+<!-- ============ SUBMODAL ANIMADO: CRIAR DISPARO A PARTIR DOS LEADS DO FUNIL ============ -->
+<div class="v2-submodal-overlay" id="fl-dispatch-modal" style="display:none; z-index:13300;">
+    <div class="v2-submodal fla-editor" id="fl-dispatch-shell" style="width:min(620px, 94vw);">
+        <div class="v2-submodal-header">
+            <div>
+                <span class="fla-eyebrow"><i class="fas fa-bullhorn"></i> DISPARO EM MASSA</span>
+                <h3>CRIAR CAMPANHA DE DISPARO</h3>
+                <p>Envio comercial para leads selecionados da etapa.</p>
+            </div>
+            <button type="button" class="btn-close-submodal" id="fl-dispatch-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="v2-submodal-body fla-editor-body" style="padding:16px 20px; display:flex; flex-direction:column; gap:12px;">
+            <div class="fla-field">
+                <label class="fla-label">Nome do Disparo</label>
+                <input type="text" id="fl-disp-name" class="ps-input" placeholder="Ex: Oferta Especial - Etapa Novo">
+            </div>
+            <div class="fla-field">
+                <label class="fla-label">Destinatários Selecionados (<span id="fl-disp-target-count">0</span> leads)</label>
+                <div class="fl-disp-targets-summary" id="fl-disp-targets-summary"></div>
+            </div>
+            <div class="fla-field">
+                <label class="fla-label">Template Comercial Pronto</label>
+                <select id="fl-disp-template" class="ps-select" style="margin-bottom:6px;">
+                    <option value="">Digitar mensagem personalizada...</option>
+                </select>
+            </div>
+            <div class="fla-field">
+                <label class="fla-label">Mensagem do WhatsApp</label>
+                <textarea id="fl-disp-message" class="ps-textarea" rows="4" placeholder="Olá {nome}! Tudo bem? Temos uma oportunidade especial para você..."></textarea>
+                <small class="fl-disp-hint" style="color:var(--holo-muted, #94a3b8); font-size:.65rem; margin-top:4px; display:block;">
+                    Variáveis dinâmicas: <code>{nome}</code>, <code>{cidade}</code>, <code>{telefone}</code>
+                </small>
+            </div>
+            <div class="fla-row" style="display:flex; gap:12px;">
+                <div style="flex:1;">
+                    <label class="fla-label">Horário de Envio</label>
+                    <input type="time" id="fl-disp-time" class="ps-input" value="10:00">
+                </div>
+                <div style="flex:1;">
+                    <label class="fla-label">Disparo Imediato</label>
+                    <label class="fl-check-pill" style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--holo-surface, #0f1624); border-radius:8px; border:1px solid var(--holo-border, #27364d); margin-top:2px; cursor:pointer;">
+                        <input type="checkbox" id="fl-disp-immediate" style="cursor:pointer; width:16px; height:16px; accent-color:#00a884;">
+                        <span style="font-size:0.75rem; font-weight:700; color:#e9edef;">Iniciar Agora</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <footer class="fla-editor-footer" style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid var(--holo-border, #27364d);">
+            <button type="button" class="btn-retro btn-secondary-retro" id="fl-disp-cancel">CANCELAR</button>
+            <button type="button" class="btn-retro" id="fl-disp-submit" style="background:#00a884; color:#111b21; font-weight:900; border:none; padding:8px 18px;">
+                <i class="fas fa-paper-plane"></i> CONFIRMAR E AGENDAR
+            </button>
         </footer>
     </div>
 </div>

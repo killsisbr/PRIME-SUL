@@ -1,34 +1,33 @@
 /* ============ PRIME SUL Design Tokens — fonte única de verdade ============ */
-/* Carregado em todas as páginas (vendedor e admin). Paleta canônica + aliases. */
+/* Carregado em todas as páginas (vendedor e admin). Tema Dark Verdinho & Variantes. */
 
-/* ============ PRIME SUL Design Tokens — Paleta Clínica Holo ============ */
-/* Carregado em todas as páginas. Paleta canônica da Clínica Holo (D:\CLINICA HOLO) */
-
-:root {
-    /* --- Paleta Clínica Holo (D:\CLINICA HOLO) --- */
-    --holo-dark: #070a12;        /* Fundo Abissal Principal (Dark Void) */
+:root,
+[data-theme="green"],
+[data-theme="prime"] {
+    /* --- Tema Verdinho Oficial (Dark Esmeralda / WhatsApp) --- */
+    --holo-dark: #070a12;        /* Fundo Abissal Dark */
     --holo-surface: #0f1624;     /* Superfície Slate Dark */
     --holo-card: #172134;        /* Card Deep Slate */
     --holo-border: #27364d;      /* Borda Metálica Cyber */
-    --holo-primary: #0ea5e9;     /* Sky Cyan Elétrico */
+    --holo-primary: #10b981;     /* 🟢 Verdinho Esmeralda / WhatsApp */
     --holo-mint: #22c55e;        /* Menta Vitalidade (Green) */
     --holo-accent: #ffb800;      /* Dourado / Âmbar */
     --holo-text: #f8fafc;        /* Texto Branco Gelo */
     --holo-muted: #94a3b8;       /* Texto Muted Slate */
 
-    /* --- Tokens Canônicos Mapeados para Clínica Holo --- */
+    /* --- Tokens Canônicos --- */
     --ink: #27364d;
     --ink-dark: #070a12;
     --text-body: #f8fafc;
     --text-soft: #94a3b8;
-    --paper: #070a12;            /* Fundo principal da aplicação (Dark Abissal) */
-    --cream: #0f1624;            /* Superfície de contêineres */
-    --card-bg: #172134;          /* Background de cards */
-    --brand: #0ea5e9;           /* Marca Principal: Sky Cyan Elétrico */
-    --accent: #ffb800;          /* Destaque Âmbar / Dourado */
-    --ok: #22c55e;              /* Verde Menta Sucesso */
+    --paper: #070a12;
+    --cream: #0f1624;
+    --card-bg: #172134;
+    --brand: #10b981;           /* Marca: Verdinho */
+    --accent: #ffb800;          /* Destaque Âmbar */
+    --ok: #22c55e;              /* Verde Sucesso */
     --bad: #ef4444;              /* Vermelho Alerta */
-    --info: #0ea5e9;             /* Cyan Info */
+    --info: #10b981;             /* Info Verdinho */
     --violet: #818cf8;
     --font-body: 'Outfit', sans-serif;
     --font-title: 'Bebas Neue', sans-serif;
@@ -65,4 +64,21 @@
     --v3-blue: var(--holo-primary);
     --v3-font: var(--font-body);
     --v3-font-title: var(--font-title);
+}
+
+/* --- Variante Laranja --- */
+[data-theme="orange"] {
+    --holo-primary: #ff7417;
+    --brand: #ff7417;
+    --primary: #ff7417;
+    --v3-orange: #ff7417;
+}
+
+/* --- Variante Cyber Azul --- */
+[data-theme="cyber"] {
+    --holo-primary: #0ea5e9;
+    --brand: #0ea5e9;
+    --primary: #0ea5e9;
+    --v3-orange: #0ea5e9;
+    --v3-blue: #0ea5e9;
 }

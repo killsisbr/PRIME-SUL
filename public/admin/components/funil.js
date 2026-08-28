@@ -310,32 +310,37 @@ export async function init() {
         if (total === 0) {
             column.innerHTML = '<div class="fl-empty-note"><i class="fas fa-filter-circle-xmark"></i><br>Nenhum lead no funil ainda.<br>Cadastre leads para visualizar a conversão.</div>';
         } else {
+            const STAGE_WIDTHS = ['100%', '93%', '86%', '79%'];
             column.innerHTML = STAGES.map((s, i) => {
                 const count = stages[s.key] || 0;
-                const width = (Math.pow(1 - 2 * TAPER, i) * 100).toFixed(1);
+                const width = STAGE_WIDTHS[i] || '79%';
                 const pct = Math.round((count / total) * 100);
                 const color = s.color;
-                const txt = s.dark ? 'var(--ink)' : '#fff';
+                const txt = s.dark ? 'var(--ink, #070a12)' : '#fff';
                 const chip = TRANSITIONS[i] ? renderTransitionChip(conversoes[TRANSITIONS[i].key]) : '';
                 const autoOn = !!stageConfigs[s.key]?.auto_send;
                 const isActive = activeStageKey === s.key;
 
                 return `
-                <div class="fl-seg-wrap ${isActive ? 'active' : ''}" data-stage="${s.key}" style="width:${width}%">
-                    <div class="fl-seg" style="--t:${TAPER_PCT}; background:${color}; color:${txt};" title="Clique para ver os clientes desta etapa">
+                <div class="fl-seg-wrap ${isActive ? 'active' : ''}" data-stage="${s.key}" style="width:${width};">
+                    <div class="fl-seg" style="background:${color}; color:${txt};" title="Clique para ver os clientes desta etapa">
                         <span class="fl-seg-fill" style="width:${pct}%;"></span>
-                        <span class="fl-seg-icon"><i class="fas ${s.icon}"></i></span>
-                        <span class="fl-seg-main">
-                            <span class="fl-seg-label">${s.label}</span>
-                            <span class="fl-seg-count">${nf(count)}</span>
-                        </span>
-                        <span class="fl-seg-right">
+                        <div class="fl-seg-left">
+                            <span class="fl-seg-icon"><i class="fas ${s.icon}"></i></span>
+                            <div class="fl-seg-main">
+                                <span class="fl-seg-label">${s.label}</span>
+                                <span class="fl-seg-count">${nf(count)}</span>
+                            </div>
+                        </div>
+                        <div class="fl-seg-right">
                             <span class="fl-seg-pct">${pct}% DO FUNIL</span>
-                            <span class="fl-seg-cta"><i class="fas fa-users"></i> CLIENTES</span>
-                        </span>
-                        <button type="button" class="fl-tools-btn" data-tools-stage="${s.key}" title="Automações desta etapa">
-                            <i class="fas ${autoOn ? 'fa-wand-magic-sparkles' : 'fa-gear'}"></i>
-                        </button>
+                            <div class="fl-seg-actions">
+                                <span class="fl-seg-cta"><i class="fas fa-users"></i> VER CLIENTES</span>
+                                <button type="button" class="fl-tools-btn" data-tools-stage="${s.key}" title="Automações desta etapa">
+                                    <i class="fas ${autoOn ? 'fa-wand-magic-sparkles' : 'fa-gear'}"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     ${chip}
                 </div>`;
@@ -388,10 +393,16 @@ export async function init() {
     }
 
     function renderTransitionChip(pct) {
-        if (pct === undefined) return '';
+        if (pct === undefined || pct === null) return '';
         const ok = pct >= 50;
         const loss = 100 - pct;
-        return `<span class="fl-chip ${ok ? '' : 'bad'}">${ok ? 'descida ' + pct + '%' : 'perda ' + loss + '%'} <i class="fas fa-arrow-down"></i></span>`;
+        return `
+        <div class="fl-trans-wrap">
+            <span class="fl-chip ${ok ? 'ok' : 'bad'}" title="${ok ? 'Taxa de conversão para a próxima etapa' : 'Perda de leads nesta transição'}">
+                <i class="fas ${ok ? 'fa-arrow-down' : 'fa-arrow-trend-down'}"></i> 
+                ${ok ? 'CONVERSÃO ' + pct + '%' : 'PERDA ' + loss + '%'}
+            </span>
+        </div>`;
     }
 
     function renderDetail() {
@@ -440,10 +451,17 @@ export async function init() {
             <p>A maior perda está em <b>${from.label} → ${to.label}</b>: <b>${worst.loss}%</b> dos leads não avançam deste estágio. Foque em qualificar a entrada dele.</p>`;
     }
 
+    let selectedLeadIds = new Set();
+
     // ================= DRAWER LATERAL DE CLIENTES (INFO LIST) =================
     async function openStageDrawer(stageKey) {
         activeStageKey = stageKey;
+        selectedLeadIds.clear();
         const stageMeta = STAGES.find(s => s.key === stageKey) || { label: stageKey.toUpperCase(), color: '#3b82f6' };
+
+        // Ativa o layout animado que encolhe o funil e dá espaço amplo à lista
+        const funnelView = document.getElementById('fl-view-funnel');
+        if (funnelView) funnelView.classList.add('drawer-open');
 
         // Destaca a fatia ativa no funil
         document.querySelectorAll('.fl-seg-wrap, .fl-detail-row').forEach(el => {
@@ -452,65 +470,121 @@ export async function init() {
 
         // Configura cabeçalho do Drawer
         const drawerBadge = document.getElementById('fl-drawer-badge');
-        drawerBadge.textContent = stageMeta.label;
-        drawerBadge.style.background = stageMeta.color;
-        drawerBadge.style.color = stageMeta.dark ? 'var(--ink)' : '#fff';
+        if (drawerBadge) {
+            drawerBadge.textContent = stageMeta.label;
+            drawerBadge.style.background = stageMeta.color;
+            drawerBadge.style.color = stageMeta.dark ? 'var(--ink, #070a12)' : '#fff';
+        }
 
         const drawer = document.getElementById('fl-drawer');
         const overviewPanel = document.getElementById('fl-overview-panel');
 
-        // Transição com Anime.js: oculta o painel de resumo e exibe o drawer lateral deslizante
-        overviewPanel.style.display = 'none';
-        drawer.style.display = 'flex';
-
-        runAnime({
-            targets: drawer,
-            translateX: ['100%', '0%'],
-            opacity: [0, 1],
-            duration: 450,
-            easing: 'easeOutCubic'
-        });
+        // Transição com Anime.js: oculta o painel de resumo e exibe o drawer lateral
+        if (overviewPanel) overviewPanel.style.display = 'none';
+        if (drawer) {
+            drawer.style.display = 'flex';
+            runAnime({
+                targets: drawer,
+                translateX: [40, 0],
+                opacity: [0, 1],
+                duration: 400,
+                easing: 'easeOutCubic'
+            });
+        }
 
         // Limpa busca e carrega clientes do estágio
-        document.getElementById('fl-drawer-search').value = '';
-        document.getElementById('fl-drawer-prio').value = '';
+        const searchInput = document.getElementById('fl-drawer-search');
+        if (searchInput) searchInput.value = '';
+        const prioInput = document.getElementById('fl-drawer-prio');
+        if (prioInput) prioInput.value = '';
+
         await loadDrawerClients();
     }
 
     function closeStageDrawer() {
         const drawer = document.getElementById('fl-drawer');
         const overviewPanel = document.getElementById('fl-overview-panel');
+        const funnelView = document.getElementById('fl-view-funnel');
 
-        runAnime({
-            targets: drawer,
-            translateX: ['0%', '100%'],
-            opacity: [1, 0],
-            duration: 320,
-            easing: 'easeInCubic',
-            complete: () => {
-                drawer.style.display = 'none';
-                overviewPanel.style.display = 'flex';
-                activeStageKey = null;
-                document.querySelectorAll('.fl-seg-wrap, .fl-detail-row').forEach(el => el.classList.remove('active'));
+        selectedLeadIds.clear();
+        updateSelectionUI();
 
-                runAnime({
-                    targets: overviewPanel,
-                    opacity: [0, 1],
-                    translateY: [15, 0],
-                    duration: 300,
-                    easing: 'easeOutQuad'
-                });
-            }
+        if (funnelView) funnelView.classList.remove('drawer-open');
+
+        if (drawer) {
+            runAnime({
+                targets: drawer,
+                translateX: [0, 40],
+                opacity: [1, 0],
+                duration: 280,
+                easing: 'easeInCubic',
+                complete: () => {
+                    drawer.style.display = 'none';
+                    if (overviewPanel) {
+                        overviewPanel.style.display = 'flex';
+                        runAnime({
+                            targets: overviewPanel,
+                            opacity: [0, 1],
+                            translateY: [15, 0],
+                            duration: 300,
+                            easing: 'easeOutQuad'
+                        });
+                    }
+                    activeStageKey = null;
+                    document.querySelectorAll('.fl-seg-wrap, .fl-detail-row').forEach(el => el.classList.remove('active'));
+                }
+            });
+        }
+    }
+
+    function updateSelectionUI() {
+        const selCount = selectedLeadIds.size;
+        const totalVisible = currentStageLeads.length;
+
+        const selBadge = document.getElementById('fl-selected-badge');
+        const selCountEl = document.getElementById('fl-selected-count');
+        const clearBtn = document.getElementById('fl-clear-selection-btn');
+        const selectAllCb = document.getElementById('fl-select-all-leads');
+        const createCampBtn = document.getElementById('fl-btn-create-campaign');
+        const campTargetCount = document.getElementById('fl-campaign-target-count');
+        const visibleCountEl = document.getElementById('fl-visible-lead-count');
+
+        if (visibleCountEl) visibleCountEl.textContent = totalVisible;
+        if (selCountEl) selCountEl.textContent = selCount;
+
+        if (selBadge) selBadge.style.display = selCount > 0 ? 'inline-flex' : 'none';
+        if (clearBtn) clearBtn.style.display = selCount > 0 ? 'inline-flex' : 'none';
+
+        if (createCampBtn) {
+            createCampBtn.style.display = selCount > 0 ? 'inline-flex' : 'none';
+        }
+        if (campTargetCount) {
+            campTargetCount.textContent = selCount;
+        }
+
+        if (selectAllCb) {
+            selectAllCb.checked = totalVisible > 0 && selCount === totalVisible;
+            selectAllCb.indeterminate = selCount > 0 && selCount < totalVisible;
+        }
+
+        // Atualiza estilo selected nos cards
+        document.querySelectorAll('.fl-client-card').forEach(card => {
+            const id = Number(card.dataset.id);
+            const isSelected = selectedLeadIds.has(id);
+            card.classList.toggle('selected', isSelected);
+            const cb = card.querySelector('.fl-card-check');
+            if (cb) cb.checked = isSelected;
         });
     }
 
     async function loadDrawerClients() {
         const listEl = document.getElementById('fl-drawer-clients');
+        if (!listEl) return;
         listEl.innerHTML = '<div class="fl-drawer-loading"><i class="fas fa-spinner fa-spin"></i> Carregando lista de clientes...</div>';
 
         try {
-            const search = (document.getElementById('fl-drawer-search').value || '').trim();
-            const prio = document.getElementById('fl-drawer-prio').value;
+            const search = (document.getElementById('fl-drawer-search')?.value || '').trim();
+            const prio = document.getElementById('fl-drawer-prio')?.value || '';
             const params = { status: activeStageKey };
             if (search) params.search = search;
             if (prio) params.prioridade = prio;
@@ -519,7 +593,9 @@ export async function init() {
             currentStageLeads = leads;
 
             const countEl = document.getElementById('fl-drawer-count');
-            countEl.textContent = `${leads.length} cliente${leads.length !== 1 ? 's' : ''} nesta etapa`;
+            if (countEl) countEl.textContent = `${leads.length} cliente${leads.length !== 1 ? 's' : ''} nesta etapa`;
+
+            updateSelectionUI();
 
             if (!leads.length) {
                 listEl.innerHTML = `
@@ -537,9 +613,13 @@ export async function init() {
                 const score = l.score == null ? '—' : l.score;
                 const limitChip = l.limite_est ? `<span class="fl-chip value">R$ ${escapeHtml(l.limite_est)}</span>` : '';
                 const tags = l.tags ? l.tags.split(',').map(t => `<span class="fl-tag">${escapeHtml(t.trim())}</span>`).join('') : '';
+                const isSelected = selectedLeadIds.has(l.id);
 
                 return `
-                <article class="fl-client-card pri-${l.prioridade || 'media'}" data-id="${l.id}">
+                <article class="fl-client-card ${isSelected ? 'selected' : ''} pri-${l.prioridade || 'media'}" data-id="${l.id}">
+                    <div class="fl-card-check-wrap">
+                        <input type="checkbox" class="fl-card-check" data-lead-id="${l.id}" ${isSelected ? 'checked' : ''}>
+                    </div>
                     <span class="fl-client-av ${AV_COLORS[(l.id || 0) % AV_COLORS.length]}">${escapeHtml(init2)}</span>
                     <div class="fl-client-info">
                         <div class="fl-client-name">${escapeHtml(l.name)}</div>
@@ -549,41 +629,223 @@ export async function init() {
                     <div class="fl-client-right">
                         <span class="fl-client-score ${scoreCls(l.score)}"><i class="fas fa-bolt"></i> ${score}</span>
                         <span class="fl-client-time">${relTime(l.created_at)}</span>
-                        <button type="button" class="fl-btn-fiche" title="Abrir Ficha"><i class="fas fa-id-card"></i> FICHA</button>
+                        <button type="button" class="fl-btn-fiche" data-fiche-id="${l.id}" title="Abrir Ficha"><i class="fas fa-id-card"></i> FICHA</button>
                     </div>
                 </article>`;
             }).join('');
 
-            // Entrada animada cascata (staggered) dos cards de clientes via Anime.js
+            // Entrada animada dos cards
             runAnime({
                 targets: '.fl-client-card',
-                translateY: [22, 0],
+                translateY: [16, 0],
                 opacity: [0, 1],
-                scale: [0.96, 1],
-                delay: runAnime ? window.anime.stagger(45) : 0,
-                duration: 400,
+                delay: runAnime ? window.anime.stagger(35) : 0,
+                duration: 350,
                 easing: 'easeOutQuad'
             });
 
-            // Handlers de clique nos cards de cliente
+            // Handlers de clique e seleção
             listEl.querySelectorAll('.fl-client-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const leadId = card.dataset.id;
-                    openClientModal(leadId);
+                card.addEventListener('click', e => {
+                    const ficheBtn = e.target.closest('.fl-btn-fiche');
+                    if (ficheBtn) {
+                        e.stopPropagation();
+                        openClientModal(card.dataset.id);
+                        return;
+                    }
+
+                    const checkWrap = e.target.closest('.fl-card-check-wrap') || e.target.classList.contains('fl-card-check');
+                    const leadId = Number(card.dataset.id);
+
+                    if (selectedLeadIds.has(leadId)) {
+                        selectedLeadIds.delete(leadId);
+                    } else {
+                        selectedLeadIds.add(leadId);
+                    }
+                    updateSelectionUI();
                 });
             });
+
         } catch (e) {
             listEl.innerHTML = `<div class="fl-drawer-empty" style="color:var(--bad);"><i class="fas fa-exclamation-circle"></i> Erro ao carregar: ${escapeHtml(e.message)}</div>`;
         }
     }
 
     // Handlers do Drawer Lateral
-    document.getElementById('fl-drawer-back-btn').onclick = closeStageDrawer;
-    document.getElementById('fl-drawer-close-btn').onclick = closeStageDrawer;
-    document.getElementById('fl-drawer-prio').addEventListener('change', loadDrawerClients);
-    document.getElementById('fl-drawer-search').addEventListener('input', () => {
+    document.getElementById('fl-drawer-back-btn')?.addEventListener('click', closeStageDrawer);
+    document.getElementById('fl-drawer-close-btn')?.addEventListener('click', closeStageDrawer);
+    document.getElementById('fl-drawer-prio')?.addEventListener('change', loadDrawerClients);
+    document.getElementById('fl-drawer-search')?.addEventListener('input', () => {
         clearTimeout(drawerSearchTimer);
         drawerSearchTimer = setTimeout(loadDrawerClients, 300);
+    });
+
+    // Seleção em massa
+    document.getElementById('fl-select-all-leads')?.addEventListener('change', e => {
+        const isChecked = e.target.checked;
+        if (isChecked) {
+            currentStageLeads.forEach(l => selectedLeadIds.add(l.id));
+        } else {
+            selectedLeadIds.clear();
+        }
+        updateSelectionUI();
+    });
+
+    document.getElementById('fl-clear-selection-btn')?.addEventListener('click', () => {
+        selectedLeadIds.clear();
+        updateSelectionUI();
+    });
+
+    // ================= DISPARO EM MASSA A PARTIR DO FUNIL =================
+    const dispModal = document.getElementById('fl-dispatch-modal');
+    const createCampBtn = document.getElementById('fl-btn-create-campaign');
+
+    createCampBtn?.addEventListener('click', async () => {
+        if (!selectedLeadIds.size) {
+            toast('Selecione ao menos um lead para criar o disparo!', 'err');
+            return;
+        }
+
+        const stageMeta = STAGES.find(s => s.key === activeStageKey) || { label: 'LEADS' };
+        const nameInput = document.getElementById('fl-disp-name');
+        if (nameInput) {
+            nameInput.value = `Disparo - Etapa ${stageMeta.label} (${selectedLeadIds.size} leads)`;
+        }
+
+        const countSpan = document.getElementById('fl-disp-target-count');
+        if (countSpan) countSpan.textContent = selectedLeadIds.size;
+
+        const summaryBox = document.getElementById('fl-disp-targets-summary');
+        if (summaryBox) {
+            const selectedLeads = currentStageLeads.filter(l => selectedLeadIds.has(l.id));
+            summaryBox.innerHTML = selectedLeads.map(l => `
+                <span class="fl-disp-target-chip"><i class="fas fa-user"></i> ${escapeHtml(l.name)} (${escapeHtml(l.phone)})</span>
+            `).join('');
+        }
+
+        // Carrega templates comerciais disponíveis
+        try {
+            const tmplSelect = document.getElementById('fl-disp-template');
+            if (tmplSelect) {
+                tmplSelect.innerHTML = '<option value="">Digitar mensagem personalizada...</option>' +
+                    templates.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+            }
+        } catch (e) {}
+
+        const msgArea = document.getElementById('fl-disp-message');
+        if (msgArea && !msgArea.value) {
+            msgArea.value = `Olá {nome}! Tudo bem? Sou da Prime Sul e temos condições exclusivas de crédito pré-aprovadas para você. Vamos conversar?`;
+        }
+
+        if (dispModal) {
+            dispModal.style.display = 'flex';
+            const shell = document.getElementById('fl-dispatch-shell');
+            if (shell) {
+                runAnime({
+                    targets: shell,
+                    scale: [0.92, 1],
+                    opacity: [0, 1],
+                    duration: 320,
+                    easing: 'easeOutCubic'
+                });
+            }
+        }
+    });
+
+    document.getElementById('fl-disp-template')?.addEventListener('change', e => {
+        const tmplId = e.target.value;
+        const msgArea = document.getElementById('fl-disp-message');
+        if (!msgArea) return;
+
+        if (!tmplId) return;
+        const found = templates.find(t => String(t.id) === String(tmplId));
+        if (found) {
+            msgArea.value = found.content || found.message || '';
+        }
+    });
+
+    function closeDispatchModal() {
+        if (!dispModal) return;
+        const shell = document.getElementById('fl-dispatch-shell');
+        if (shell) {
+            runAnime({
+                targets: shell,
+                scale: [1, 0.95],
+                opacity: [1, 0],
+                duration: 200,
+                easing: 'easeInQuad',
+                complete: () => {
+                    dispModal.style.display = 'none';
+                }
+            });
+        } else {
+            dispModal.style.display = 'none';
+        }
+    }
+
+    document.getElementById('fl-disp-close')?.addEventListener('click', closeDispatchModal);
+    document.getElementById('fl-disp-cancel')?.addEventListener('click', closeDispatchModal);
+
+    document.getElementById('fl-disp-submit')?.addEventListener('click', async () => {
+        const name = (document.getElementById('fl-disp-name')?.value || '').trim();
+        const message = (document.getElementById('fl-disp-message')?.value || '').trim();
+        const template_id = document.getElementById('fl-disp-template')?.value || null;
+        const timeVal = document.getElementById('fl-disp-time')?.value || '10:00';
+        const isImmediate = document.getElementById('fl-disp-immediate')?.checked;
+
+        if (!name) {
+            toast('Informe um nome para a campanha!', 'err');
+            return;
+        }
+        if (!message) {
+            toast('Digite a mensagem a ser enviada aos clientes!', 'err');
+            return;
+        }
+        if (!selectedLeadIds.size) {
+            toast('Nenhum lead selecionado!', 'err');
+            return;
+        }
+
+        let scheduled_at = null;
+        if (!isImmediate) {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            scheduled_at = `${todayStr} ${timeVal}:00`;
+        }
+
+        try {
+            const submitBtn = document.getElementById('fl-disp-submit');
+            if (submitBtn) submitBtn.disabled = true;
+
+            const res = await api('/campaigns', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name,
+                    message,
+                    template_id: template_id ? Number(template_id) : null,
+                    scheduled_at,
+                    lead_ids: Array.from(selectedLeadIds)
+                })
+            });
+
+            if (isImmediate && res && res.id) {
+                await api(`/campaigns/${res.id}/start`, { method: 'POST' }).catch(() => {});
+            }
+
+            toast(`Campanha "${name}" criada com ${selectedLeadIds.size} leads com sucesso!`, 'ok');
+            closeDispatchModal();
+
+            selectedLeadIds.clear();
+            updateSelectionUI();
+
+            // Atualiza métricas do funil
+            await loadData();
+
+        } catch (e) {
+            toast('Erro ao criar campanha: ' + e.message, 'err');
+        } finally {
+            const submitBtn = document.getElementById('fl-disp-submit');
+            if (submitBtn) submitBtn.disabled = false;
+        }
     });
 
     // System de Edição Inline Interativa (Click-to-Edit)

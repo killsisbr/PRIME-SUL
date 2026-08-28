@@ -192,10 +192,10 @@ export async function init() {
 
             return `
             <div class="dp-sched-block-bar" style="left:${startPct}%; width:${durationPct}%;" data-id="${c.id}" title="${esc(c.name)} (${startStr} às ${endStr})">
-                <span class="dp-block-mini-label">⚡ ${targetCount}</span>
+                <span class="dp-block-mini-label"><i class="fas fa-bolt"></i> ${targetCount}</span>
                 <div class="dp-sched-block-pill">
-                    <b>🚀 ${esc(c.name)}</b>
-                    <small>${startStr} às ${endStr} • ⚡ ${targetCount} leads</small>
+                    <b><i class="fas fa-rocket"></i> ${esc(c.name)}</b>
+                    <small>${startStr} às ${endStr} • <i class="fas fa-users"></i> ${targetCount} leads</small>
                 </div>
             </div>`;
         }).join('');
@@ -268,14 +268,14 @@ export async function init() {
                 return `
                 <div class="dp-cat-camp-item" data-id="${c.id}" style="margin-bottom:10px; cursor:pointer;" title="Clique em qualquer lugar para abrir a ficha de disparo (${timeStr} às ${endStr})">
                     <div class="dp-camp-item-head" style="align-items:center;">
-                        <strong class="dp-camp-card-title" data-id="${c.id}">🚀 ${esc(c.name)}</strong>
+                        <strong class="dp-camp-card-title" data-id="${c.id}"><i class="fas fa-rocket"></i> ${esc(c.name)}</strong>
                         ${statusBadge}
                         <span class="dp-camp-time-tag" style="margin-left:auto;"><i class="far fa-clock"></i> ${timeStr} às ${endStr}</span>
                     </div>
                     <div class="dp-camp-item-progress" style="margin-top:6px;">
                         <div class="dp-camp-mini-bar"><div class="dp-camp-mini-fill" style="width:${sentPct}%"></div></div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-                            <small>${sent} / ${total} enviados • ⏱️ ~${durationMin} min</small>
+                            <small>${sent} / ${total} enviados • <i class="fas fa-stopwatch"></i> ~${durationMin} min</small>
                             <div class="dp-camp-ctrl-group" data-id="${c.id}">
                                 ${status !== 'running' && status !== 'done' ? `<button type="button" class="dp-ctrl-btn play" data-act="start" title="Iniciar / Retomar envio"><i class="fas fa-play"></i> INICIAR</button>` : ''}
                                 ${status === 'running' ? `<button type="button" class="dp-ctrl-btn pause" data-act="pause" title="Pausar disparo"><i class="fas fa-pause"></i> PAUSAR</button>` : ''}
@@ -409,7 +409,7 @@ export async function init() {
         checkTimeCollision(totalDurationMin);
 
         if (!activeTargets.length) {
-            container.innerHTML = '<div class="dp-loading">⚠️ Nenhum lead disponível! Todos os leads desta etapa já foram agendados em outros disparos.</div>';
+            container.innerHTML = '<div class="dp-loading"><i class="fas fa-triangle-exclamation"></i> Nenhum lead disponível! Todos os leads desta etapa já foram agendados em outros disparos.</div>';
             return;
         }
 
@@ -555,7 +555,7 @@ export async function init() {
 
         const tmplSelect = document.getElementById('dpSchedTemplateSelect');
         if (tmplSelect) {
-            tmplSelect.innerHTML = '<option value="">✨ Escolher Template Comercial Pronto...</option>' +
+            tmplSelect.innerHTML = '<option value="">Escolher Template Comercial Pronto...</option>' +
                 templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
         }
 

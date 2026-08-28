@@ -215,7 +215,7 @@ export async function init() {
             const numStr = n.number || '';
             const isActive = _selectedBot === numStr ? 'active' : '';
             const botEventsCount = _allEvents.filter(e => String(e.number) === String(numStr)).length;
-            const statusLabel = n.status === 'connected' ? '● ONLINE' : n.status === 'cooldown' ? '❄ PAUSADO' : '○ OFFLINE';
+            const statusLabel = n.status === 'connected' ? 'ONLINE' : n.status === 'cooldown' ? 'PAUSADO' : 'OFFLINE';
             const initials = (n.label || 'B' + (idx + 1)).slice(0, 2).toUpperCase();
 
             html += `

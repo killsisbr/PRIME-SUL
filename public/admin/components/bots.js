@@ -1,7 +1,7 @@
 const CONN_LABEL = { connected: 'CONECTADO', connecting: 'CONECTANDO', offline: 'OFFLINE', banned: 'BANIDO' };
 const BAN_LABEL = { ativo: 'ATIVO', resfriado: 'RESFRIADO', banido: 'BANIDO' };
 const WA_STATUS_LABEL = { novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO' };
-const WA_PRIO_LABEL = { alta: '★ Alta', media: '★ Média', baixa: '★ Baixa' };
+const WA_PRIO_LABEL = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
 
 const _pollers = new Map();
 let _leads = [];
@@ -133,7 +133,7 @@ export async function init() {
             let messages = [];
             messages.push({
                 type: 'in',
-                text: `Simulação iniciada para ${lead.name} (${lead.phone || 'Tel N/D'}). Cidade: ${lead.city || 'N/D'}.`,
+                text: `Conversa iniciada com ${lead.name} (${lead.phone || 'Tel N/D'}). Cidade: ${lead.city || 'N/D'}.`,
                 time: new Date(lead.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
             });
 
@@ -216,14 +216,173 @@ export async function init() {
         };
     }
 
+    // ================= EMOJI PICKER & ATTACHMENT SYSTEM =================
+    const emojiBtn = document.getElementById('waEmojiBtn');
+    const emojiPicker = document.getElementById('waEmojiPicker');
+    const emojiGrid = document.getElementById('waEmojiGrid');
+    const closeEmojiBtn = document.getElementById('waCloseEmojiBtn');
+
+    const attachBtn = document.getElementById('waAttachBtn');
+    const attachMenu = document.getElementById('waAttachMenu');
+    const fileInput = document.getElementById('waFileInput');
+    const attachPhotoBtn = document.getElementById('waAttachPhotoBtn');
+    const attachDocBtn = document.getElementById('waAttachDocBtn');
+
+    const WA_EMOJIS = [
+        '😀', '😃', '😄', '😁', '😊', '😍', '🤩',
+        '👍', '👏', '🤝', '🙏', '💪', '🔥', '⭐',
+        '💰', '💳', '🏦', '🚀', '✅', '📞', '📅',
+        '🎯', '🔒', '📄', '📎', '💼', '🚗', '🏡',
+        '🎉', '✨', '💯', '🆗', '⏳', '💡', '⚡'
+    ];
+
+    if (emojiGrid) {
+        emojiGrid.innerHTML = WA_EMOJIS.map(em => `
+            <button type="button" class="wa-emoji-btn" data-emoji="${em}">${em}</button>
+        `).join('');
+
+        emojiGrid.querySelectorAll('.wa-emoji-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const em = btn.dataset.emoji;
+                if (chatInput) {
+                    const start = chatInput.selectionStart || chatInput.value.length;
+                    const end = chatInput.selectionEnd || chatInput.value.length;
+                    chatInput.value = chatInput.value.substring(0, start) + em + chatInput.value.substring(end);
+                    chatInput.focus();
+                    chatInput.selectionStart = chatInput.selectionEnd = start + em.length;
+                }
+            };
+        });
+    }
+
+    if (emojiBtn && emojiPicker) {
+        emojiBtn.onclick = (e) => {
+            e.stopPropagation();
+            const isOpen = emojiPicker.style.display === 'flex';
+            emojiPicker.style.display = isOpen ? 'none' : 'flex';
+            if (attachMenu) attachMenu.style.display = 'none';
+            emojiBtn.classList.toggle('active', !isOpen);
+            if (attachBtn) attachBtn.classList.remove('active');
+        };
+    }
+
+    if (closeEmojiBtn && emojiPicker) {
+        closeEmojiBtn.onclick = () => {
+            emojiPicker.style.display = 'none';
+            if (emojiBtn) emojiBtn.classList.remove('active');
+        };
+    }
+
+    if (attachBtn && attachMenu) {
+        attachBtn.onclick = (e) => {
+            e.stopPropagation();
+            const isOpen = attachMenu.style.display === 'flex';
+            attachMenu.style.display = isOpen ? 'none' : 'flex';
+            if (emojiPicker) emojiPicker.style.display = 'none';
+            attachBtn.classList.toggle('active', !isOpen);
+            if (emojiBtn) emojiBtn.classList.remove('active');
+        };
+    }
+
+    // Fecha popups ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (emojiPicker && !emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+            emojiPicker.style.display = 'none';
+            if (emojiBtn) emojiBtn.classList.remove('active');
+        }
+        if (attachMenu && !attachMenu.contains(e.target) && e.target !== attachBtn) {
+            attachMenu.style.display = 'none';
+            if (attachBtn) attachBtn.classList.remove('active');
+        }
+    });
+
+    if (attachPhotoBtn && fileInput) {
+        attachPhotoBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (attachMenu) attachMenu.style.display = 'none';
+            if (attachBtn) attachBtn.classList.remove('active');
+            fileInput.accept = 'image/*';
+            fileInput.click();
+        };
+    }
+
+    if (attachDocBtn && fileInput) {
+        attachDocBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (attachMenu) attachMenu.style.display = 'none';
+            if (attachBtn) attachBtn.classList.remove('active');
+            fileInput.accept = '.pdf,.doc,.docx,.txt,.csv,.xlsx';
+            fileInput.click();
+        };
+    }
+
+    if (fileInput) {
+        fileInput.onchange = async () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file || !_activeLead) return;
+
+            const msgBox = document.getElementById('waChatMessages');
+            const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const isImg = file.type.startsWith('image/');
+            const sizeStr = file.size > 1024 * 1024
+                ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+                : Math.ceil(file.size / 1024) + ' KB';
+
+            const bubble = document.createElement('div');
+            bubble.className = `wa-msg-bubble out ${isImg ? 'image' : 'doc'}`;
+
+            if (isImg) {
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    bubble.innerHTML = `
+                        <img src="${re.target.result}" class="wa-msg-img-preview" alt="${esc(file.name)}">
+                        <div><b>Foto:</b> ${esc(file.name)} (${sizeStr})</div>
+                        <div class="wa-msg-meta"><span>${timeStr}</span> <i class="fas fa-check-double" style="color:#34b7f1;"></i></div>
+                    `;
+                    if (msgBox) {
+                        msgBox.appendChild(bubble);
+                        msgBox.scrollTop = msgBox.scrollHeight;
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                bubble.innerHTML = `
+                    <div class="wa-msg-doc-card">
+                        <i class="fas fa-file-lines wa-msg-doc-icon"></i>
+                        <div class="wa-msg-doc-meta">
+                            <div class="wa-msg-doc-name">${esc(file.name)}</div>
+                            <div class="wa-msg-doc-size">${sizeStr} • Documento</div>
+                        </div>
+                    </div>
+                    <div class="wa-msg-meta"><span>${timeStr}</span> <i class="fas fa-check-double" style="color:#34b7f1;"></i></div>
+                `;
+                if (msgBox) {
+                    msgBox.appendChild(bubble);
+                    msgBox.scrollTop = msgBox.scrollHeight;
+                }
+            }
+
+            try {
+                await api(`/leads/${_activeLead.id}/notes`, {
+                    method: 'POST',
+                    body: JSON.stringify({ note: `[WhatsApp Web ${isImg ? 'Foto' : 'Documento'}] ${file.name} (${sizeStr})` })
+                });
+                if (toast) toast(`${isImg ? 'Foto' : 'Documento'} anexado e enviado!`, 'ok');
+            } catch (e) {}
+
+            fileInput.value = '';
+        };
+    }
+
     // ================= QUICK CHIPS SYSTEM (LOCALSTORAGE + DRAG & DROP + PRIORIDADE) =================
     const STORAGE_CHIPS_KEY = 'prime_sul_quick_chips';
     const DEFAULT_QUICK_CHIPS = [
-        { title: '👋 Saudação', text: 'Olá {nome}! Tudo bem? Como posso te ajudar na sua simulação hoje?' },
-        { title: '⏱️ Aguarde', text: 'Estou analisando seu limite de crédito agora. Pode aguardar um minuto?' },
-        { title: '✅ Aprovado', text: 'Seu cadastro foi aprovado com sucesso! Vamos concluir a contratação?' },
-        { title: '📄 Documentos', text: 'Olá {nome}, para dar andamento preciso que envie foto do seu RG/CPF e comprovante de residência.' },
-        { title: '🏦 Dados Bancários', text: 'Por favor, me informe sua chave PIX ou conta bancária para depósito do valor aprovado.' }
+        { title: 'Saudação', text: 'Olá {nome}! Tudo bem? Como posso te ajudar hoje?' },
+        { title: 'Aguarde', text: 'Estou verificando suas informações agora. Pode aguardar um minuto?' },
+        { title: 'Aprovado', text: 'Seu cadastro foi localizado com sucesso! Vamos dar andamento?' },
+        { title: 'Documentos', text: 'Olá {nome}, para dar andamento preciso que envie foto do seu RG/CPF e comprovante de residência.' },
+        { title: 'Dados Bancários', text: 'Por favor, me informe sua chave PIX ou conta bancária para transferência.' }
     ];
 
     function getQuickChips() {
@@ -337,11 +496,17 @@ export async function init() {
     function openQuickModal(editIdx = null) {
         let modal = document.getElementById('waQuickModal');
         if (!modal) return;
-        if (modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
-        }
         modal.style.display = 'flex';
-        modal.style.zIndex = '999999';
+        const shell = document.getElementById('waQuickModalShell');
+        if (shell && window.anime) {
+            window.anime({
+                targets: shell,
+                scale: [0.92, 1],
+                opacity: [0, 1],
+                duration: 320,
+                easing: 'easeOutCubic'
+            });
+        }
         resetQuickForm();
         renderQuickManageList();
 
@@ -352,7 +517,7 @@ export async function init() {
                 inputTitle.value = item.title;
                 inputText.value = item.text;
                 editIndexEl.value = editIdx;
-                formTitleEl.innerHTML = '<i class="fas fa-pen" style="color:var(--primary);"></i> EDITAR TEMPLATE';
+                formTitleEl.innerHTML = '<i class="fas fa-pen" style="color:#38bdf8;"></i> <span>EDITAR ATALHO</span>';
                 if (cancelEditBtn) cancelEditBtn.style.display = 'inline-flex';
                 inputTitle.focus();
                 inputTitle.select();
@@ -372,7 +537,22 @@ export async function init() {
 
     const closeQuickModal = () => {
         const modal = document.getElementById('waQuickModal') || quickModal;
-        if (modal) modal.style.display = 'none';
+        if (!modal) return;
+        const shell = document.getElementById('waQuickModalShell');
+        if (shell && window.anime) {
+            window.anime({
+                targets: shell,
+                scale: [1, 0.95],
+                opacity: [1, 0],
+                duration: 200,
+                easing: 'easeInQuad',
+                complete: () => {
+                    modal.style.display = 'none';
+                }
+            });
+        } else {
+            modal.style.display = 'none';
+        }
     };
     if (closeQuickModalBtn) closeQuickModalBtn.onclick = closeQuickModal;
     if (doneQuickModalBtn) doneQuickModalBtn.onclick = closeQuickModal;
@@ -381,7 +561,7 @@ export async function init() {
         if (inputTitle) inputTitle.value = '';
         if (inputText) inputText.value = '';
         if (editIndexEl) editIndexEl.value = '-1';
-        if (formTitleEl) formTitleEl.innerHTML = '<i class="fas fa-plus-circle" style="color:var(--ok);"></i> ADICIONAR NOVO TEMPLATE';
+        if (formTitleEl) formTitleEl.innerHTML = '<i class="fas fa-plus-circle" style="color:#00a884;"></i> <span>ADICIONAR NOVO ATALHO</span>';
         if (cancelEditBtn) cancelEditBtn.style.display = 'none';
     }
 
@@ -423,7 +603,7 @@ export async function init() {
 
         listEl.innerHTML = chips.map((c, i) => {
             const badgeClass = i === 0 ? 'prio-1' : i === 1 ? 'prio-2' : i === 2 ? 'prio-3' : 'normal';
-            const badgeLabel = i === 0 ? '★ 1º Prioridade' : i === 1 ? '★ 2º Prioridade' : i === 2 ? '★ 3º Prioridade' : `Item ${i + 1}`;
+            const badgeLabel = i === 0 ? '1º Prioridade' : i === 1 ? '2º Prioridade' : i === 2 ? '3º Prioridade' : `Item ${i + 1}`;
             return `
                 <div class="wa-quick-manage-item" draggable="true" data-index="${i}">
                     <i class="fas fa-grip-vertical wa-quick-drag-handle" title="Arraste para reordenar"></i>
@@ -512,13 +692,25 @@ export async function init() {
 
     renderChipsBar();
 
-    // Toggle tools button
+    // Toggle tools button (inicia SEMPRE fechado; só abre se o usuário clicar)
     const toggleToolsBtn = document.getElementById('waToggleToolsBtn');
     const previewToolsPanel = document.getElementById('waPreviewTools');
     if (toggleToolsBtn && previewToolsPanel) {
+        previewToolsPanel.style.display = 'none';
+        previewToolsPanel.classList.remove('active');
+        toggleToolsBtn.classList.remove('active');
+
         toggleToolsBtn.onclick = () => {
-            const isHidden = getComputedStyle(previewToolsPanel).display === 'none';
-            previewToolsPanel.style.display = isHidden ? 'flex' : 'none';
+            const isCurrentlyOpen = previewToolsPanel.classList.contains('active') || (previewToolsPanel.style.display === 'flex');
+            if (isCurrentlyOpen) {
+                previewToolsPanel.style.display = 'none';
+                previewToolsPanel.classList.remove('active');
+                toggleToolsBtn.classList.remove('active');
+            } else {
+                previewToolsPanel.style.display = 'flex';
+                previewToolsPanel.classList.add('active');
+                toggleToolsBtn.classList.add('active');
+            }
         };
     }
 
@@ -549,7 +741,7 @@ export async function init() {
         }
 
         const prioEl = document.getElementById('wapt-prio');
-        if (prioEl) prioEl.textContent = WA_PRIO_LABEL[lead.prioridade] || '★ Média';
+        if (prioEl) prioEl.textContent = WA_PRIO_LABEL[lead.prioridade] || 'Média';
 
         const origemEl = document.getElementById('wapt-origem');
         if (origemEl) origemEl.textContent = lead.origem || 'SITE';

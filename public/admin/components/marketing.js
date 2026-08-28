@@ -9,12 +9,12 @@ const FONTS = {
     '4': 'Comic Sans MS, cursive',
     '5': 'Courier New, monospace'
 };
-const EMOJIS = ['💸', '🏦', '🚗', '✨', '🔥', '📞', '🎁', '🤑', '✅', '❤️'];
+const EMOJIS = [];
 const TEMPLATES = [
-    { icon: '🔥', name: 'Oferta do Dia', msg: '🔥 *OFERTA DO DIA*\n\nCrédito com as melhores taxas do mercado!\n\nChame agora e veja quanto você pode pegar. ✅' },
-    { icon: '✨', name: 'Novidades', msg: '✨ *NOVIDADES*\n\nNovas condições de pagamento disponíveis.\n\nFale com a gente! 📞' },
-    { icon: '🎟️', name: 'Cupom Desconto', msg: '🎟️ *CUPOM DE DESCONTO*\n\nTaxas reduzidas esta semana.\n\nGaranta já a sua simulação! 🚀' },
-    { icon: '📞', name: 'Peça sua Simulação', msg: '📞 *PEÇA SUA SIMULAÇÃO*\n\nCrédito aprovado em minutos.\n\nResponda SIM para continuar! 💰' }
+    { icon: 'fa-fire', name: 'Oferta do Dia', msg: '*OFERTA DO DIA*\n\nCrédito com as melhores taxas do mercado!\n\nChame agora e veja quanto você pode pegar.' },
+    { icon: 'fa-star', name: 'Novidades', msg: '*NOVIDADES*\n\nNovas condições de pagamento disponíveis.\n\nFale com a gente!' },
+    { icon: 'fa-ticket', name: 'Condição Especial', msg: '*CONDIÇÃO ESPECIAL*\n\nTaxas reduzidas esta semana.\n\nGaranta já a sua simulação!' },
+    { icon: 'fa-phone-volume', name: 'Peça sua Simulação', msg: '*PEÇA SUA SIMULAÇÃO*\n\nCrédito aprovado em minutos.\n\nResponda SIM para continuar!' }
 ];
 const TYPE_META = { text: { icon: 'fa-font', label: 'TEXTO' }, image: { icon: 'fa-image', label: 'FOTO' }, link: { icon: 'fa-link', label: 'LINK' } };
 const STATUS_META = {
