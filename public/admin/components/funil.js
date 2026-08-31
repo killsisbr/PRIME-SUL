@@ -320,6 +320,7 @@ export async function init() {
                 const chip = TRANSITIONS[i] ? renderTransitionChip(conversoes[TRANSITIONS[i].key]) : '';
                 const autoOn = !!stageConfigs[s.key]?.auto_send;
                 const isActive = activeStageKey === s.key;
+                const isDefaultStage = s.key === 'novo';
 
                 return `
                 <div class="fl-seg-wrap ${isActive ? 'active' : ''}" data-stage="${s.key}" style="width:${width};">
@@ -328,7 +329,7 @@ export async function init() {
                         <div class="fl-seg-left">
                             <span class="fl-seg-icon"><i class="fas ${s.icon}"></i></span>
                             <div class="fl-seg-main">
-                                <span class="fl-seg-label">${s.label}</span>
+                                <span class="fl-seg-label">${s.label}${isDefaultStage ? ' <small style="font-size:0.6rem; opacity:0.85; font-weight:800; letter-spacing:0.5px;">(TRIAGEM / ENTRADA)</small>' : ''}</span>
                                 <span class="fl-seg-count">${nf(count)}</span>
                             </div>
                         </div>
@@ -336,9 +337,7 @@ export async function init() {
                             <span class="fl-seg-pct">${pct}% DO FUNIL</span>
                             <div class="fl-seg-actions">
                                 <span class="fl-seg-cta"><i class="fas fa-users"></i> VER CLIENTES</span>
-                                <button type="button" class="fl-tools-btn" data-tools-stage="${s.key}" title="Automações desta etapa">
-                                    <i class="fas ${autoOn ? 'fa-wand-magic-sparkles' : 'fa-gear'}"></i>
-                                </button>
+
                             </div>
                         </div>
                     </div>
@@ -380,12 +379,7 @@ export async function init() {
             });
         });
 
-        document.querySelectorAll('[data-tools-stage]').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                openAutomationPopup(btn.dataset.toolsStage);
-            });
-        });
+
 
         document.querySelectorAll('.fl-detail-row').forEach(row => {
             row.addEventListener('click', () => openStageDrawer(row.dataset.stage));
@@ -644,25 +638,24 @@ export async function init() {
                 easing: 'easeOutQuad'
             });
 
-            // Handlers de clique e seleção
+            // Handlers de clique e seleção direta
             listEl.querySelectorAll('.fl-client-card').forEach(card => {
                 card.addEventListener('click', e => {
-                    const ficheBtn = e.target.closest('.fl-btn-fiche');
-                    if (ficheBtn) {
+                    const checkWrap = e.target.closest('.fl-card-check-wrap') || e.target.classList.contains('fl-card-check');
+                    if (checkWrap) {
                         e.stopPropagation();
-                        openClientModal(card.dataset.id);
+                        const leadId = Number(card.dataset.id);
+                        if (selectedLeadIds.has(leadId)) {
+                            selectedLeadIds.delete(leadId);
+                        } else {
+                            selectedLeadIds.add(leadId);
+                        }
+                        updateSelectionUI();
                         return;
                     }
 
-                    const checkWrap = e.target.closest('.fl-card-check-wrap') || e.target.classList.contains('fl-card-check');
-                    const leadId = Number(card.dataset.id);
-
-                    if (selectedLeadIds.has(leadId)) {
-                        selectedLeadIds.delete(leadId);
-                    } else {
-                        selectedLeadIds.add(leadId);
-                    }
-                    updateSelectionUI();
+                    // Clique no card abre diretamente a ficha do cliente
+                    openClientModal(card.dataset.id);
                 });
             });
 
@@ -808,8 +801,18 @@ export async function init() {
 
         let scheduled_at = null;
         if (!isImmediate) {
-            const todayStr = new Date().toISOString().slice(0, 10);
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${y}-${m}-${d}`;
             scheduled_at = `${todayStr} ${timeVal}:00`;
+
+            const scheduledTime = new Date(`${todayStr}T${timeVal}:00`);
+            if (scheduledTime < now) {
+                toast('O horário agendado já passou! Escolha um horário futuro ou marque "Disparo Imediato".', 'err');
+                return;
+            }
         }
 
         try {
@@ -1238,111 +1241,7 @@ export async function init() {
         if (e.target.id === 'flClientOverlay') closeClientModal();
     });
 
-    // ================= POPUP DE AUTOMAÇÕES DA ETAPA =================
-    async function loadAutomationResources() {
-        const [configs, numbers, templateRows] = await Promise.all([
-            api('/tools/stage-config'),
-            api('/campaigns/numbers'),
-            api('/templates')
-        ]);
-        stageConfigs = configs || {};
-        availableNumbers = (numbers || []).filter(n => n.status === 'ativo');
-        templates = (templateRows || []).filter(t => t.purpose === 'screening');
-    }
 
-    function fillSelects() {
-        const numberOptions = '<option value="">Seleção automática</option>' + availableNumbers.map(n =>
-            `<option value="${n.id}">${escapeHtml(n.label || n.number || ('Número #' + n.id))}</option>`).join('');
-        document.getElementById('fla-auto-number').innerHTML = numberOptions;
-        const templateOptions = '<option value="">Aplicar um template...</option>' + templates.map(t =>
-            `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
-        document.getElementById('fla-auto-template').innerHTML = templateOptions;
-    }
-
-    function switchFlaTab(name) {
-        document.querySelectorAll('#fla-tabbar .fla-tab[data-fla-tab]').forEach(tab => tab.classList.toggle('active', tab.dataset.flaTab === name));
-        document.querySelectorAll('[data-fla-panel]').forEach(panel => panel.hidden = panel.dataset.flaPanel !== name);
-    }
-
-    async function openAutomationPopup(stage) {
-        const meta = STAGES.find(s => s.key === stage) || { label: stage.toUpperCase() };
-        document.getElementById('fla-stage').textContent = meta.label;
-        document.getElementById('flaOverlay').style.display = 'flex';
-        try {
-            await loadAutomationResources();
-            fillSelects();
-            const cfg = stageConfigs[stage] || {};
-            const canMessage = ['novo', 'contato'].includes(stage);
-            document.getElementById('fla-card-auto').classList.toggle('disabled', !canMessage);
-            document.getElementById('fla-card-send').classList.toggle('disabled', !canMessage);
-            document.getElementById('fla-auto').checked = !!cfg.auto_send;
-            document.getElementById('fla-auto-msg').value = cfg.message || '';
-            document.getElementById('fla-auto-number').value = cfg.number_id || '';
-            document.getElementById('fla-move-to').value = stage === 'novo' ? 'contato' : stage === 'contato' ? 'confirmado' : 'concluido';
-            updatePreview();
-            updateAutomationReadiness(cfg, canMessage, stage);
-            switchFlaTab(canMessage ? 'auto' : 'move');
-        } catch (e) { toast(e.message, 'err'); }
-    }
-
-    function updateAutomationReadiness(cfg, canMessage, stage) {
-        const hasMessage = !!(cfg.message || '').trim();
-        const hasNumber = availableNumbers.length > 0;
-        const isActive = !!cfg.auto_send;
-        document.getElementById('fla-stat-auto').textContent = isActive ? 'ATIVA' : 'PAUSADA';
-        document.getElementById('fla-stat-msg').textContent = hasMessage ? 'PRONTA' : 'PENDENTE';
-        document.getElementById('fla-stat-number').textContent = hasNumber ? String(availableNumbers.length) : 'NENHUM';
-
-        if (!canMessage) {
-            document.getElementById('fla-ready-label').textContent = 'ETAPA OPERACIONAL';
-            document.getElementById('fla-ready-title').textContent = 'GESTÃO EM LOTE';
-            document.getElementById('fla-ready-desc').textContent = 'Nesta etapa, use movimentação e score. Mensagens automáticas ficam disponíveis apenas em Novo e Em contato.';
-        } else if (isActive && hasMessage && hasNumber) {
-            document.getElementById('fla-ready-label').textContent = 'PRONTA PARA USO';
-            document.getElementById('fla-ready-title').textContent = 'AUTOMAÇÃO ATIVA';
-            document.getElementById('fla-ready-desc').textContent = 'Novos leads desta etapa receberão a mensagem configurada pelo número selecionado ou pela rotação automática.';
-        } else {
-            const missing = [!hasMessage && 'uma mensagem', !hasNumber && 'um número ativo', !isActive && 'ativar a automação'].filter(Boolean).join(', ');
-            document.getElementById('fla-ready-label').textContent = 'CONFIGURAÇÃO PENDENTE';
-            document.getElementById('fla-ready-title').textContent = 'FALTA POUCO';
-            document.getElementById('fla-ready-desc').textContent = `Para deixar esta etapa pronta, configure ${missing}.`;
-        }
-    }
-
-    function updatePreview() {
-        const raw = document.getElementById('fla-auto-msg').value.trim();
-        document.getElementById('fla-preview').textContent = raw
-            ? raw.replace(/\{nome\}/g, 'Maria')
-            : 'A prévia da mensagem automática aparecerá aqui.';
-    }
-
-    document.getElementById('fla-close').onclick = () => document.getElementById('flaOverlay').style.display = 'none';
-    document.getElementById('flaOverlay').addEventListener('click', e => { if (e.target.id === 'flaOverlay') e.target.style.display = 'none'; });
-    document.querySelectorAll('#fla-tabbar .fla-tab[data-fla-tab]').forEach(tab => {
-        tab.addEventListener('click', () => {
-            if (tab.classList.contains('disabled')) return toast('Mensagens estão disponíveis apenas em Novo e Em contato', 'info');
-            switchFlaTab(tab.dataset.flaTab);
-        });
-    });
-    document.getElementById('fla-auto-msg').addEventListener('input', updatePreview);
-
-    document.getElementById('fla-save').onclick = async () => {
-        const stage = document.getElementById('fla-stage').textContent.toLowerCase();
-        const body = {
-            status: stage,
-            config: {
-                auto_send: document.getElementById('fla-auto').checked,
-                message: document.getElementById('fla-auto-msg').value.trim(),
-                number_id: Number(document.getElementById('fla-auto-number').value) || null
-            }
-        };
-        try {
-            await api('/tools/stage-config', { method: 'PUT', body: JSON.stringify(body) });
-            toast('Automação da etapa salva!');
-            await loadAutomationResources();
-            await loadData();
-        } catch (e) { toast(e.message, 'err'); }
-    };
 
     // ================= TRANSFERÊNCIA DE LEAD (ADMIN) =================
     let transferLeadId = null;
@@ -1597,14 +1496,12 @@ export async function init() {
         const editModal = document.getElementById('flClientEditOverlay');
         const clientModal = document.getElementById('flClientOverlay');
         const transferModal = document.getElementById('flTransferOverlay');
-        const autoModal = document.getElementById('flaOverlay');
         const drawer = document.getElementById('fl-drawer');
 
         if (addModal && addModal.style.display === 'flex') { closeNewLeadModal(); }
         else if (editModal && editModal.style.display === 'flex') { closeClientEditModal(); }
         else if (clientModal && clientModal.style.display === 'flex') { closeClientModal(); }
         else if (transferModal && transferModal.style.display === 'flex') { transferModal.style.display = 'none'; }
-        else if (autoModal && autoModal.style.display === 'flex') { autoModal.style.display = 'none'; }
         else if (drawer && drawer.style.display === 'flex') { closeStageDrawer(); }
     }
 

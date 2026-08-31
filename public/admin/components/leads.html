@@ -1,93 +1,45 @@
 <div class="ld-root">
-    <!-- ============ TOP HEADER & STATS ============ -->
-    <div class="ld-header">
-        <div class="ld-brand">
-            <span class="ld-brand-icon"><i class="fas fa-users"></i></span>
-            <div>
-                <small>CARTEIRA COMERCIAL</small>
-                <h2>Leads & Clientes</h2>
-                <p>Gestão completa da base de contatos com inteligência comercial.</p>
-            </div>
-        </div>
-        <div class="ld-stats">
-            <div class="ld-stat">
-                <span class="fl-stat-icon blue"><i class="fas fa-address-book"></i></span>
-                <div>
-                    <b id="lv-stat-total">0</b>
-                    <span>TOTAL BASE</span>
-                </div>
-            </div>
-            <div class="ld-stat">
-                <span class="fl-stat-icon green"><i class="fas fa-calendar-day"></i></span>
-                <div>
-                    <b id="lv-stat-hoje">0</b>
-                    <span>HOJE</span>
-                </div>
-            </div>
-            <div class="ld-stat">
-                <span class="fl-stat-icon orange"><i class="fas fa-fire"></i></span>
-                <div>
-                    <b id="lv-stat-quentes">0</b>
-                    <span>SCORE ≥ 70</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ ACTION BAR & FILTROS ============ -->
-    <div class="ld-action-bar">
-        <button type="button" class="btn-retro" id="ld-btn-new">
-            <i class="fas fa-plus"></i> NOVO LEAD
-        </button>
-        <button type="button" class="btn-retro btn-secondary-retro" id="ld-btn-ocr">
-            <i class="fas fa-wand-magic-sparkles" style="color:var(--primary);"></i> AUTO-PREENCHER COM IA (OCR)
-        </button>
-        <button type="button" class="btn-retro btn-secondary-retro" id="kbx-tools-btn" disabled title="Escolha um status nos filtros para ver as ferramentas de etapa">
-            <i class="fas fa-bolt"></i> AÇÕES EM MASSA
-        </button>
-        <div class="ld-right-actions" style="margin-left:auto;">
-            <button type="button" class="fl-refresh" id="kbx-reload" title="Atualizar base"><i class="fas fa-rotate-right"></i></button>
-        </div>
-    </div>
-
-    <!-- ============ FILTROS DE BUSCA ============ -->
-    <div class="ld-filter-bar">
-        <div class="fl-search-box" style="flex:2; min-width:240px;">
+    <!-- ============ TOP COMPACT TOOLBAR & FILTROS ============ -->
+    <div class="ld-compact-bar">
+        <div class="ld-search-wrap">
             <i class="fas fa-search"></i>
             <input type="text" id="kbx-search" placeholder="Buscar por nome, telefone, CPF, cidade...">
         </div>
-        <select id="kbx-status" class="fl-select-pill">
+        <select id="kbx-status" class="ld-select-filter">
             <option value="">TODOS OS STATUS</option>
-            <option value="novo">Novo</option>
+            <option value="novo">Novo (Triagem)</option>
             <option value="contato">Em contato</option>
             <option value="confirmado">Confirmado</option>
             <option value="concluido">Concluído</option>
             <option value="bloqueado">Bloqueado</option>
         </select>
-        <select id="kbx-origem" class="fl-select-pill">
+        <select id="kbx-origem" class="ld-select-filter">
             <option value="">TODAS ORIGENS</option>
             <option value="SITE">Site</option>
             <option value="SIMULACAO">Simulação</option>
             <option value="INDICACAO">Indicação</option>
         </select>
-        <select id="kbx-prio" class="fl-select-pill">
+        <select id="kbx-prio" class="ld-select-filter">
             <option value="">TODAS PRIORIDADES</option>
             <option value="alta">Alta</option>
             <option value="media">Média</option>
             <option value="baixa">Baixa</option>
         </select>
-        <select id="kbx-score" class="fl-select-pill">
-            <option value="">TODOS SCORES</option>
-            <option value="70">Score ≥ 70</option>
-            <option value="50">Score ≥ 50</option>
-        </select>
-        <input type="text" id="kbx-tag" class="fl-select-pill" style="max-width:140px;" placeholder="Tag (ex: quente)">
-        <span class="ld-count-badge" id="kbx-total">0 leads</span>
+        <input type="text" id="kbx-tag" class="ld-select-filter" style="max-width:130px;" placeholder="Tag (ex: inss)">
+        
+        <span class="ld-count-badge" id="kbx-total">0 clientes</span>
+        
+        <div class="ld-actions-right">
+            <button type="button" class="btn-retro" id="ld-btn-new">
+                <i class="fas fa-plus"></i> NOVO CLIENTE
+            </button>
+            <button type="button" class="fl-refresh" id="kbx-reload" title="Atualizar lista"><i class="fas fa-rotate-right"></i></button>
+        </div>
     </div>
 
-    <!-- ============ LISTA REVOLUTIONARY DE LEADS ============ -->
-    <div class="ld-list" id="kbx-board">
-        <div class="fl-drawer-loading"><i class="fas fa-spinner fa-spin"></i> Carregando lista de leads...</div>
+    <!-- ============ LISTA DE FICHAS DE CLIENTES ============ -->
+    <div class="ld-cards-grid" id="kbx-board">
+        <div class="fl-drawer-loading"><i class="fas fa-spinner fa-spin"></i> Carregando clientes...</div>
     </div>
 </div>
 

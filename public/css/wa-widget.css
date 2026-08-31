@@ -147,8 +147,10 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background-image: radial-gradient(rgba(0,0,0,.04) 1px, transparent 0);
-    background-size: 16px 16px;
+    background-color: #0b141a;
+    background-image: url('/img/wa-doodle-dark.svg');
+    background-repeat: repeat;
+    background-size: 280px 280px;
 }
 
 /* SPEECH BUBBLES */

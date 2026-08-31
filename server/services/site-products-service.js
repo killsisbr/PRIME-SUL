@@ -9,7 +9,7 @@ const DEFAULT_PRODUCTS = [
         tagline: 'Crédito rápido, sem burocracia',
         desc: 'Você preenche em 30 segundos e nossa equipe analisa seu caso.',
         icone: 'fa-money-bill-wave',
-        cor: '#ff7417',
+        cor: '#2563eb',
         beneficios: ['Contratação 100% digital', 'Atendimento humanizado no WhatsApp', 'Sem consulta à restrição']
     },
     {
@@ -18,7 +18,7 @@ const DEFAULT_PRODUCTS = [
         tagline: 'A condição que cabe no seu bolso',
         desc: 'Parcelas descontadas direto no benefício ou folha de pagamento.',
         icone: 'fa-building-columns',
-        cor: '#3b82f6',
+        cor: '#ffb800',
         beneficios: ['Desconto em folha ou benefício', 'Condições especiais para aposentados', 'Análise gratuita e sem compromisso']
     },
     {

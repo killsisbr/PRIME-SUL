@@ -90,7 +90,7 @@ router.post('/:id/notes', async (req, res, next) => {
         const rawNote = (req.body.note ?? req.body.obs ?? req.body.text ?? '').trim();
         if (!rawNote) return res.status(400).json({ error: 'Anotação não pode estar vazia' });
 
-        const existingLead = await leadService.getLeadById(req.params.id, req.user.id);
+        const existingLead = await leadService.getLead(req.params.id, req.user.id);
         if (!existingLead) return res.status(404).json({ error: 'Lead não encontrado' });
 
         const timestamp = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });

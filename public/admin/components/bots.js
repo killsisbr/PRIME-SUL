@@ -714,6 +714,29 @@ export async function init() {
         };
     }
 
+    // Floating WhatsApp Widget Popout button
+    const floatBtn = document.getElementById('waFloatWidgetBtn');
+    if (floatBtn) {
+        floatBtn.onclick = () => {
+            if (!_activeLead) {
+                if (toast) toast('Selecione uma conversa primeiro!', 'info');
+                return;
+            }
+            if (window.openWaFloatingWidget) {
+                window.openWaFloatingWidget(_activeLead);
+            }
+            // Fecha modal principal para o operador continuar operando com a janela flutuante
+            const closeBtn = document.querySelector('#toolModalClose, .btn-close-modal, .tool-modal-close');
+            if (closeBtn) {
+                closeBtn.click();
+            } else {
+                const modal = document.getElementById('dynamicModal') || document.getElementById('toolModal');
+                if (modal) modal.classList.remove('active');
+            }
+            if (toast) toast(`Conversa com ${_activeLead.name} aberta no pop-up flutuante!`, 'ok');
+        };
+    }
+
     // External WhatsApp button
     const externalBtn = document.getElementById('waExternalBtn');
     if (externalBtn) {
@@ -762,6 +785,23 @@ export async function init() {
         set('wapt-city', lead.city);
         set('wapt-renda', lead.renda ? formatMoney(lead.renda) : null);
         set('wapt-limite', lead.limite_est ? formatMoney(lead.limite_est) : null);
+
+        // Header tooltips
+        set('waPtCpf', lead.cpf);
+        set('waPtRenda', lead.renda ? formatMoney(lead.renda) : null);
+        set('waPtLimite', lead.limite_est ? formatMoney(lead.limite_est) : null);
+
+        const noteIcon = document.getElementById('waHeaderNoteIcon');
+        const noteText = document.getElementById('waPtObs');
+        if (noteIcon && noteText) {
+            if (lead.obs && lead.obs.trim().length > 0) {
+                noteIcon.style.display = 'inline-block';
+                noteText.textContent = lead.obs;
+            } else {
+                noteIcon.style.display = 'none';
+                noteText.textContent = '—';
+            }
+        }
     }
 
     function updateStepperUI(currentStage) {

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" opacity="0.08">
+  <g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Chat Bubble 1 -->
+    <path d="M30 40 h30 a10 10 0 0 1 10 10 v15 a10 10 0 0 1 -10 10 h-20 l-10 8 v-8 a10 10 0 0 1 -10 -10 v-15 a10 10 0 0 1 10 -10 z"/>
+    <circle cx="45" cy="55" r="1.5" fill="#ffffff"/>
+    <circle cx="55" cy="55" r="1.5" fill="#ffffff"/>
+    <circle cx="65" cy="55" r="1.5" fill="#ffffff"/>
+
+    <!-- Coffee Mug -->
+    <path d="M120 45 v20 a8 8 0 0 0 8 8 h14 a8 8 0 0 0 8 -8 v-20 h-30 z"/>
+    <path d="M150 50 h6 a4 4 0 0 1 4 4 v4 a4 4 0 0 1 -4 4 h-6"/>
+    <path d="M128 38 q4 -5 0 -10"/>
+    <path d="M136 38 q4 -5 0 -10"/>
+
+    <!-- Headphones -->
+    <path d="M220 60 a18 18 0 0 1 36 0 v12"/>
+    <rect x="216" y="58" width="6" height="14" rx="3" fill="#ffffff" fill-opacity="0.2"/>
+    <rect x="254" y="58" width="6" height="14" rx="3" fill="#ffffff" fill-opacity="0.2"/>
+
+    <!-- Paper Plane -->
+    <path d="M320 40 l45 20 l-45 20 l12 -20 z"/>
+    <path d="M332 60 l33 0"/>
+
+    <!-- Watch / Clock -->
+    <circle cx="50" cy="150" r="16"/>
+    <path d="M50 140 v10 l7 4"/>
+    <path d="M42 134 h16"/>
+    <path d="M42 166 h16"/>
+
+    <!-- Heart -->
+    <path d="M140 145 q0 -10 10 -10 q8 0 10 8 q2 -8 10 -8 q10 0 10 10 q0 12 -20 22 q-20 -10 -20 -22 z"/>
+
+    <!-- Camera -->
+    <rect x="220" y="140" width="36" height="24" rx="5"/>
+    <path d="M230 140 l3 -6 h10 l3 6"/>
+    <circle cx="238" cy="152" r="7"/>
+
+    <!-- Game Controller -->
+    <rect x="310" y="140" width="40" height="22" rx="10"/>
+    <path d="M318 151 h8 M322 147 v8"/>
+    <circle cx="340" cy="149" r="1.5" fill="#ffffff"/>
+    <circle cx="344" cy="153" r="1.5" fill="#ffffff"/>
+
+    <!-- Music Note -->
+    <path d="M40 240 v25 a6 6 0 1 1 -5 -5 h5 v-20 h20 v25 a6 6 0 1 1 -5 -5 h5 v-20 z"/>
+
+    <!-- Light Bulb -->
+    <path d="M140 240 a14 14 0 0 1 20 0 c3 4 3 8 3 12 h-26 c0 -4 0 -8 3 -12 z"/>
+    <path d="M140 252 h20 v3 h-20 z M143 255 h14 v3 h-14 z"/>
+    <path d="M148 245 l4 -4 l4 4"/>
+
+    <!-- Smiley Face -->
+    <circle cx="240" cy="250" r="18"/>
+    <circle cx="234" cy="245" r="2" fill="#ffffff"/>
+    <circle cx="246" cy="245" r="2" fill="#ffffff"/>
+    <path d="M233 255 q7 8 14 0"/>
+
+    <!-- Smartphone -->
+    <rect x="325" y="235" width="22" height="38" rx="4"/>
+    <line x1="333" y1="240" x2="339" y2="240"/>
+    <circle cx="336" cy="266" r="2"/>
+
+    <!-- Star -->
+    <path d="M50 330 l4 8 l9 1 l-7 6 l2 9 l-8 -5 l-8 5 l2 -9 l-7 -6 l9 -1 z"/>
+
+    <!-- Gift Box -->
+    <rect x="135" y="335" width="28" height="24" rx="3"/>
+    <path d="M133 335 h32 v-6 h-32 z"/>
+    <line x1="149" y1="329" x2="149" y2="359"/>
+    <path d="M149 329 q-6 -8 -10 -4 q-4 4 10 4"/>
+    <path d="M149 329 q6 -8 10 -4 q4 4 -10 4"/>
+
+    <!-- Speech Balloon 2 -->
+    <path d="M225 330 a16 16 0 0 1 30 6 c0 6 -4 10 -8 13 l4 9 l-10 -5 a16 16 0 0 1 -16 -23 z"/>
+    <line x1="233" y1="338" x2="247" y2="338"/>
+    <line x1="233" y1="343" x2="243" y2="343"/>
+
+    <!-- Umbrella / Sun -->
+    <path d="M320 345 a18 18 0 0 1 36 0 h-36 z"/>
+    <path d="M338 345 v16 a4 4 0 0 1 -8 0"/>
+    <path d="M338 327 v-4"/>
+
+    <!-- Decorative Tiny Dots & Crosses -->
+    <path d="M90 90 l6 6 M96 90 l-6 6"/>
+    <path d="M290 100 l6 6 M296 100 l-6 6"/>
+    <path d="M90 290 l6 6 M96 290 l-6 6"/>
+    <path d="M375 290 l6 6 M381 290 l-6 6"/>
+    <circle cx="185" cy="95" r="2" fill="#ffffff"/>
+    <circle cx="95" cy="195" r="2" fill="#ffffff"/>
+    <circle cx="285" cy="195" r="2" fill="#ffffff"/>
+    <circle cx="190" cy="295" r="2" fill="#ffffff"/>
+    <circle cx="285" cy="370" r="2" fill="#ffffff"/>
+    <circle cx="95" cy="370" r="2" fill="#ffffff"/>
+  </g>
+</svg>

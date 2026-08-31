@@ -66,34 +66,34 @@ export async function init() {
         const dateFormatted = new Date((l.created_at || '').replace(' ', 'T')).toLocaleString('pt-BR');
 
         return `
-        <article class="ld-card pri-${l.prioridade || 'media'}" data-id="${l.id}">
-            <div class="ld-card-main-row">
-                <span class="fl-client-av ${avCls}">${esc(initials(l.name))}</span>
-                <div class="ld-card-info">
-                    <div class="ld-card-name">${esc(l.name)}</div>
-                    <div class="ld-card-sub">
+        <article class="ld-client-card status-${l.status || 'novo'}" data-id="${l.id}">
+            <div class="ld-cc-main">
+                <span class="ld-cc-av ${avCls}">${esc(initials(l.name))}</span>
+                <div class="ld-cc-identity">
+                    <div class="ld-cc-top">
+                        <strong class="ld-cc-name">${esc(l.name)}</strong>
+                        <span class="ld-status-badge status-${l.status || 'novo'}">${STATUS_LABEL[l.status] || 'NOVO'}</span>
+                        <span class="ld-prio-badge pri-${l.prioridade || 'media'}">${prioLabel}</span>
+                        ${l.origem ? `<span class="ld-origin-tag">${esc(l.origem)}</span>` : ''}
+                    </div>
+                    <div class="ld-cc-sub">
                         <span><i class="fas fa-phone"></i> ${esc(l.phone)}</span>
-                        ${l.cpf ? `<span>• CPF: ${esc(l.cpf)}</span>` : ''}
-                        ${l.city ? `<span>• <i class="fas fa-location-dot"></i> ${esc(l.city)}</span>` : ''}
+                        ${l.cpf ? `<span><i class="fas fa-id-card"></i> ${esc(l.cpf)}</span>` : ''}
+                        ${l.city ? `<span><i class="fas fa-location-dot"></i> ${esc(l.city)}</span>` : ''}
+                        ${l.limite_est ? `<span class="ld-limite-tag"><i class="fas fa-sack-dollar"></i> R$ ${Number(l.limite_est).toLocaleString('pt-BR')}</span>` : ''}
+                        ${l.tags ? l.tags.split(',').filter(Boolean).map(t => `<span class="ld-tag-pill">${esc(t.trim())}</span>`).join('') : ''}
+                        <span class="ld-time-tag"><i class="far fa-clock"></i> ${relTime(l.created_at)}</span>
                     </div>
                 </div>
-                <div class="ld-card-right">
-                    <span class="fl-client-score ${scoreCls(l.score)}">${scoreIcon}${score}</span>
-                    <span class="ld-card-time" title="${dateFormatted}"><i class="far fa-clock"></i> ${relTime(l.created_at)}</span>
-                    <select class="fl-select-pill ld-status-select" data-id="${l.id}" onclick="event.stopPropagation()">${statusOptions}</select>
-                    <button type="button" class="fl-wa-cta-btn ld-wa-btn" data-id="${l.id}" title="Abrir WhatsApp Flutuante" onclick="event.stopPropagation()">
-                        <i class="fab fa-whatsapp"></i>
-                    </button>
-                    <button type="button" class="fl-btn-fiche ld-fiche-btn" data-id="${l.id}" title="Ver Ficha Completa" onclick="event.stopPropagation()">
-                        <i class="fas fa-id-card"></i> FICHA
-                    </button>
-                </div>
             </div>
-            <div class="ld-card-chips">
-                <span class="fl-chip origin">${esc(l.origem || 'SITE')}</span>
-                <span class="fl-client-prio-pill pri-${l.prioridade || 'media'}">${prioLabel}</span>
-                ${l.limite_est ? `<span class="fl-chip value">R$ ${esc(l.limite_est)}</span>` : ''}
-                ${l.tags ? l.tags.split(',').map(t => `<span class="fl-tag">${esc(t.trim())}</span>`).join('') : ''}
+            <div class="ld-cc-actions">
+                <select class="ld-status-select" data-id="${l.id}" onclick="event.stopPropagation()">${statusOptions}</select>
+                <button type="button" class="ld-btn-action ld-wa-btn" data-id="${l.id}" title="Chamar no WhatsApp" onclick="event.stopPropagation()">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+                <button type="button" class="ld-btn-action ld-fiche-btn" data-id="${l.id}" title="Ver Ficha Completa" onclick="event.stopPropagation()">
+                    <i class="fas fa-address-card"></i> Ficha
+                </button>
             </div>
         </article>`;
     }
@@ -101,27 +101,27 @@ export async function init() {
     function render() {
         const list = applyFilters();
         const countEl = document.getElementById('kbx-total');
-        if (countEl) countEl.textContent = `${list.length} lead${list.length !== 1 ? 's' : ''}`;
+        if (countEl) countEl.textContent = `${list.length} cliente${list.length !== 1 ? 's' : ''}`;
 
         const board = document.getElementById('kbx-board');
         if (!board) return;
 
         board.innerHTML = list.length
             ? list.map(cardHtml).join('')
-            : '<div class="fl-drawer-empty"><i class="fas fa-inbox"></i> Nenhum lead encontrado com esses filtros.</div>';
+            : '<div class="fl-drawer-empty"><i class="fas fa-inbox"></i> Nenhum cliente encontrado com esses filtros.</div>';
 
         // Animação de entrada dos cards com Anime.js staggering
         runAnime({
-            targets: '.ld-card',
-            translateY: [22, 0],
+            targets: '.ld-client-card',
+            translateY: [15, 0],
             opacity: [0, 1],
-            delay: runAnime ? window.anime.stagger(30) : 0,
-            duration: 380,
+            delay: runAnime ? window.anime.stagger(25) : 0,
+            duration: 320,
             easing: 'easeOutQuad'
         });
 
         // Event listeners nos cards para abrir a Ficha do Cliente e WhatsApp
-        board.querySelectorAll('.ld-card').forEach(card => {
+        board.querySelectorAll('.ld-client-card').forEach(card => {
             card.onclick = (e) => {
                 const leadId = card.dataset.id;
                 if (window.openClientModal) {

@@ -76,17 +76,7 @@
     <!-- ============ CONTENT (100% Module HUD) ============ -->
     <main class="content-area">
         <section class="module-hud-shell" id="homeHudShell" style="--module-accent:#10b981; max-width:1180px; margin:0 auto;">
-            <header class="module-hud-header">
-                <div class="module-hud-brand">
-                    <span><i class="fas fa-bolt"></i></span>
-                    <div>
-                        <small>PAINEL DO VENDEDOR</small>
-                        <h1 id="greeting">BOM DIA!</h1>
-                        <p>Resumo da sua operação de crédito hoje, <span id="currentDate"></span>.</p>
-                    </div>
-                </div>
-                <b><i class="fas fa-circle"></i> CENTRAL ATIVA</b>
-            </header>
+
             <div class="module-hud-console">
                 <aside class="module-hud-stage">
                     <div class="module-hud-stage-top"><span>PAINEL DO VENDEDOR</span><i class="fas fa-bolt"></i></div>
@@ -153,10 +143,11 @@
         // Bots anti-ban desabilitados por hora: oculta módulos de bot/anti-ban.
         const BOTS_DISABLED = true;
         const MODULES = [
-            { name: 'hub', title: 'Hub de Disparo', icon: 'fa-rocket', color: '#ff7417', desc: 'Estratégia anti-ban', badge: 'HUB', border: '#ff7417', bot: true },
+            { name: 'leads', title: 'Carteira de Clientes', icon: 'fa-address-book', color: '#2563eb', desc: 'Ver todos os clientes cadastrados', badge: 'CLIENTES', border: '#2563eb' },
             { name: 'funil', title: 'Funil de Vendas', icon: 'fa-filter', color: '#3b82f6', desc: 'Conversão por estágio', badge: 'FUNIL', border: '#3b82f6' },
+            { name: 'disparo', title: 'Disparo Comercial', icon: 'fa-paper-plane', color: '#ff7417', desc: 'Disparar mensagens para X quantidade de leads com templates', badge: 'DISPARO', border: '#ff7417' },
             { name: 'bots', title: 'Meu WhatsApp', icon: 'fa-mobile-screen-button', color: '#10b981', desc: 'Conectar números e escanear QR', badge: 'WA', border: '#10b981' },
-            { name: 'disparo', title: 'Disparo Comercial', icon: 'fa-paper-plane', color: '#ff7417', desc: 'Disparar mensagens para X quantidade de leads com templates', badge: 'DISPARO', border: '#ff7417' }
+            { name: 'hub', title: 'Hub de Disparo', icon: 'fa-rocket', color: '#ff7417', desc: 'Estratégia anti-ban', badge: 'HUB', border: '#ff7417', bot: true }
         ];
         let visibleModules = MODULES.filter(m => !(BOTS_DISABLED && m.bot));
 
@@ -241,6 +232,14 @@
                 const htmlText = await htmlRes.text();
                 body.innerHTML = htmlText;
                 titleEl.textContent = title.toUpperCase();
+                
+                const modalHeader = document.querySelector('.dynamic-modal-header');
+                if (body.querySelector('.v2-hide-header')) {
+                    modalHeader.style.display = 'none';
+                } else {
+                    modalHeader.style.display = 'flex';
+                }
+
                 if (body.querySelector('.v2-title')) titleEl.style.display = 'none';
                 else titleEl.style.display = 'block';
 
@@ -317,8 +316,7 @@
         let g = 'BOM DIA';
         if (h >= 12 && h < 18) g = 'BOA TARDE';
         else if (h >= 18) g = 'BOA NOITE';
-        document.getElementById('greeting').textContent = `${g}, ${me.name.split(' ')[0].toUpperCase()}!`;
-        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
         document.getElementById('storeName').textContent = me.name;
         document.getElementById('storeAvatar').textContent = me.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
         document.getElementById('homeHeadline').innerHTML = `${g},<br><span>${me.name.split(' ')[0].toUpperCase()}.</span>`;

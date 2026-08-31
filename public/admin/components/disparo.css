@@ -561,7 +561,7 @@
 .phone-avatar { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--holo-primary, #0ea5e9); color: #fff; font-size: .6rem; }
 .phone-contact span { display: block; font: 700 .7rem/1 var(--font-body); color: #f8fafc; }
 .phone-contact small { font-size: .48rem; color: var(--holo-muted, #94a3b8); }
-.phone-chat { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px; overflow-y: auto; background: #070a12; background-image: radial-gradient(#27364d 1px, transparent 1px); background-size: 14px 14px; }
+.phone-chat { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px; overflow-y: auto; background-color: #0b141a; background-image: url('/img/wa-doodle-dark.svg'); background-repeat: repeat; background-size: 280px 280px; }
 .phone-msg { max-width: 90%; padding: 8px 10px; border-radius: 10px; font: 600 .68rem/1.35 var(--font-body); position: relative; word-break: break-word; }
 .phone-msg.incoming { align-self: flex-start; background: var(--holo-card, #172134); color: #f8fafc; border: 1px solid var(--holo-border, #27364d); border-bottom-left-radius: 2px; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
 .phone-msg.incoming small { display: block; text-align: right; margin-top: 3px; font-size: .44rem; color: var(--holo-muted, #94a3b8); }

@@ -1,52 +1,46 @@
 <div class="fl-root">
-    <!-- ============ TOP CONTROL STRIP ============ -->
+    <!-- ============ TOP COMPACT BAR (1 LINHA SEM CARDS GIGANTES) ============ -->
     <div class="fl-top-strip">
         <div class="fl-mode-switcher">
             <button type="button" class="fl-mode-btn active" id="fl-mode-funnel">
-                <i class="fas fa-filter"></i> VISÃO FUNIL
+                <i class="fas fa-filter"></i> FUNIL
             </button>
             <button type="button" class="fl-mode-btn" id="fl-mode-crm">
-                <i class="fas fa-table-columns"></i> MODO CRM KANBAN
+                <i class="fas fa-table-columns"></i> KANBAN
             </button>
         </div>
-        <div class="fl-top-right-actions">
-            <button type="button" class="btn-retro" id="fl-btn-new-lead" style="padding:6px 14px; font-size:.76rem; background:#10b981; color:#fff; cursor:pointer;">
-                <i class="fas fa-plus"></i> NOVO LEAD
-            </button>
-            <span class="fl-live-badge"><i class="fas fa-circle"></i> AO VIVO</span>
-            <button type="button" class="fl-refresh" id="fl-refresh" title="Atualizar dados"><i class="fas fa-rotate-right"></i></button>
-        </div>
-    </div>
 
-    <!-- ============ TOP METRICS ============ -->
-    <div class="fl-stats">
-        <div class="fl-stat" id="fl-stat-1">
-            <span class="fl-stat-icon blue"><i class="fas fa-users"></i></span>
-            <div>
+        <!-- STATS COMPACTAS EM LINHA (ECONOMIZA 100PX DE ALTURA) -->
+        <div class="fl-compact-metrics">
+            <div class="fl-pill-stat" title="Total de Leads no Funil">
+                <i class="fas fa-users text-blue"></i>
                 <b id="fl-total">0</b>
-                <span>LEADS NO FUNIL</span>
+                <span>leads</span>
             </div>
-        </div>
-        <div class="fl-stat" id="fl-stat-2">
-            <span class="fl-stat-icon green"><i class="fas fa-calendar-plus"></i></span>
-            <div>
+            <div class="fl-pill-stat" title="Novos cadastrados hoje">
+                <i class="fas fa-calendar-plus text-green"></i>
                 <b id="fl-hoje">0</b>
-                <span>CADASTRADOS HOJE</span>
+                <span>hoje</span>
             </div>
-        </div>
-        <div class="fl-stat" id="fl-stat-3">
-            <span class="fl-stat-icon orange"><i class="fas fa-paper-plane"></i></span>
-            <div>
+            <div class="fl-pill-stat" title="Envios do Bot">
+                <i class="fas fa-paper-plane text-orange"></i>
                 <b id="fl-envios">0</b>
-                <span>ENVIOS DO BOT</span>
+                <span>envios</span>
+            </div>
+            <div class="fl-pill-stat" title="Taxa de Conversão Global">
+                <i class="fas fa-chart-line text-cyan"></i>
+                <b id="fl-taxa">0%</b>
+                <span>conv.</span>
             </div>
         </div>
-        <div class="fl-stat" id="fl-stat-4">
-            <span class="fl-stat-icon dark"><i class="fas fa-chart-line"></i></span>
-            <div>
-                <b id="fl-taxa">0%</b>
-                <span>CONVERSÃO GLOBAL</span>
-            </div>
+
+        <div class="fl-top-right-actions">
+            <button type="button" class="fl-btn-action-primary" id="fl-btn-new-lead">
+                <i class="fas fa-plus"></i> Novo Lead
+            </button>
+            <span class="fl-live-badge"><i class="fas fa-circle"></i> Ao vivo</span>
+            <button type="button" class="fl-refresh-btn" id="fl-refresh" title="Atualizar dados"><i
+                    class="fas fa-rotate-right"></i></button>
         </div>
     </div>
 
@@ -64,7 +58,8 @@
             <div class="fl-overview-panel" id="fl-overview-panel">
                 <div class="fl-panel-title"><i class="fas fa-calendar-check"></i> RETORNOS DE HOJE</div>
                 <div class="fl-returns" id="fl-returns">
-                    <div class="fl-return-empty"><i class="fas fa-circle-check"></i> Nenhum retorno pendente para hoje.</div>
+                    <div class="fl-return-empty"><i class="fas fa-circle-check"></i> Nenhum retorno pendente para hoje.
+                    </div>
                 </div>
 
                 <div class="fl-panel-title"><i class="fas fa-chart-simple"></i> DETALHAMENTO</div>
@@ -112,7 +107,8 @@
                     <span class="fl-selected-badge" id="fl-selected-badge" style="display:none;">
                         <i class="fas fa-check-circle"></i> <b id="fl-selected-count">0</b> selecionados
                     </span>
-                    <button type="button" class="fl-clear-sel-btn" id="fl-clear-selection-btn" style="display:none;" title="Limpar seleção">
+                    <button type="button" class="fl-clear-sel-btn" id="fl-clear-selection-btn" style="display:none;"
+                        title="Limpar seleção">
                         <i class="fas fa-times"></i> Limpar
                     </button>
                 </div>
@@ -123,8 +119,10 @@
                 <div class="fl-drawer-footer">
                     <span id="fl-drawer-count">0 clientes exibidos</span>
                     <div class="fl-drawer-footer-actions">
-                        <button type="button" class="btn-retro fl-btn-dispatch" id="fl-btn-create-campaign" style="display:none;">
-                            <i class="fas fa-paper-plane"></i> CRIAR DISPARO (<span id="fl-campaign-target-count">0</span>)
+                        <button type="button" class="btn-retro fl-btn-dispatch" id="fl-btn-create-campaign"
+                            style="display:none;">
+                            <i class="fas fa-paper-plane"></i> CRIAR DISPARO (<span
+                                id="fl-campaign-target-count">0</span>)
                         </button>
                         <button type="button" class="fl-btn-secondary" id="fl-drawer-close-btn">
                             <i class="fas fa-chevron-right"></i> RECOLHER
@@ -149,7 +147,8 @@
                 <option value="baixa">Baixa</option>
             </select>
             <span class="fl-crm-count-badge" id="fl-crm-total-count">0 leads no CRM</span>
-            <button type="button" class="btn-retro" id="fl-btn-new-lead-crm" style="padding:6px 14px; font-size:.76rem; background:#10b981; color:#fff; cursor:pointer; margin-left:auto;">
+            <button type="button" class="btn-retro" id="fl-btn-new-lead-crm"
+                style="padding:6px 14px; font-size:.76rem; background:#10b981; color:#fff; cursor:pointer; margin-left:auto;">
                 <i class="fas fa-plus"></i> NOVO LEAD
             </button>
         </div>
@@ -177,16 +176,19 @@
                     <div class="ld-ocr-icon"><i class="fas fa-file-invoice-dollar"></i></div>
                     <div>
                         <strong>SOLTE UMA IMAGEM OU PDF AQUI (OU CLIQUE PARA ENVIAR)</strong>
-                        <p>A IA Vision analisa CNH, RG ou comprovante e preenche Nome, CPF, Telefone e Renda automaticamente! Também aceita colar (Ctrl+V) uma imagem copiada.</p>
+                        <p>A IA Vision analisa CNH, RG ou comprovante e preenche Nome, CPF, Telefone e Renda
+                            automaticamente! Também aceita colar (Ctrl+V) uma imagem copiada.</p>
                     </div>
-                    <button type="button" class="ld-nl-btn ld-nl-btn-secondary" style="margin-left:auto;"><i class="fas fa-upload"></i> LER DOCUMENTO</button>
+                    <button type="button" class="ld-nl-btn ld-nl-btn-secondary" style="margin-left:auto;"><i
+                            class="fas fa-upload"></i> LER DOCUMENTO</button>
                 </div>
                 <div class="ld-ocr-loading" id="ldOcrLoading" style="display:none;">
                     <i class="fas fa-brain fa-spin"></i>
                     <span>PROCESSANDO DOCUMENTO VIA IA VISION (OCR)...</span>
                 </div>
                 <div class="ld-ocr-preview" id="ldOcrPreview" style="display:none;">
-                    <button type="button" class="ld-ocr-thumb-btn" id="ldOcrThumbBtn" title="Clique pra ver em tamanho maior">
+                    <button type="button" class="ld-ocr-thumb-btn" id="ldOcrThumbBtn"
+                        title="Clique pra ver em tamanho maior">
                         <img id="ldOcrThumb" class="ld-ocr-thumb" alt="Documento enviado">
                         <i class="fas fa-file-pdf ld-ocr-thumb-pdf" id="ldOcrThumbPdf" style="display:none;"></i>
                     </button>
@@ -194,7 +196,8 @@
                         <strong id="ldOcrFileName">documento</strong>
                         <span>Clique na miniatura pra conferir o documento em tamanho maior</span>
                     </div>
-                    <button type="button" class="ld-nl-btn ld-nl-btn-secondary" id="ldOcrChange"><i class="fas fa-rotate"></i> TROCAR</button>
+                    <button type="button" class="ld-nl-btn ld-nl-btn-secondary" id="ldOcrChange"><i
+                            class="fas fa-rotate"></i> TROCAR</button>
                 </div>
             </div>
 
@@ -213,11 +216,15 @@
 
                 <div class="ld-nl-row">
                     <div class="ld-nl-field" style="flex:1; min-width:140px;">
-                        <label class="ld-nl-label" for="add-phone2"><i class="fab fa-whatsapp" style="color:#25d366;"></i> Telefone 2 <small style="color:var(--text-muted);">(Opcional)</small></label>
+                        <label class="ld-nl-label" for="add-phone2"><i class="fab fa-whatsapp"
+                                style="color:#25d366;"></i> Telefone 2 <small
+                                style="color:var(--text-muted);">(Opcional)</small></label>
                         <input type="text" id="add-phone2" class="ld-nl-input" placeholder="Ex: 11988888888">
                     </div>
                     <div class="ld-nl-field" style="flex:1; min-width:140px;">
-                        <label class="ld-nl-label" for="add-phone3"><i class="fab fa-whatsapp" style="color:#25d366;"></i> Telefone 3 <small style="color:var(--text-muted);">(Opcional)</small></label>
+                        <label class="ld-nl-label" for="add-phone3"><i class="fab fa-whatsapp"
+                                style="color:#25d366;"></i> Telefone 3 <small
+                                style="color:var(--text-muted);">(Opcional)</small></label>
                         <input type="text" id="add-phone3" class="ld-nl-input" placeholder="Ex: 11977777777">
                     </div>
                 </div>
@@ -263,7 +270,8 @@
                 <div class="ld-nl-row">
                     <div class="ld-nl-field" style="flex:1; min-width:200px;">
                         <label class="ld-nl-label" for="add-tags">Tags <small>Separadas por vírgula</small></label>
-                        <input type="text" id="add-tags" class="ld-nl-input" placeholder="ex: urgente, aposentado, consignado">
+                        <input type="text" id="add-tags" class="ld-nl-input"
+                            placeholder="ex: urgente, aposentado, consignado">
                     </div>
                     <div class="ld-nl-field" style="flex:1; min-width:200px;">
                         <label class="ld-nl-label" for="add-obs">Observações Iniciais</label>
@@ -295,11 +303,14 @@
                 <div class="fl-client-identity">
                     <div class="fl-client-top-row">
                         <span class="fl-client-stage-pill" id="fl-c-stage-pill">NOVO</span>
-                        <span class="fl-client-prio-pill fl-editable-pill" id="fl-c-prio-pill" title="Clique para alterar prioridade">PRIORIDADE MÉDIA</span>
+                        <span class="fl-client-prio-pill fl-editable-pill" id="fl-c-prio-pill"
+                            title="Clique para alterar prioridade">PRIORIDADE MÉDIA</span>
                     </div>
                     <h2 id="fl-c-name" class="fl-editable-text" title="Clique para editar o nome">Nome do Cliente</h2>
                     <p id="fl-c-sub" class="fl-c-sub-info">
-                        Tel 1: <span id="fl-c-phone-val" class="fl-editable-inline">--</span><span id="fl-c-phones-extra"></span> • CPF: <span id="fl-c-cpf-val" class="fl-editable-inline">--</span>
+                        Tel 1: <span id="fl-c-phone-val" class="fl-editable-inline">--</span><span
+                            id="fl-c-phones-extra"></span> • CPF: <span id="fl-c-cpf-val"
+                            class="fl-editable-inline">--</span>
                     </p>
                 </div>
             </div>
@@ -307,7 +318,8 @@
                 <button type="button" class="fl-wa-cta-btn" id="fl-c-wa-btn">
                     <i class="fab fa-whatsapp"></i> ABRIR WHATSAPP
                 </button>
-                <button type="button" class="fl-btn-secondary" id="fl-c-transfer-btn" style="display:none;" title="Transferir Lead (Admin)">
+                <button type="button" class="fl-btn-secondary" id="fl-c-transfer-btn" style="display:none;"
+                    title="Transferir Lead (Admin)">
                     <i class="fas fa-right-left"></i> TRANSFERIR
                 </button>
                 <button type="button" class="fl-close-submodal-btn" id="fl-c-close-btn" title="Fechar">
@@ -329,15 +341,18 @@
                     <small>RENDA DECLARADA <i class="fas fa-pen fl-edit-icon"></i></small>
                     <strong id="fl-c-renda">R$ --</strong>
                 </div>
-                <div class="fl-c-card fl-editable-card" id="fl-c-desejado-card" title="Clique para editar valor desejado">
+                <div class="fl-c-card fl-editable-card" id="fl-c-desejado-card"
+                    title="Clique para editar valor desejado">
                     <small>VALOR DESEJADO <i class="fas fa-pen fl-edit-icon"></i></small>
                     <strong id="fl-c-desejado">R$ --</strong>
                 </div>
-                <div class="fl-c-card accent fl-editable-card" id="fl-c-limite-card" title="Clique para editar limite estimado">
+                <div class="fl-c-card accent fl-editable-card" id="fl-c-limite-card"
+                    title="Clique para editar limite estimado">
                     <small>LIMITE ESTIMADO <i class="fas fa-pen fl-edit-icon"></i></small>
                     <strong id="fl-c-limite">R$ --</strong>
                 </div>
-                <div class="fl-c-card fl-editable-card" id="fl-c-cidade-card" title="Clique para editar cidade / estado">
+                <div class="fl-c-card fl-editable-card" id="fl-c-cidade-card"
+                    title="Clique para editar cidade / estado">
                     <small>CIDADE / ORIGEM <i class="fas fa-pen fl-edit-icon"></i></small>
                     <strong id="fl-c-origem">--</strong>
                 </div>
@@ -357,7 +372,8 @@
                     <div class="fl-c-section-title">
                         <i class="fas fa-note-sticky"></i> OBSERVAÇÕES DO CLIENTE
                     </div>
-                    <textarea id="fl-c-obs" class="ps-textarea" rows="3" placeholder="Digite anotações ou observações sobre este cliente..."></textarea>
+                    <textarea id="fl-c-obs" class="ps-textarea" rows="3"
+                        placeholder="Digite anotações ou observações sobre este cliente..."></textarea>
                     <div class="fl-c-section-footer">
                         <button type="button" class="btn-retro" id="fl-c-save-obs">
                             <i class="fas fa-floppy-disk"></i> SALVAR OBSERVAÇÃO
@@ -370,7 +386,8 @@
                         <i class="fas fa-clock-rotate-left"></i> HISTÓRICO E ATIVIDADES
                     </div>
                     <div class="fl-client-timeline" id="fl-c-timeline">
-                        <div class="fl-timeline-empty"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>
+                        <div class="fl-timeline-empty"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -390,94 +407,7 @@
     </div>
 </div>
 
-<!-- ============ SUBMODAL: AUTOMAÇÕES DA ETAPA ============ -->
-<div class="v2-submodal-overlay" id="flaOverlay" style="display:none;">
-    <div class="v2-submodal fla-modal fla-console-modal">
-        <div class="v2-submodal-header">
-            <div>
-                <span class="fla-eyebrow">AUTOMAÇÕES DO FUNIL</span>
-                <h3>ETAPA <span id="fla-stage">NOVO</span></h3>
-                <p>Prepare a etapa, configure as ações e acompanhe o que está pronto para uso.</p>
-            </div>
-            <button type="button" class="btn-close-submodal" id="fla-close"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="v2-submodal-body fla-console">
-            <section class="fla-command-stage">
-                <div class="fla-stage-top"><span id="fla-ready-label">VERIFICANDO ETAPA</span><i class="fas fa-wand-magic-sparkles"></i></div>
-                <div class="fla-stage-copy">
-                    <small>STATUS DA AUTOMAÇÃO</small>
-                    <h2 id="fla-ready-title">CARREGANDO...</h2>
-                    <p id="fla-ready-desc">Verificando mensagem, número de envio e ativação.</p>
-                </div>
-                <div class="fla-impact-strip">
-                    <div><b id="fla-stat-auto">-</b><span>AUTOMAÇÃO</span></div>
-                    <div><b id="fla-stat-msg">-</b><span>MENSAGEM</span></div>
-                    <div><b id="fla-stat-number">-</b><span>NÚMERO</span></div>
-                </div>
-            </section>
 
-            <div class="fla-tabbar" id="fla-tabbar">
-                <button type="button" class="fla-tab active" data-fla-tab="auto" id="fla-card-auto"><i class="fas fa-bolt"></i> MENSAGEM AUTOMÁTICA</button>
-                <button type="button" class="fla-tab" id="fla-card-send"><i class="fas fa-paper-plane"></i> DISPARAR AGORA</button>
-                <button type="button" class="fla-tab" data-fla-tab="move" id="fla-card-move"><i class="fas fa-right-left"></i> MOVER LEADS</button>
-                <button type="button" class="fla-tab" data-fla-tab="score" id="fla-card-score"><i class="fas fa-gauge-high"></i> SCORE</button>
-            </div>
-
-            <div class="fla-tabpanel-wrap">
-                <!-- ABA: MENSAGEM AUTOMÁTICA -->
-                <section class="fla-tabpanel" data-fla-panel="auto">
-                    <div class="fla-section-head"><div><i class="fas fa-wand-magic-sparkles"></i><strong>ATIVAR AUTOMAÇÃO</strong><span>Você pode pausar sem perder a configuração</span></div><label class="fla-switch"><input type="checkbox" id="fla-auto"><span></span></label></div>
-                    <label class="fla-label" for="fla-auto-msg">Mensagem da Automação <small>Use <b>{nome}</b> para personalizar o envio</small></label>
-                    <textarea id="fla-auto-msg" class="ps-textarea" rows="2" maxlength="4000" placeholder="Olá {nome}! Podemos continuar sua simulação?"></textarea>
-
-                    <div class="fla-row">
-                        <div style="flex:1; min-width:200px;">
-                            <label class="fla-label" for="fla-auto-template">Template Modelo</label>
-                            <select id="fla-auto-template" class="ps-select">
-                                <option value="">Aplicar um template...</option>
-                            </select>
-                        </div>
-                        <div style="flex:1; min-width:200px;">
-                            <label class="fla-label" for="fla-auto-number">Canal de Envio <small>(Bot / Instância WhatsApp)</small></label>
-                            <select id="fla-auto-number" class="ps-select">
-                                <option value="">Seleção automática</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="fla-preview" id="fla-preview"></div>
-                    <footer class="fla-editor-footer fla-editor-footer-inline"><button type="button" class="btn-retro" id="fla-save"><i class="fas fa-save"></i> SALVAR AUTOMAÇÃO</button></footer>
-                </section>
-
-                <!-- ABA: MOVER LEADS -->
-                <section class="fla-tabpanel fla-tabpanel-small" data-fla-panel="move" hidden>
-                    <label class="fla-label" for="fla-move-to">Mover leads desta etapa para</label>
-                    <div class="fla-row">
-                        <select id="fla-move-to" class="ps-select"><option value="novo">Novo</option><option value="contato">Em contato</option><option value="confirmado">Confirmado</option><option value="concluido">Concluído</option><option value="bloqueado">Bloqueado</option></select>
-                        <input type="number" id="fla-move-limit" class="ps-input" min="1" placeholder="Limite (todos)">
-                    </div>
-                    <footer class="fla-editor-footer fla-editor-footer-inline"><button type="button" class="btn-retro" id="fla-move"><i class="fas fa-right-left"></i> MOVER LEADS</button></footer>
-                </section>
-
-                <!-- ABA: RECALCULAR SCORE -->
-                <section class="fla-tabpanel fla-tabpanel-small" data-fla-panel="score" hidden>
-                    <label class="fla-label" for="fla-score-limit">Quantidade de leads <small>Deixe vazio para processar todos</small></label>
-                    <input type="number" id="fla-score-limit" class="ps-input" min="1" placeholder="Todos os leads">
-                    <footer class="fla-editor-footer fla-editor-footer-inline"><button type="button" class="btn-retro" id="fla-score"><i class="fas fa-gauge-high"></i> RECALCULAR</button></footer>
-                </section>
-
-                <!-- ABA: PROGRESSO (ativada automaticamente durante um job) -->
-                <section class="fla-tabpanel fla-tabpanel-small" data-fla-panel="progress" hidden>
-                    <div class="fla-job" id="fla-job">
-                        <div class="fla-job-head"><strong id="fla-job-title">PROCESSANDO</strong><span id="fla-job-status">0%</span></div>
-                        <div class="fla-progress"><i id="fla-job-bar"></i></div>
-                        <p id="fla-job-detail"></p>
-                    </div>
-                </section>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- ============ SUBMODAL: TRANSFERIR LEAD (ADMIN) ============ -->
 <div class="v2-submodal-overlay" id="flTransferOverlay" style="display:none;">
@@ -493,7 +423,8 @@
         <div class="v2-submodal-body fla-editor-body">
             <label class="fla-label" for="flt-seller">Vendedor de destino</label>
             <select id="flt-seller" class="ps-select"></select>
-            <p style="font-size:.7rem; font-weight:600; color:var(--text-muted); margin-top:10px;">A transferência ficará registrada no histórico do lead com identificação do administrador.</p>
+            <p style="font-size:.7rem; font-weight:600; color:var(--text-muted); margin-top:10px;">A transferência
+                ficará registrada no histórico do lead com identificação do administrador.</p>
         </div>
         <footer class="fla-editor-footer">
             <button class="btn-retro btn-secondary-retro" id="flt-cancel">CANCELAR</button>
@@ -573,67 +504,84 @@
 
                 <div>
                     <label class="fla-label" for="fl-edit-tags">Tags <small>Separadas por vírgula</small></label>
-                    <input type="text" id="fl-edit-tags" class="ps-input" placeholder="ex: urgente, aposentado, consignado">
+                    <input type="text" id="fl-edit-tags" class="ps-input"
+                        placeholder="ex: urgente, aposentado, consignado">
                 </div>
             </form>
         </div>
         <footer class="fla-editor-footer">
             <button type="button" class="btn-retro btn-secondary-retro" id="fl-edit-cancel">CANCELAR</button>
-            <button type="button" class="btn-retro" id="fl-edit-save"><i class="fas fa-floppy-disk"></i> SALVAR ALTERAÇÕES</button>
+            <button type="button" class="btn-retro" id="fl-edit-save"><i class="fas fa-floppy-disk"></i> SALVAR
+                ALTERAÇÕES</button>
         </footer>
     </div>
 </div>
 
 <!-- ============ SUBMODAL ANIMADO: CRIAR DISPARO A PARTIR DOS LEADS DO FUNIL ============ -->
 <div class="v2-submodal-overlay" id="fl-dispatch-modal" style="display:none; z-index:13300;">
-    <div class="v2-submodal fla-editor" id="fl-dispatch-shell" style="width:min(620px, 94vw);">
+    <div class="v2-submodal fla-editor" id="fl-dispatch-shell" style="width: min(900px, 96vw) !important; max-width: min(900px, 96vw) !important; max-height:88vh; display:flex; flex-direction:column;">
         <div class="v2-submodal-header">
             <div>
                 <span class="fla-eyebrow"><i class="fas fa-bullhorn"></i> DISPARO EM MASSA</span>
                 <h3>CRIAR CAMPANHA DE DISPARO</h3>
                 <p>Envio comercial para leads selecionados da etapa.</p>
             </div>
-            <button type="button" class="btn-close-submodal" id="fl-dispatch-close"><i class="fas fa-times"></i></button>
+            <button type="button" class="btn-close-submodal" id="fl-dispatch-close"><i
+                    class="fas fa-times"></i></button>
         </div>
-        <div class="v2-submodal-body fla-editor-body" style="padding:16px 20px; display:flex; flex-direction:column; gap:12px;">
-            <div class="fla-field">
-                <label class="fla-label">Nome do Disparo</label>
-                <input type="text" id="fl-disp-name" class="ps-input" placeholder="Ex: Oferta Especial - Etapa Novo">
-            </div>
-            <div class="fla-field">
-                <label class="fla-label">Destinatários Selecionados (<span id="fl-disp-target-count">0</span> leads)</label>
-                <div class="fl-disp-targets-summary" id="fl-disp-targets-summary"></div>
-            </div>
-            <div class="fla-field">
-                <label class="fla-label">Template Comercial Pronto</label>
-                <select id="fl-disp-template" class="ps-select" style="margin-bottom:6px;">
-                    <option value="">Digitar mensagem personalizada...</option>
-                </select>
-            </div>
-            <div class="fla-field">
-                <label class="fla-label">Mensagem do WhatsApp</label>
-                <textarea id="fl-disp-message" class="ps-textarea" rows="4" placeholder="Olá {nome}! Tudo bem? Temos uma oportunidade especial para você..."></textarea>
-                <small class="fl-disp-hint" style="color:var(--holo-muted, #94a3b8); font-size:.65rem; margin-top:4px; display:block;">
-                    Variáveis dinâmicas: <code>{nome}</code>, <code>{cidade}</code>, <code>{telefone}</code>
-                </small>
-            </div>
-            <div class="fla-row" style="display:flex; gap:12px;">
-                <div style="flex:1;">
-                    <label class="fla-label">Horário de Envio</label>
-                    <input type="time" id="fl-disp-time" class="ps-input" value="10:00">
+        <div class="v2-submodal-body fla-editor-body"
+            style="padding:20px; display:flex; flex-direction:row; gap:20px; flex:1; min-height:0;">
+            
+            <div class="fla-col-left" style="flex: 1; display:flex; flex-direction:column; gap:12px; min-width:0;">
+                <div class="fla-field">
+                    <label class="fla-label">Nome do Disparo</label>
+                    <input type="text" id="fl-disp-name" class="ps-input" placeholder="Ex: Oferta Especial - Etapa Novo">
                 </div>
-                <div style="flex:1;">
-                    <label class="fla-label">Disparo Imediato</label>
-                    <label class="fl-check-pill" style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--holo-surface, #0f1624); border-radius:8px; border:1px solid var(--holo-border, #27364d); margin-top:2px; cursor:pointer;">
-                        <input type="checkbox" id="fl-disp-immediate" style="cursor:pointer; width:16px; height:16px; accent-color:#00a884;">
-                        <span style="font-size:0.75rem; font-weight:700; color:#e9edef;">Iniciar Agora</span>
-                    </label>
+                <div class="fla-field" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                    <label class="fla-label">Destinatários Selecionados (<span id="fl-disp-target-count">0</span> leads)</label>
+                    <div class="fl-disp-targets-summary" id="fl-disp-targets-summary" style="flex:1; overflow-y:auto; padding:8px; border:2px solid var(--holo-border, #27364d); border-radius:12px; background:rgba(0,0,0,0.2);"></div>
                 </div>
             </div>
+
+            <div class="fla-col-right" style="flex: 1; display:flex; flex-direction:column; gap:12px; min-width:0;">
+                <div class="fla-field">
+                    <label class="fla-label">Template Comercial Pronto</label>
+                    <select id="fl-disp-template" class="ps-select" style="margin-bottom:6px;">
+                        <option value="">Digitar mensagem personalizada...</option>
+                    </select>
+                </div>
+                <div class="fla-field" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                    <label class="fla-label">Mensagem do WhatsApp</label>
+                    <textarea id="fl-disp-message" class="ps-textarea" style="flex:1; min-height:120px; resize:none;"
+                        placeholder="Olá {nome}! Tudo bem? Temos uma oportunidade especial para você..."></textarea>
+                    <small class="fl-disp-hint"
+                        style="color:var(--holo-muted, #94a3b8); font-size:.65rem; margin-top:4px; display:block;">
+                        Variáveis dinâmicas: <code>{nome}</code>, <code>{cidade}</code>, <code>{telefone}</code>
+                    </small>
+                </div>
+                <div class="fla-row" style="display:flex; gap:12px;">
+                    <div style="flex:1;">
+                        <label class="fla-label">Horário de Envio</label>
+                        <input type="time" id="fl-disp-time" class="ps-input" value="10:00">
+                    </div>
+                    <div style="flex:1;">
+                        <label class="fla-label">Disparo Imediato</label>
+                        <label class="fl-check-pill"
+                            style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--holo-surface, #0f1624); border-radius:8px; border:1px solid var(--holo-border, #27364d); margin-top:2px; cursor:pointer;">
+                            <input type="checkbox" id="fl-disp-immediate"
+                                style="cursor:pointer; width:16px; height:16px; accent-color:#00a884;">
+                            <span style="font-size:0.75rem; font-weight:700; color:#e9edef;">Iniciar Agora</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        <footer class="fla-editor-footer" style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid var(--holo-border, #27364d);">
+        <footer class="fla-editor-footer"
+            style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid var(--holo-border, #27364d);">
             <button type="button" class="btn-retro btn-secondary-retro" id="fl-disp-cancel">CANCELAR</button>
-            <button type="button" class="btn-retro" id="fl-disp-submit" style="background:#00a884; color:#111b21; font-weight:900; border:none; padding:8px 18px;">
+            <button type="button" class="btn-retro" id="fl-disp-submit"
+                style="background:#00a884; color:#111b21; font-weight:900; border:none; padding:8px 18px;">
                 <i class="fas fa-paper-plane"></i> CONFIRMAR E AGENDAR
             </button>
         </footer>

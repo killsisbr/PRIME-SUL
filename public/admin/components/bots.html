@@ -1,263 +1,242 @@
 <div class="bt-root">
-    <!-- TAB BAR SUPERIOR -->
-    <div class="bt-tab-bar">
-        <div class="bt-tabs">
-            <button type="button" class="bt-tab-btn active" data-tab="preview">
-                <i class="fab fa-whatsapp"></i> WHATSAPP PREVIEW & CHAT
-            </button>
-            <button type="button" class="bt-tab-btn" data-tab="config">
-                <i class="fas fa-qrcode"></i> CONFIGURAÇÃO & QR CODE
-            </button>
-        </div>
-        <div class="bt-tab-status" id="bt-tab-connection-status" title="Clique para abrir o scanner e gerenciador de QR Code">
-            <span class="bt-badge conn-offline" title="Clique para abrir o scanner e escanear o QR Code"><i class="fas fa-circle"></i> VERIFICANDO CONEXÕES...</span>
-        </div>
-    </div>
-
-    <!-- PAINEL 1: WHATSAPP PREVIEW (DEFAULT) -->
-    <div class="bt-tab-panel active" id="bt-panel-preview">
-        <div class="wa-preview-container">
-            <!-- Sidebar: Lista de Leads / Conversas -->
-            <aside class="wa-preview-sidebar">
-                <div class="wa-sidebar-header">
-                    <div class="wa-sidebar-title">
-                        <i class="fab fa-whatsapp" style="color:#25d366;"></i>
-                        <span>CONVERSAS</span>
-                    </div>
-                    <div class="wa-sidebar-search">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="waLeadSearch" placeholder="Buscar lead..." autocomplete="off">
-                    </div>
+    <div class="v2-hide-header" style="display:none;"></div>
+    <!-- CONTAINER WHATSAPP WEB PREVIEW & CHAT DIRETO -->
+    <div class="wa-preview-container">
+        <!-- Sidebar: Lista de Leads / Conversas -->
+        <aside class="wa-preview-sidebar">
+            <div class="wa-sidebar-header">
+                <div class="wa-sidebar-title">
+                    <i class="fab fa-whatsapp" style="color:#25d366;"></i>
+                    <span>CONVERSAS</span>
                 </div>
-                <div class="wa-sidebar-leads" id="waLeadList">
-                    <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando conversas...</div>
+                <div class="wa-sidebar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="waLeadSearch" placeholder="Buscar lead..." autocomplete="off">
                 </div>
-            </aside>
+            </div>
+            <div class="wa-sidebar-leads" id="waLeadList">
+                <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando conversas...</div>
+            </div>
+        </aside>
 
-            <!-- Main: Janela de Chat do WhatsApp -->
-            <main class="wa-preview-chat">
-                <!-- Header do Chat -->
-                <div class="wa-chat-header" id="waChatHeader">
-                    <div class="wa-chat-header-left">
+        <!-- Main: Janela de Chat do WhatsApp -->
+        <main class="wa-preview-chat">
+            <!-- Header do Chat -->
+            <div class="wa-chat-header" id="waChatHeader">
+                <div class="wa-chat-header-left">
+                    
+                    <!-- AREA DO PERFIL -->
+                    <div class="wa-profile-trigger" style="display:flex; align-items:center; gap:10px; cursor:default; position:relative;">
                         <div class="wa-chat-avatar" id="waChatAvatar">WA</div>
                         <div class="wa-chat-meta">
                             <strong id="waChatName">Selecione um Lead</strong>
                             <span id="waChatPhone" class="wa-chat-status-sub">Aguardando seleção na lista</span>
                         </div>
-                    </div>
-                    <div class="wa-chat-header-right">
-                        <button type="button" class="wa-chat-tool-btn" id="waToggleToolsBtn" title="Alternar Painel de Ferramentas">
-                            <i class="fas fa-toolbox"></i> FERRAMENTAS
-                        </button>
-                        <button type="button" class="wa-chat-tool-btn" id="waExternalBtn" title="Abrir no WhatsApp Web Externo">
-                            <i class="fas fa-arrow-up-right-from-square"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Quick Response Chips Wrap -->
-                <div class="wa-chat-chips-wrap">
-                    <div class="wa-chat-chips" id="waQuickChips">
-                        <!-- Gerado dinamicamente via JS -->
-                    </div>
-                    <button type="button" class="wa-chip-manage-btn" id="waManageChipsBtn" title="Gerenciar e Reordenar Templates">
-                        <i class="fas fa-sliders"></i> <span>GERENCIAR</span>
-                    </button>
-                </div>
-
-                <!-- Histórico de Mensagens -->
-                <div class="wa-chat-messages" id="waChatMessages">
-                    <div class="wa-chat-empty">
-                        <i class="fab fa-whatsapp" style="font-size:3.5rem; color:#25d366; opacity:0.7; margin-bottom:12px;"></i>
-                        <h3>WhatsApp Preview Ativo</h3>
-                        <p>Selecione um lead da lista para iniciar o atendimento.</p>
-                    </div>
-                </div>
-
-                <!-- Popups de Emojis e Anexos -->
-                <div class="wa-emoji-picker-popup" id="waEmojiPicker" style="display:none;">
-                    <div class="wa-emoji-picker-header">
-                        <span><i class="far fa-face-smile"></i> EMOJIS WHATSAPP</span>
-                        <button type="button" class="wa-picker-close-btn" id="waCloseEmojiBtn"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="wa-emoji-grid" id="waEmojiGrid"></div>
-                </div>
-
-                <div class="wa-attach-menu-popup" id="waAttachMenu" style="display:none;">
-                    <button type="button" class="wa-attach-item" id="waAttachPhotoBtn">
-                        <span class="wa-attach-icon photo"><i class="fas fa-image"></i></span>
-                        <span>Fotos e vídeos</span>
-                    </button>
-                    <button type="button" class="wa-attach-item" id="waAttachDocBtn">
-                        <span class="wa-attach-icon doc"><i class="fas fa-file-lines"></i></span>
-                        <span>Documento</span>
-                    </button>
-                </div>
-                <input type="file" id="waFileInput" style="display:none;">
-
-                <!-- Footer / Envio Estilo WhatsApp Web -->
-                <div class="wa-chat-footer">
-                    <button type="button" class="wa-footer-action-btn" id="waEmojiBtn" title="Emojis"><i class="far fa-face-smile"></i></button>
-                    <button type="button" class="wa-footer-action-btn" id="waAttachBtn" title="Anexar documento ou imagem"><i class="fas fa-paperclip"></i></button>
-                    <input type="text" id="waChatInput" placeholder="Digite uma mensagem..." autocomplete="off">
-                    <button type="button" id="waChatSendBtn" title="Enviar Mensagem">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </main>
-
-            <!-- Painel Lateral Acoplado de Ferramentas (Fechado por padrão, abre ao clicar em FERRAMENTAS) -->
-            <aside class="wa-preview-tools" id="waPreviewTools" style="display: none;">
-                <div class="wa-tools-header">
-                    <h4><i class="fas fa-toolbox"></i> FERRAMENTAS DO LEAD</h4>
-                </div>
-                <div class="wa-tools-body">
-                    <!-- Tool 0: Dados do Lead -->
-                    <div class="wa-tool-card">
-                        <div class="wa-tool-title">
-                            <span><i class="fas fa-address-card"></i> DADOS DO LEAD</span>
-                            <span class="wa-info-score" id="wapt-score">—</span>
-                        </div>
-                        <div class="wa-info-badges">
-                            <span class="wa-info-badge" id="wapt-prio">Média</span>
-                            <span class="wa-info-badge" id="wapt-origem">SITE</span>
-                            <span class="wa-info-badge" id="wapt-status">NOVO</span>
-                        </div>
-                        <div class="wa-info-grid">
-                            <div class="wa-info-row">
-                                <span class="wa-info-label"><i class="fas fa-user"></i> Nome</span>
-                                <span class="wa-info-value editable" id="wapt-name" data-field="name" title="Clique para editar">—</span>
-                            </div>
-                            <div class="wa-info-row">
-                                <span class="wa-info-label"><i class="fas fa-phone"></i> Telefone</span>
-                                <span class="wa-info-value copyable" id="wapt-phone" data-copy="">—</span>
-                            </div>
-                            <div class="wa-info-row">
-                                <span class="wa-info-label"><i class="fas fa-id-card"></i> CPF</span>
-                                <span class="wa-info-value copyable editable" id="wapt-cpf" data-field="cpf" data-copy="" title="Clique para editar">—</span>
-                            </div>
-                            <div class="wa-info-row">
-                                <span class="wa-info-label"><i class="fas fa-location-dot"></i> Cidade</span>
-                                <span class="wa-info-value editable" id="wapt-city" data-field="city" title="Clique para editar">—</span>
-                            </div>
-                            <div class="wa-info-row">
-                                <span class="wa-info-label"><i class="fas fa-sack-dollar"></i> Renda</span>
-                                <span class="wa-info-value editable" id="wapt-renda" data-field="renda" title="Clique para editar">—</span>
-                            </div>
-                            <div class="wa-info-row">
-                                <span class="wa-info-label"><i class="fas fa-coins"></i> Limite Est.</span>
-                                <span class="wa-info-value editable" id="wapt-limite" data-field="limite_est" title="Clique para editar">—</span>
+                        
+                        <!-- Tooltip Perfil -->
+                        <div class="wa-profile-tooltip" id="waProfileTooltip">
+                            <div class="wa-pt-title"><i class="fas fa-id-card"></i> DADOS DO LEAD</div>
+                            <div class="wa-pt-grid">
+                                <span><i class="fas fa-id-card"></i> CPF:</span> <strong id="waPtCpf">—</strong>
+                                <span><i class="fas fa-sack-dollar"></i> Renda:</span> <strong id="waPtRenda">—</strong>
+                                <span><i class="fas fa-coins"></i> Limite:</span> <strong id="waPtLimite">—</strong>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tool 1: Mover Estágio -->
-                    <div class="wa-tool-card">
-                        <div class="wa-tool-title"><span><i class="fas fa-right-left"></i> ESTÁGIO NO FUNIL</span></div>
-                        <div class="wa-tool-stepper" id="wapt-stepper">
-                            <button type="button" class="wa-tool-step-btn" data-stage="novo">NOVO</button>
-                            <button type="button" class="wa-tool-step-btn" data-stage="contato">CONTATO</button>
-                            <button type="button" class="wa-tool-step-btn" data-stage="confirmado">CONFIRMADO</button>
-                            <button type="button" class="wa-tool-step-btn" data-stage="concluido">CONCLUÍDO</button>
+                    <!-- AREA DA NOTA -->
+                    <div class="wa-note-trigger" style="display:flex; align-items:center; position:relative;">
+                        <i class="fas fa-note-sticky wa-header-note-icon" id="waHeaderNoteIcon" style="display:none;" title="Este lead possui anotações"></i>
+                        
+                        <!-- Tooltip Anotação -->
+                        <div class="wa-note-tooltip" id="waNoteTooltip">
+                            <div class="wa-pt-title"><i class="fas fa-note-sticky"></i> ANOTAÇÕES DO LEAD</div>
+                            <div class="wa-pt-text" id="waPtObs">—</div>
                         </div>
                     </div>
 
-                    <!-- Tool 3: Anotações -->
-                    <div class="wa-tool-card">
-                        <div class="wa-tool-title"><span><i class="fas fa-note-sticky"></i> ANOTAÇÃO RÁPIDA</span></div>
-                        <textarea id="wapt-note" class="wa-tool-input" rows="2" placeholder="Observações do lead..."></textarea>
-                        <button type="button" class="btn-retro" id="wapt-note-save" style="padding:6px 12px; font-size:.65rem;"><i class="fas fa-floppy-disk"></i> SALVAR NOTA</button>
-                    </div>
+                </div>
+                <div class="wa-chat-header-right">
+                    <button type="button" class="wa-chat-tool-btn wa-btn-popout" id="waFloatWidgetBtn" title="Destacar e continuar em Pop-up Flutuante">
+                        <i class="fas fa-arrow-up-right-from-square"></i> <span>JANELA FLUTUANTE</span>
+                    </button>
+                    <button type="button" class="wa-chat-tool-btn" id="waToggleToolsBtn" title="Alternar Ficha do Lead">
+                        <i class="fas fa-id-card"></i> <span>FICHA</span>
+                    </button>
+                    <button type="button" class="wa-chat-tool-btn" id="waExternalBtn" title="Abrir no WhatsApp Oficial">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                </div>
+            </div>
 
-                    <!-- Tool 4: IA Respostas -->
-                    <div class="wa-tool-card">
-                        <div class="wa-tool-title"><span><i class="fas fa-wand-magic-sparkles"></i> IA RESPOSTAS</span></div>
-                        <button type="button" class="btn-retro btn-secondary-retro" id="wapt-ai-btn" style="padding:6px 12px; font-size:.65rem; justify-content:center;"><i class="fas fa-robot"></i> GERAR SUGESTÃO IA</button>
+            <!-- Quick Response Chips Wrap -->
+            <div class="wa-chat-chips-wrap">
+                <div class="wa-chat-chips" id="waQuickChips">
+                    <!-- Gerado dinamicamente via JS -->
+                </div>
+                <button type="button" class="wa-chip-manage-btn" id="waManageChipsBtn" title="Gerenciar e Reordenar Templates">
+                    <i class="fas fa-sliders"></i> <span>GERENCIAR</span>
+                </button>
+            </div>
+
+            <!-- Histórico de Mensagens -->
+            <div class="wa-chat-messages" id="waChatMessages">
+                <div class="wa-chat-empty">
+                    <i class="fab fa-whatsapp" style="font-size:3.5rem; color:#25d366; opacity:0.8; margin-bottom:10px;"></i>
+                    <h3>WhatsApp Preview</h3>
+                    <p>Selecione um lead da lista para iniciar o atendimento.</p>
+                </div>
+            </div>
+
+            <!-- Popups de Emojis e Anexos -->
+            <div class="wa-emoji-picker-popup" id="waEmojiPicker" style="display:none;">
+                <div class="wa-emoji-picker-header">
+                    <span><i class="far fa-face-smile"></i> EMOJIS WHATSAPP</span>
+                    <button type="button" class="wa-picker-close-btn" id="waCloseEmojiBtn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="wa-emoji-grid" id="waEmojiGrid"></div>
+            </div>
+
+            <div class="wa-attach-menu-popup" id="waAttachMenu" style="display:none;">
+                <button type="button" class="wa-attach-item" id="waAttachPhotoBtn">
+                    <span class="wa-attach-icon photo"><i class="fas fa-image"></i></span>
+                    <span>Fotos e vídeos</span>
+                </button>
+                <button type="button" class="wa-attach-item" id="waAttachDocBtn">
+                    <span class="wa-attach-icon doc"><i class="fas fa-file-lines"></i></span>
+                    <span>Documento</span>
+                </button>
+            </div>
+            <input type="file" id="waFileInput" style="display:none;">
+
+            <!-- Footer / Envio Estilo WhatsApp Web -->
+            <div class="wa-chat-footer">
+                <button type="button" class="wa-footer-action-btn" id="waEmojiBtn" title="Emojis"><i class="far fa-face-smile"></i></button>
+                <button type="button" class="wa-footer-action-btn" id="waAttachBtn" title="Anexar documento ou imagem"><i class="fas fa-paperclip"></i></button>
+                <input type="text" id="waChatInput" placeholder="Digite uma mensagem..." autocomplete="off">
+                <button type="button" id="waChatSendBtn" title="Enviar Mensagem">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- Painel Lateral de Ficha do Lead (Fechado por padrão, abre ao clicar em FICHA) -->
+        <aside class="wa-preview-tools" id="waPreviewTools" style="display: none;">
+            <div class="wa-tools-header">
+                <h4><i class="fas fa-id-card"></i> FICHA DO LEAD</h4>
+            </div>
+            <div class="wa-tools-body">
+                <!-- Tool 0: Dados do Lead -->
+                <div class="wa-tool-card">
+                    <div class="wa-tool-title">
+                        <span><i class="fas fa-address-card"></i> DADOS CADASTRAIS</span>
+                        <span class="wa-info-score" id="wapt-score">—</span>
+                    </div>
+                    <div class="wa-info-badges">
+                        <span class="wa-info-badge" id="wapt-prio">Média</span>
+                        <span class="wa-info-badge" id="wapt-origem">SITE</span>
+                        <span class="wa-info-badge" id="wapt-status">NOVO</span>
+                    </div>
+                    <div class="wa-info-grid">
+                        <div class="wa-info-row">
+                            <span class="wa-info-label"><i class="fas fa-user"></i> Nome</span>
+                            <span class="wa-info-value editable" id="wapt-name" data-field="name" title="Clique para editar">—</span>
+                        </div>
+                        <div class="wa-info-row">
+                            <span class="wa-info-label"><i class="fas fa-phone"></i> Telefone</span>
+                            <span class="wa-info-value copyable" id="wapt-phone" data-copy="">—</span>
+                        </div>
+                        <div class="wa-info-row">
+                            <span class="wa-info-label"><i class="fas fa-id-card"></i> CPF</span>
+                            <span class="wa-info-value copyable editable" id="wapt-cpf" data-field="cpf" data-copy="" title="Clique para editar">—</span>
+                        </div>
+                        <div class="wa-info-row">
+                            <span class="wa-info-label"><i class="fas fa-location-dot"></i> Cidade</span>
+                            <span class="wa-info-value editable" id="wapt-city" data-field="city" title="Clique para editar">—</span>
+                        </div>
+                        <div class="wa-info-row">
+                            <span class="wa-info-label"><i class="fas fa-sack-dollar"></i> Renda</span>
+                            <span class="wa-info-value editable" id="wapt-renda" data-field="renda" title="Clique para editar">—</span>
+                        </div>
+                        <div class="wa-info-row">
+                            <span class="wa-info-label"><i class="fas fa-coins"></i> Limite Est.</span>
+                            <span class="wa-info-value editable" id="wapt-limite" data-field="limite_est" title="Clique para editar">—</span>
+                        </div>
                     </div>
                 </div>
-            </aside>
-        </div>
+
+                <!-- Tool 1: Mover Estágio -->
+                <div class="wa-tool-card">
+                    <div class="wa-tool-title"><span><i class="fas fa-right-left"></i> ESTÁGIO NO FUNIL</span></div>
+                    <div class="wa-tool-stepper" id="wapt-stepper">
+                        <button type="button" class="wa-tool-step-btn" data-stage="novo">NOVO</button>
+                        <button type="button" class="wa-tool-step-btn" data-stage="contato">CONTATO</button>
+                        <button type="button" class="wa-tool-step-btn" data-stage="confirmado">CONFIRMADO</button>
+                        <button type="button" class="wa-tool-step-btn" data-stage="concluido">CONCLUÍDO</button>
+                    </div>
+                </div>
+
+                <!-- Tool 2: Anotações -->
+                <div class="wa-tool-card">
+                    <div class="wa-tool-title"><span><i class="fas fa-note-sticky"></i> ANOTAÇÃO RÁPIDA</span></div>
+                    <textarea id="wapt-note" class="wa-tool-input" rows="2" placeholder="Observações do lead..."></textarea>
+                    <button type="button" class="btn-retro" id="wapt-note-save" style="padding:6px 12px; font-size:.65rem;"><i class="fas fa-floppy-disk"></i> SALVAR NOTA</button>
+                </div>
+            </div>
+        </aside>
     </div>
 
-    <!-- PAINEL 2: CONFIGURAÇÃO & QR CODE -->
-    <div class="bt-tab-panel" id="bt-panel-config">
-        <div class="bt-shell">
-            <aside class="bt-hero">
-                <div class="bt-hero-top">
-                    <span class="bt-hero-icon"><i class="fab fa-whatsapp"></i></span>
-                    <span class="bt-env" id="bt-env">—</span>
-                </div>
-                <small class="bt-hero-eyebrow">CONEXÃO WHATSAPP</small>
-                <h2 class="bt-hero-headline">CONECTE.<br><span>MONITORE. VENDA.</span></h2>
-                <p class="bt-hero-desc">Escaneie o QR Code, acompanhe a saúde das sessões e deixe seus números prontos pra operar.</p>
-
-                <div class="bt-hero-toggle" id="bt-hero-toggle-wrap">
-                    <label class="bt-switch"><input type="checkbox" id="bt-toggle" checked><span></span></label>
-                    <div>
-                        <strong id="bt-toggle-label">BOTS ATIVOS</strong>
-                        <span id="bt-toggle-desc">Pausar temporariamente todas as conexões da empresa</span>
-                    </div>
-                </div>
-
-                <div class="bt-hero-metrics">
-                    <div><b id="bt-total">0</b><span>NÚMEROS</span></div>
-                    <div><b id="bt-conectados">0</b><span>CONECTADOS</span></div>
-                    <div><b id="bt-limite">—</b><span>LIMITE/DIA</span></div>
-                    <div><b id="bt-cooldown">—</b><span>COOLDOWN</span></div>
-                </div>
-            </aside>
-
-            <main class="bt-content">
-                <div class="bt-grid" id="bt-grid">
-                    <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando bots...</div>
-                </div>
-            </main>
     <!-- SUBMODAL: GERENCIADOR DE TEMPLATES RÁPIDOS -->
     <div class="v2-submodal-overlay" id="waQuickModal" style="display:none; z-index:13400;">
-        <div class="v2-submodal fla-editor" id="waQuickModalShell" style="width:min(680px, 94vw); max-height:88vh; display:flex; flex-direction:column;">
+        <div class="v2-submodal fla-editor" id="waQuickModalShell" style="width: min(960px, 96vw) !important; max-width: min(960px, 96vw) !important; max-height:88vh; display:flex; flex-direction:column;">
             <div class="v2-submodal-header">
                 <div>
                     <span class="fla-eyebrow"><i class="fas fa-bolt"></i> ATALHOS DE ATENDIMENTO</span>
                     <h3>GERENCIAR RESPOSTAS RÁPIDAS</h3>
-                    <p>Configure os atalhos e frases frequentes exibidos no topo do WhatsApp.</p>
+                    <p>Configure os atalhos exibidos no topo do WhatsApp para envio imediato.</p>
                 </div>
                 <button type="button" class="btn-close-submodal" id="waCloseQuickModalBtn"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="v2-submodal-body fla-editor-body" style="padding:16px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:12px;">
-                <div class="wa-quick-info-banner">
-                    <i class="fas fa-circle-info"></i>
-                    <span>Os <b>3 primeiros atalhos</b> da lista aparecem em destaque na barra rápida do chat. Arraste ou use as setas para priorizar.</span>
+            <div class="v2-submodal-body fla-editor-body" style="padding:20px; overflow:hidden; display:flex; gap:20px; flex:1; min-height:400px;">
+                <!-- COLUNA ESQUERDA: LISTA -->
+                <div style="flex:1; display:flex; flex-direction:column; gap:12px; overflow:hidden; min-width:0;">
+                    <div class="wa-quick-info-banner">
+                        <i class="fas fa-circle-info"></i>
+                        <span>Os <b>3 primeiros atalhos</b> aparecem em destaque na barra rápida do chat. Arraste ou use as setas para priorizar.</span>
+                    </div>
+
+                    <!-- Lista de Templates Reordenáveis -->
+                    <div id="waQuickItemsList" class="wa-quick-items-list" style="flex:1; overflow-y:auto; padding-right:8px;"></div>
                 </div>
 
-                <!-- Lista de Templates Reordenáveis -->
-                <div id="waQuickItemsList" class="wa-quick-items-list"></div>
-
-                <!-- Form de Criar / Editar -->
-                <div class="wa-quick-form-card">
-                    <h4 id="waQuickFormTitle" class="wa-quick-form-title">
-                        <i class="fas fa-plus-circle"></i> <span>ADICIONAR NOVO ATALHO</span>
-                    </h4>
-                    <input type="hidden" id="waQuickEditIndex" value="-1">
-                    <div class="fla-field">
-                        <label class="fla-label">Título do Atalho</label>
-                        <input type="text" id="waQuickInputTitle" class="ps-input" placeholder="Ex: Saudação Inicial">
-                    </div>
-                    <div class="fla-field" style="margin-top:8px;">
-                        <label class="fla-label">Mensagem (use {nome} para o nome do contato)</label>
-                        <textarea id="waQuickInputText" class="ps-textarea" rows="3" placeholder="Ex: Olá {nome}! Tudo bem? Como posso te ajudar hoje?"></textarea>
-                    </div>
-                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
-                        <button type="button" class="btn-retro btn-secondary-retro" id="waQuickCancelEditBtn" style="display:none; padding:6px 14px; font-size:.72rem;">CANCELAR</button>
-                        <button type="button" class="btn-retro" id="waQuickSaveItemBtn" style="background:#00a884; color:#111b21; font-weight:900; border:none; padding:7px 16px; font-size:.74rem;">
-                            <i class="fas fa-check"></i> SALVAR ATALHO
-                        </button>
+                <!-- COLUNA DIREITA: FORMULÁRIO -->
+                <div style="flex:0 0 420px; display:flex; flex-direction:column;">
+                    <div class="wa-quick-form-card" style="flex:1; margin:0; display:flex; flex-direction:column;">
+                        <h4 id="waQuickFormTitle" class="wa-quick-form-title">
+                            <i class="fas fa-plus-circle"></i> <span>ADICIONAR NOVO ATALHO</span>
+                        </h4>
+                        <input type="hidden" id="waQuickEditIndex" value="-1">
+                        <div class="fla-field">
+                            <label class="fla-label">Título do Atalho</label>
+                            <input type="text" id="waQuickInputTitle" class="ps-input" placeholder="Ex: Saudação Inicial">
+                        </div>
+                        <div class="fla-field" style="margin-top:8px; flex:1; display:flex; flex-direction:column;">
+                            <label class="fla-label">Mensagem (use {nome} para o nome do contato)</label>
+                            <textarea id="waQuickInputText" class="ps-textarea" style="flex:1; resize:none;" placeholder="Ex: Olá {nome}! Tudo bem? Como posso te ajudar hoje?"></textarea>
+                        </div>
+                        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                            <button type="button" class="btn-retro btn-secondary-retro" id="waQuickCancelEditBtn" style="display:none; padding:8px 14px; font-size:.74rem;">CANCELAR</button>
+                            <button type="button" class="btn-retro" id="waQuickSaveItemBtn" style="background:#25d366; color:#fff; font-weight:900; padding:8px 16px; font-size:.76rem;">
+                                <i class="fas fa-check"></i> SALVAR ATALHO
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <footer class="fla-editor-footer" style="display:flex; justify-content:flex-end; padding:12px 20px; border-top:1px solid var(--holo-border, #27364d);">
-                <button type="button" class="btn-retro" id="waDoneQuickModalBtn" style="background:var(--holo-primary, #0ea5e9); color:#fff; font-weight:800; border:none; padding:8px 22px; font-size:.76rem;">CONCLUÍDO</button>
+            <footer class="fla-editor-footer" style="display:flex; justify-content:flex-end; padding:10px 18px; border-top:1.5px solid #e5e7eb;">
+                <button type="button" class="btn-retro" id="waDoneQuickModalBtn" style="background:var(--brand, #2563eb); color:#fff; font-weight:800; padding:6px 18px; font-size:.74rem;">CONCLUÍDO</button>
             </footer>
         </div>
     </div>

@@ -142,12 +142,6 @@
                         <button type="button" class="btn-retro" id="wat-save-note" style="padding:6px 12px; font-size:.65rem; width:100%; justify-center;"><i class="fas fa-floppy-disk"></i> SALVAR NOTA</button>
                         <div id="wat-notes-list" class="wa-notes-list"></div>
                     </div>
-
-                    <!-- TOOL 4: RESPOSTA SUGERIDA POR IA -->
-                    <div class="wa-tool-card">
-                        <div class="wa-tool-title"><span><i class="fas fa-wand-magic-sparkles"></i> IA RESPOSTAS</span></div>
-                        <button type="button" class="btn-retro btn-secondary-retro" id="wat-ai-sug" style="padding:6px 12px; font-size:.65rem; justify-content:center;"><i class="fas fa-robot"></i> GERAR SUGESTÃO IA</button>
-                    </div>
                 </div>
             </div>
         </div>
