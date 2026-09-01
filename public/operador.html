@@ -52,34 +52,37 @@
         </div>
     </div>
 
-    <!-- ============ TOP BAR ============ -->
-    <header class="top-bar">
-        <div class="search-trigger" id="openHudBtn">
-            <i class="fas fa-search" style="color:var(--primary);"></i>
-            <span>Buscar ferramenta...</span>
-            <span class="search-shortcut">Ctrl+K</span>
-        </div>
-        <div class="top-actions">
-            <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="cycleTheme()" title="Trocar Tema">
-                <i class="fas fa-fire" style="color:#ff7417;"></i> <span>Laranja Prime</span>
-            </button>
-            <span class="role-chip" id="roleChip" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:2.5px solid var(--dark); border-radius:999px; background:var(--ok); color:#fff; font:800 .6rem var(--font-body); letter-spacing:.8px;"><i class="fas fa-user-tie"></i> OPERADOR</span>
-            <div class="store-profile" onclick="logout()">
-                <div class="avatar" id="storeAvatar">PS</div>
-                <div class="store-info-top">
-                    <strong id="storeName">Prime Sul</strong>
-                </div>
-            </div>
-        </div>
-    </header>
-
     <!-- ============ CONTENT (100% Module HUD) ============ -->
     <main class="content-area">
         <section class="module-hud-shell" id="homeHudShell" style="--module-accent:#10b981; max-width:1180px; margin:0 auto;">
 
             <div class="module-hud-console">
                 <aside class="module-hud-stage">
-                    <div class="module-hud-stage-top"><span>PAINEL DO VENDEDOR</span><i class="fas fa-bolt"></i></div>
+                    <div class="module-hud-stage-top">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span>PAINEL DO VENDEDOR</span>
+                            <i class="fas fa-bolt" style="font-size:0.75rem;"></i>
+                        </div>
+                        <div class="stage-user-controls" style="display:flex; align-items:center; gap:8px;">
+                            <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="cycleTheme()" title="Trocar Tema" style="padding:4px 8px; font-size:0.7rem;">
+                                <i class="fas fa-fire" style="color:#ff7417;"></i>
+                            </button>
+                            <span class="role-chip" id="roleChip" style="display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border:1.5px solid var(--holo-border, #27364d); border-radius:999px; background:rgba(16,185,129,0.15); color:#10b981; font:800 .62rem var(--font-body); letter-spacing:.6px;"><i class="fas fa-user-tie"></i> OPERADOR</span>
+                            <div class="store-profile stage-store-profile" onclick="logout()" title="Clique para Sair / Logout" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1.5px solid var(--holo-border, #27364d); padding:4px 10px; border-radius:999px; transition:all 0.2s;">
+                                <div class="avatar" id="storeAvatar" style="width:24px; height:24px; font-size:0.65rem; background:var(--primary, #3b82f6); color:#fff; border-radius:50%; display:grid; place-items:center; font-weight:800;">PS</div>
+                                <strong id="storeName" style="font-size:0.75rem; color:#f8fafc; font-weight:700;">Prime Sul</strong>
+                                <i class="fas fa-right-from-bracket" style="font-size:0.7rem; color:var(--danger, #ef4444); margin-left:4px;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BARRA DE PESQUISA (MOVIDA DO CABEÇALHO PARA O CARD DA ESQUERDA) -->
+                    <div class="search-trigger stage-search-trigger" id="openHudBtn" style="margin:16px 0 12px 0; width:100%; max-width:none; background:rgba(15,23,42,0.6); border:1.5px solid var(--holo-border, #27364d); box-shadow:none; padding:10px 14px; border-radius:12px;">
+                        <i class="fas fa-search" style="color:var(--holo-primary, #0ea5e9);"></i>
+                        <span style="color:#94a3b8; font-size:0.8rem;">Buscar ferramenta...</span>
+                        <span class="search-shortcut" style="background:#1e293b; border-color:#334155; color:#cbd5e1; font-size:0.6rem; padding:2px 6px;">Ctrl+K</span>
+                    </div>
+
                     <div class="module-hud-copy">
                         <small>COMECE POR AQUI</small>
                         <h2 id="homeHeadline">BOM DIA,<br><span>BORA VENDER.</span></h2>
