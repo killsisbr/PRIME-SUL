@@ -179,9 +179,27 @@ body.admin-body {
     background: rgba(239, 68, 68, 0.2) !important;
     border-color: rgba(239, 68, 68, 0.5) !important;
 }
+
+.stage-search-trigger {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    margin: 14px 0 16px 0 !important;
+    padding: 0 16px !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1.5px solid var(--holo-border, #27364d) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    font-size: 0.82rem !important;
+}
+
 .stage-search-trigger:hover {
     border-color: var(--holo-primary, #0ea5e9) !important;
-    background: rgba(15, 23, 42, 0.85) !important;
+    background: rgba(15, 23, 42, 0.9) !important;
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.2) !important;
 }
 
 .welcome-banner {
