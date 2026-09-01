@@ -6,9 +6,13 @@
 
 /* ============ HEADER ============ */
 .dp-saas-header {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
     padding: 12px 18px; border: 2px solid var(--holo-border, #27364d); border-radius: 16px;
     background: var(--holo-surface, #0f1624); color: #f8fafc; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); flex-wrap: wrap;
+}
+
+.dp-meta-info-combined {
+    display: flex; align-items: center; gap: 24px; flex: 1; min-width: 320px; flex-wrap: wrap;
 }
 
 .dp-saas-sub-info { font: 900 .72rem var(--font-body); letter-spacing: 1px; color: var(--holo-primary, #0ea5e9); text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
