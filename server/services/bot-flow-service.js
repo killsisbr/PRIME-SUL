@@ -1,6 +1,7 @@
 const db = require('../database/db');
 const whatsapp = require('./whatsapp-service');
 const handoffs = require('./handoff-service');
+const ws = require('./websocket-service');
 
 const YES = (process.env.BOT_CONFIRM_KEYWORDS || 'sim,ok,confirmo,quero,claro,pode,pode sim').split(',').map(s => s.trim()).filter(Boolean);
 const NO = (process.env.BOT_DENY_KEYWORDS || 'nao,não,dispenso,obrigado').split(',').map(s => s.trim()).filter(Boolean);
@@ -17,7 +18,8 @@ function match(text, list) {
 
 async function addOptOut(send, phone, reason) {
     await db.run('INSERT OR IGNORE INTO opt_outs (organization_id,phone,reason) VALUES (?,?,?)', [send.organization_id || 1, phone, reason]);
-    await db.run("UPDATE leads SET status='bloqueado', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+    await db.run("UPDATE leads SET status='nao', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+    ws.broadcast(send.organization_id || 1, { type: 'LEAD_UPDATE', lead_id: send.lead_id, status: 'nao' });
     await db.run("UPDATE sends SET status='recusado', replied_at=datetime('now') WHERE id=? AND status='sent'", [send.id]);
     await db.run("UPDATE followups SET status='cancelled' WHERE lead_id=? AND status='scheduled'", [send.lead_id]);
 }
@@ -33,7 +35,8 @@ async function handleIncoming({ botNumber, phone, text }) {
         if (match(text, YES)) {
             const changed = await db.run("UPDATE sends SET status='confirmado', replied_at=datetime('now') WHERE id=? AND status='sent'", [send.id]);
             if (!changed.changes) return { handled: true, action: 'already_processed' };
-            await db.run("UPDATE leads SET status='confirmado', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+            await db.run("UPDATE leads SET status='sim', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+            ws.broadcast(send.organization_id || 1, { type: 'LEAD_UPDATE', lead_id: send.lead_id, status: 'sim' });
             if (send.campaign_id) await db.run('UPDATE campaigns SET total_yes=total_yes+1 WHERE id=?', [send.campaign_id]);
             await handoffs.enqueue(send);
             await handoffs.processDue();

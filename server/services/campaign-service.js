@@ -19,9 +19,9 @@ function numId(id) {
 
 // Status que podem ser alvo de campanha (bloqueado/duplicado nunca entram).
 // Mantido em sync com anti-ban-service.js#shouldSend.
-const TARGETABLE_STATUSES = ['novo', 'contato', 'confirmado', 'concluido'];
+const TARGETABLE_STATUSES = ['novos', 'enviados', 'sim'];
 // Quando a campanha não especifica status, mantém o comportamento padrão histórico (leads quentes)
-const DEFAULT_STATUSES = ['novo', 'contato'];
+const DEFAULT_STATUSES = ['novos'];
 
 // Message de entrada do bot principal (anti-ban): pergunta se pode encaminhar a simulação
 function buildMainMessage(lead) {
@@ -385,6 +385,13 @@ async function processCampaign(campaign, job) {
                     `UPDATE sends SET status = 'sent', wa_message = ?, sent_at = datetime('now') WHERE id = ?`,
                     [msg, send.id]
                 );
+                
+                // Mover o lead de 'novos' para 'enviados' no funil
+                if (lead.status === 'novos') {
+                    await db.run("UPDATE leads SET status = 'enviados', updated_at = datetime('now') WHERE id = ?", [lead.id]);
+                    const ws = require('./websocket-service');
+                    ws.broadcast(campaign.organization_id || 1, { type: 'LEAD_UPDATE', lead_id: lead.id, status: 'enviados' });
+                }
                 botEvents.log(botNumber.number, 'send_ok', `${lead.name} → ${usedPhone}`, botNumber.label);
                 progress.sent++;
             } else {

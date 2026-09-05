@@ -519,7 +519,8 @@
 
 <!-- ============ SUBMODAL ANIMADO: CRIAR DISPARO A PARTIR DOS LEADS DO FUNIL ============ -->
 <div class="v2-submodal-overlay" id="fl-dispatch-modal" style="display:none; z-index:13300;">
-    <div class="v2-submodal fla-editor" id="fl-dispatch-shell" style="width: min(900px, 96vw) !important; max-width: min(900px, 96vw) !important; max-height:88vh; display:flex; flex-direction:column;">
+    <div class="v2-submodal fla-editor" id="fl-dispatch-shell"
+        style="width: min(900px, 96vw) !important; max-width: min(900px, 96vw) !important; max-height:88vh; display:flex; flex-direction:column;">
         <div class="v2-submodal-header">
             <div>
                 <span class="fla-eyebrow"><i class="fas fa-bullhorn"></i> DISPARO EM MASSA</span>
@@ -531,15 +532,19 @@
         </div>
         <div class="v2-submodal-body fla-editor-body"
             style="padding:20px; display:flex; flex-direction:row; gap:20px; flex:1; min-height:0;">
-            
+
             <div class="fla-col-left" style="flex: 1; display:flex; flex-direction:column; gap:12px; min-width:0;">
                 <div class="fla-field">
                     <label class="fla-label">Nome do Disparo</label>
-                    <input type="text" id="fl-disp-name" class="ps-input" placeholder="Ex: Oferta Especial - Etapa Novo">
+                    <input type="text" id="fl-disp-name" class="ps-input"
+                        placeholder="Ex: Oferta Especial - Etapa Novo">
                 </div>
                 <div class="fla-field" style="flex:1; display:flex; flex-direction:column; min-height:0;">
-                    <label class="fla-label">Destinatários Selecionados (<span id="fl-disp-target-count">0</span> leads)</label>
-                    <div class="fl-disp-targets-summary" id="fl-disp-targets-summary" style="flex:1; overflow-y:auto; padding:8px; border:2px solid var(--holo-border, #27364d); border-radius:12px; background:rgba(0,0,0,0.2);"></div>
+                    <label class="fla-label">Destinatários Selecionados (<span id="fl-disp-target-count">0</span>
+                        leads)</label>
+                    <div class="fl-disp-targets-summary" id="fl-disp-targets-summary"
+                        style="flex:1; overflow-y:auto; padding:8px; border:2px solid var(--holo-border, #27364d); border-radius:12px; background:rgba(0,0,0,0.2);">
+                    </div>
                 </div>
             </div>
 

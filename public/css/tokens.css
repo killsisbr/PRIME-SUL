@@ -53,7 +53,23 @@
     --v3-font-title: var(--font-title);
 }
 
-/* --- Variação Tema Laranja Prime Oficial --- */
+/* --- Aliases HOLO legados (convergindo dark -> claro Neo-Brutalista) --- */
+    /* Mantidos como alias dos tokens claros para que qualquer `var(--holo-*, fallback)`
+       espalhado pelos componentes passe a resolver para o tema claro, eliminando
+       o visual escuro/glassmorphism sem quebrar HTML/JS que ainda referenciam. */
+    --holo-ink: var(--ink);
+    --holo-dark: var(--paper);
+    --holo-text: var(--text-body);
+    --holo-muted: var(--text-soft);
+    --holo-surface: var(--card-bg);
+    --holo-card: var(--card-bg);
+    --holo-border: var(--ink);
+    --holo-primary: var(--brand);
+    --holo-accent: var(--accent);
+    --holo-mint: var(--ok);
+    --holo-orange: var(--brand);
+
+    /* --- Variação Tema Laranja Prime Oficial --- */
 [data-theme="orange"],
 [data-theme="prime"] {
     --brand: #ff7417;

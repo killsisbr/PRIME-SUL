@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/admin/css/admin.css">
     <link rel="stylesheet" href="/admin/css/components.css">
     <link rel="stylesheet" href="/admin/components/leads.css">
+    <link rel="stylesheet" href="/admin/css/ps-modal.css">
     <script src="/js/wa-widget.js"></script>
     <script src="/js/realtime.js"></script>
     <script src="/js/theme.js"></script>
@@ -53,51 +54,124 @@
         </div>
     </div>
 
-    <!-- ============ CONTENT (100% Module HUD) ============ -->
-    <main class="content-area">
-        <section class="module-hud-shell" id="homeHudShell" style="--module-accent:#ff7417; max-width:1180px; margin:0 auto;">
+    <!-- ============ TOP BAR ============ -->
+    <header class="top-bar">
+        <div class="top-brand">
+            <div class="brand-badge">PS</div>
+            <div class="brand-text">
+                <strong>PRIME SUL</strong>
+                <span>DISPARO & ANTI-BAN</span>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button type="button" class="top-action-link" onclick="openToolV2('numeros','Números Anti-Ban')" title="Gerenciar Números Anti-Ban">
+                <i class="fas fa-shield-halved" style="color:var(--bad);"></i>
+                <span id="topChipsCount">Chips: carregando...</span>
+            </button>
+            <button type="button" class="action-btn" id="openHudBtn" title="Buscar ferramenta (Ctrl+K)">
+                <i class="fas fa-search"></i>
+            </button>
+            <div class="store-profile" onclick="logout()" title="Clique para sair">
+                <div class="avatar" id="storeAvatar">PS</div>
+                <div class="store-info-top">
+                    <strong id="storeName">Admin</strong>
+                </div>
+            </div>
+        </div>
+    </header>
 
-            <div class="module-hud-console">
-                <aside class="module-hud-stage">
-                    <div class="module-hud-stage-top">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span>PAINEL DE OPERAÇÃO</span>
-                            <i class="fas fa-bolt" style="font-size:0.75rem;"></i>
-                        </div>
-                        <div class="store-profile stage-store-profile" onclick="logout()" title="Clique para Sair / Logout" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1.5px solid var(--holo-border, #27364d); padding:4px 10px; border-radius:999px; transition:all 0.2s;">
-                            <div class="avatar" id="storeAvatar" style="width:24px; height:24px; font-size:0.65rem; background:var(--primary, #ff7417); color:#fff; border-radius:50%; display:grid; place-items:center; font-weight:800;">PS</div>
-                            <strong id="storeName" style="font-size:0.75rem; color:#f8fafc; font-weight:700;">Prime Sul</strong>
-                            <i class="fas fa-right-from-bracket" style="font-size:0.7rem; color:var(--danger, #ef4444); margin-left:4px;"></i>
-                        </div>
-                    </div>
+    <!-- ============ CONTENT (Zero-Scroll Laptop Dashboard) ============ -->
+    <main class="dash-viewport">
+        <!-- BARRA DE SAÚDE ANTI-BAN & ATALHO DIRETO -->
+        <section class="dash-hero">
+            <div class="dash-hero-info">
+                <div class="dash-greeting" id="homeHeadline">OLÁ, ADMIN 👋</div>
+                <p class="dash-sub">Gerencie seus números descartáveis e dispare com segurança anti-ban.</p>
+            </div>
 
-                    <!-- BARRA DE PESQUISA -->
-                    <div class="search-trigger stage-search-trigger" id="openHudBtn">
-                        <i class="fas fa-search" style="color:var(--holo-primary, #0ea5e9);"></i>
-                        <span style="color:#94a3b8; font-size:0.8rem;">Buscar ferramenta...</span>
-                        <span class="search-shortcut" style="background:#1e293b; border-color:#334155; color:#cbd5e1; font-size:0.6rem; padding:2px 6px;">Ctrl+K</span>
-                    </div>
+            <!-- CHIPS MONITOR EM TEMPO REAL -->
+            <div class="dash-chips-strip">
+                <div class="chip-metric chip-active" title="Números prontos para envio">
+                    <span class="chip-dot"></span>
+                    <strong id="statChipsAtivos">0</strong>
+                    <small>ATIVOS</small>
+                </div>
+                <div class="chip-metric chip-cooling" title="Em resfriamento de segurança (cooldown)">
+                    <span class="chip-dot"></span>
+                    <strong id="statChipsCooldown">0</strong>
+                    <small>RESFRIANDO</small>
+                </div>
+                <div class="chip-metric chip-banned" title="Números descartados">
+                    <span class="chip-dot"></span>
+                    <strong id="statChipsBanidos">0</strong>
+                    <small>BANIDOS</small>
+                </div>
+                <div class="chip-metric chip-msgs" title="Mensagens disparadas hoje">
+                    <i class="fas fa-paper-plane" style="color:var(--primary); font-size:0.75rem;"></i>
+                    <strong id="statChipsMsgs">0</strong>
+                    <small>ENVIOS HOJE</small>
+                </div>
+            </div>
 
-                    <div class="module-hud-copy">
-                        <small>COMECE POR AQUI</small>
-                        <h2 id="homeHeadline">BOM DIA,<br><span>BORA OPERAR.</span></h2>
-                        <p>Organize sua carteira, priorize oportunidades e avance cada contato pelo funil sem perder contexto.</p>
-                    </div>
-                    <button type="button" class="module-hud-primary" id="homePrimary"><i class="fas fa-arrow-right"></i> ABRIR PRIMEIRA FERRAMENTA</button>
-                    <div class="module-hud-metrics">
-                        <div><b id="statLeads">0</b><span>LEADS</span></div>
-                        <div><b id="statEnvios">0</b><span>ENVIOS</span></div>
-                        <div><b id="statConversao">0%</b><span>CONVERSÃO</span></div>
-                    </div>
-                </aside>
-                <div class="module-hud-launchpad" id="homeLaunchpad"></div>
+            <button type="button" class="btn-quick-add" onclick="openToolV2('numeros','Números Anti-Ban')">
+                <i class="fas fa-plus"></i> CADASTRAR NÚMERO
+            </button>
+        </section>
+
+        <!-- OS 3 PILARES PRINCIPAIS -->
+        <section class="dash-main-cards">
+            <!-- Card 1: Números Descartáveis -->
+            <div class="dash-card card-shield" onclick="openToolV2('numeros','Números Anti-Ban')">
+                <div class="dash-card-badge"><i class="fas fa-shield-halved"></i> PROTEÇÃO ATIVA</div>
+                <div class="dash-card-icon"><i class="fas fa-mobile-screen-button"></i></div>
+                <h3 class="dash-card-title">NÚMEROS DESCARTÁVEIS</h3>
+                <p class="dash-card-desc">Cadastre novos chips, acompanhe o limite diário de mensagens e resfriamento automático.</p>
+                <div class="dash-card-action">
+                    <span>GERENCIAR CHIPS</span>
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <!-- Card 2: Disparo Comercial -->
+            <div class="dash-card card-dispatch" onclick="openToolV2('disparo','Disparo Comercial')">
+                <div class="dash-card-badge orange"><i class="fas fa-bolt"></i> ROTAÇÃO AUTOMÁTICA</div>
+                <div class="dash-card-icon orange"><i class="fas fa-paper-plane"></i></div>
+                <h3 class="dash-card-title">DISPARO EM MASSA</h3>
+                <p class="dash-card-desc">Envie mensagens para listas de contatos com alternância inteligente de números e templates.</p>
+                <div class="dash-card-action">
+                    <span>INICIAR DISPARO</span>
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <!-- Card 3: Conversas & Clientes -->
+            <div class="dash-card card-chat" onclick="openToolV2('bots','Conversas WhatsApp')">
+                <div class="dash-card-badge green"><i class="fab fa-whatsapp"></i> ATENDIMENTO</div>
+                <div class="dash-card-icon green"><i class="fas fa-comments"></i></div>
+                <h3 class="dash-card-title">CONVERSAS & CLIENTES</h3>
+                <p class="dash-card-desc">Atenda clientes que responderam aos disparos, veja o histórico e avance no funil de vendas.</p>
+                <div class="dash-card-action">
+                    <span>VER CONVERSAS</span>
+                    <i class="fas fa-arrow-right"></i>
+                </div>
             </div>
         </section>
+
+        <!-- BARRA INFERIOR SECUNDÁRIA (Acesso rápido sem poluição) -->
+        <footer class="dash-secondary-bar">
+            <span class="sec-label"><i class="fas fa-layer-group"></i> Outras Ferramentas:</span>
+            <div class="sec-links">
+                <button type="button" class="sec-btn" onclick="openToolV2('leads','Carteira de Clientes')"><i class="fas fa-address-book"></i> Carteira de Clientes</button>
+                <button type="button" class="sec-btn" onclick="openToolV2('funil','Funil de Vendas')"><i class="fas fa-filter"></i> Funil de Vendas</button>
+                <button type="button" class="sec-btn" onclick="openToolV2('templates','Templates')"><i class="fas fa-file-lines"></i> Templates de Mensagem</button>
+                <button type="button" class="sec-btn" onclick="openToolV2('vendedores','Vendedores')"><i class="fas fa-user-tie"></i> Equipe / Vendedores</button>
+                <button type="button" class="sec-btn" onclick="openToolV2('config','Configurações')"><i class="fas fa-cog"></i> Configurações</button>
+            </div>
+        </footer>
     </main>
 
-    <script src="/admin/js/module-hud.js"></script>
-    <!-- TEMPORÁRIO: AI Site Editor (só admin) — ver public/js/site-editor.js pra remover depois -->
-    <script src="/js/site-editor.js"></script>
+    <script src="/admin/js/ps-modal.js"></script>
+    <!-- AI Site Editor desativado para o cliente -->
     <script>
         const me = JSON.parse(localStorage.getItem('prime_sul_user') || 'null');
         if (!me) { window.location.href = '/login.html'; }
@@ -134,22 +208,21 @@
         window.api = api;
 
         async function logout() {
+            if (!confirm('Deseja realmente sair do painel?')) return;
             await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
             localStorage.removeItem('prime_sul_user');
             window.location.href = '/login.html';
         }
 
         // ================= APP GRID =================
-        // Bots anti-ban desabilitados por hora: oculta módulos de bot/anti-ban,
-        // mantendo cadastro de leads, disparo e organização no funil.
         const BOTS_DISABLED = false;
         const MODULES = [
+            { name: 'numeros', title: 'Números Anti-Ban', icon: 'fa-shield-halved', color: '#df4632', desc: 'Descartáveis e limites', border: '#df4632', admin: true, bot: true },
+            { name: 'disparo', title: 'Disparo Comercial', icon: 'fa-paper-plane', color: '#ff7417', desc: 'Disparo em massa de mensagens com templates', badge: 'DISPARO', border: '#ff7417' },
+            { name: 'bots', title: 'Conversas WhatsApp', icon: 'fa-comments', color: '#10b981', desc: 'Atendimento e mensagens', badge: 'BOT', border: '#10b981', admin: true, bot: true },
             { name: 'leads', title: 'Carteira de Clientes', icon: 'fa-address-book', color: '#2563eb', desc: 'Ver todos os clientes cadastrados', badge: 'CLIENTES', border: '#2563eb' },
             { name: 'funil', title: 'Funil de Vendas', icon: 'fa-filter', color: '#3b82f6', desc: 'Conversão por estágio', badge: 'FUNIL', border: '#3b82f6' },
-            { name: 'bots', title: 'Bots WhatsApp', icon: 'fa-robot', color: '#10b981', desc: 'QR code e conexões', badge: 'BOT', border: '#10b981', admin: true, bot: true },
-            { name: 'disparo', title: 'Disparo Comercial', icon: 'fa-paper-plane', color: '#ff7417', desc: 'Disparar mensagens para X quantidade de leads com templates', badge: 'DISPARO', border: '#ff7417' },
             { name: 'templates', title: 'Templates', icon: 'fa-file-lines', color: '#0ea5e9', desc: 'Resposta e conversão por template', border: '#0ea5e9', admin: true },
-            { name: 'numeros', title: 'Números Anti-Ban', icon: 'fa-shield-halved', color: '#df4632', desc: 'Descartáveis e limites', border: '#df4632', admin: true, bot: true },
             { name: 'vendedores', title: 'Vendedores', icon: 'fa-user-tie', color: '#8b5cf6', desc: 'Equipe e permissões', border: '#8b5cf6', admin: true },
             { name: 'config', title: 'Configuração', icon: 'fa-cog', color: '#181716', desc: 'Crédito BB e templates', admin: true }
         ];
@@ -157,7 +230,9 @@
         if (BOTS_DISABLED) visibleModules = visibleModules.filter(m => !m.bot);
 
         function renderLaunchpad() {
-            document.getElementById('homeLaunchpad').innerHTML = visibleModules.map((m, i) => `
+            const el = document.getElementById('homeLaunchpad');
+            if (!el) return;
+            el.innerHTML = visibleModules.map((m, i) => `
                 <button type="button" class="module-hud-card tone-${(i % 4) + 1}" onclick="openToolV2('${m.name}','${m.title}')" style="--module-accent:${m.color};">
                     <em>0${i + 1}</em>
                     <span><i class="fas ${m.icon}"></i></span>
@@ -181,8 +256,10 @@
         }
 
         // HUD keyboard
-        document.getElementById('openHudBtn').onclick = () => { document.getElementById('hudOverlay').classList.add('active'); document.getElementById('hudInput').focus(); };
-        document.getElementById('homePrimary').onclick = () => { const f = visibleModules[0]; if (f) openToolV2(f.name, f.title); };
+        const openHudBtn = document.getElementById('openHudBtn');
+        if (openHudBtn) openHudBtn.onclick = () => { document.getElementById('hudOverlay').classList.add('active'); document.getElementById('hudInput').focus(); };
+        const hp = document.getElementById('homePrimary');
+        if (hp) hp.onclick = () => { const f = visibleModules[0]; if (f) openToolV2(f.name, f.title); };
         document.addEventListener('keydown', e => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('hudOverlay').classList.add('active'); document.getElementById('hudInput').focus(); }
             if (e.key === 'Escape') { document.getElementById('hudOverlay').classList.remove('active'); closeDynamicModal(); }
@@ -266,13 +343,7 @@
                 if (module && typeof module.init === 'function') {
                     api = (await module.init({ container: body })) || {};
                 }
-                window.buildModuleHud?.(body, componentName, title);
-                if (typeof afterInit === 'function') {
-                    // navegação vinda de outro módulo (ex: Hub/Funil abrindo Campanhas): já entra no painel completo
-                    const workspace = body.querySelector('.module-hud-workspace');
-                    if (workspace) workspace.classList.add('active');
-                    afterInit(api);
-                }
+                if (typeof afterInit === 'function') afterInit(api);
             } catch (err) {
                 console.error('[Dashboard] Erro ao instanciar módulo:', err);
                 body.innerHTML = `
@@ -288,11 +359,10 @@
         window.openToolV2 = openToolV2;
 
         function closeDynamicModal() {
-            const openSubmodal = [...document.querySelectorAll('.v2-submodal-overlay')]
+            // fecha o submodal mais acima (ele cuida dos próprios; aqui cobrimos overlays legacy)
+            const openSubmodal = [...document.querySelectorAll('.v2-submodal-overlay, .psm-overlay')]
                 .filter(el => getComputedStyle(el).display !== 'none').pop();
             if (openSubmodal) { openSubmodal.style.display = 'none'; return; }
-            const openWorkspace = document.querySelector('#dynamicModalBody .module-hud-workspace.active');
-            if (openWorkspace) { openWorkspace.classList.remove('active'); return; }
             const overlay = document.getElementById('dynamicModalOverlay');
             overlay.classList.remove('active');
             overlay.style.display = 'none';
@@ -308,13 +378,43 @@
         }
         window.closeDynamicModal = closeDynamicModal;
 
-        // ================= LOAD STATS =================
+        // ================= LOAD STATS & CHIPS STATUS =================
+        async function loadChipsStatus() {
+            try {
+                const numbers = await api('/campaigns/numbers');
+                let ativos = 0, resfriando = 0, banidos = 0, totalMsgs = 0;
+                if (Array.isArray(numbers)) {
+                    numbers.forEach(n => {
+                        if (n.status === 'ativo') ativos++;
+                        else if (n.status === 'resfriado') resfriando++;
+                        else if (n.status === 'banido') banidos++;
+                        totalMsgs += Number(n.messages_sent || 0);
+                    });
+                }
+                const elAtivos = document.getElementById('statChipsAtivos');
+                const elCooling = document.getElementById('statChipsCooldown');
+                const elBanidos = document.getElementById('statChipsBanidos');
+                const elMsgs = document.getElementById('statChipsMsgs');
+                const elTopCount = document.getElementById('topChipsCount');
+                if (elAtivos) elAtivos.textContent = ativos;
+                if (elCooling) elCooling.textContent = resfriando;
+                if (elBanidos) elBanidos.textContent = banidos;
+                if (elMsgs) elMsgs.textContent = totalMsgs;
+                if (elTopCount) elTopCount.textContent = `${ativos} ${ativos === 1 ? 'chip ativo' : 'chips ativos'}`;
+            } catch (e) {
+                console.error('[Chips Status]', e);
+            }
+        }
+
         async function loadStats() {
             try {
                 const counts = await api('/leads/counts');
-                document.getElementById('statLeads').textContent = counts.leads;
-                document.getElementById('statEnvios').textContent = counts.envios;
-                document.getElementById('statConversao').textContent = counts.conversao + '%';
+                const elLeads = document.getElementById('statLeads');
+                const elEnvios = document.getElementById('statEnvios');
+                const elConversao = document.getElementById('statConversao');
+                if (elLeads) elLeads.textContent = counts.leads;
+                if (elEnvios) elEnvios.textContent = counts.envios;
+                if (elConversao) elConversao.textContent = counts.conversao + '%';
             } catch (e) { console.error(e); }
         }
 
@@ -324,13 +424,15 @@
         if (h >= 12 && h < 18) g = 'BOA TARDE';
         else if (h >= 18) g = 'BOA NOITE';
 
+        const firstName = (me.name || 'Admin').split(' ')[0].toUpperCase();
         document.getElementById('storeName').textContent = me.name;
         document.getElementById('storeAvatar').textContent = me.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
-        document.getElementById('homeHeadline').innerHTML = `${g},<br><span>${me.name.split(' ')[0].toUpperCase()}.</span>`;
+        document.getElementById('homeHeadline').textContent = `${g}, ${firstName} 👋`;
 
-        renderLaunchpad();
         renderHud();
+        loadChipsStatus();
         loadStats();
+        setInterval(loadChipsStatus, 15000);
         setInterval(loadStats, 30000);
     </script>
 </body>

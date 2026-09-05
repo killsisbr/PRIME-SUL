@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS leads (
     prioridade    TEXT NOT NULL DEFAULT 'media'
                   CHECK (prioridade IN ('alta','media','baixa')),
     score         INTEGER,                          -- 0-100 calculado automaticamente
-    status        TEXT NOT NULL DEFAULT 'novo'
-                  CHECK (status IN ('novo','contato','confirmado','concluido','bloqueado','duplicado')),
+    status        TEXT NOT NULL DEFAULT 'novos'
+                  CHECK (status IN ('novos','enviados','sim','nao','bloqueado','duplicado')),
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );

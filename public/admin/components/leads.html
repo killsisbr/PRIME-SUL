@@ -43,19 +43,19 @@
     </div>
 </div>
 
-<!-- ============ MODAL ANIMADO: NOVO LEAD + IA VISION OCR (100% ISOLADO / SEM SCROLL INTERNO) ============ -->
-<div class="ld-nl-overlay" id="ldAddOverlay" style="display:none;">
-    <div class="ld-nl-modal" id="ld-add-shell">
-        <div class="ld-nl-header">
-            <div>
-                <span class="ld-nl-eyebrow">CADASTRO DE CLIENTE</span>
+<!-- ============ MODAL: NOVO LEAD + IA VISION OCR (psm central, IDs preservados) ============ -->
+<div class="psm-overlay" id="ldAddOverlay" style="display:none;">
+    <div class="psm-modal" id="ld-add-shell" style="width:min(720px,96vw);">
+        <div class="psm-header">
+            <div class="psm-header-text">
+                <span class="psm-eyebrow">CADASTRO DE CLIENTE</span>
                 <h3>NOVO LEAD COM IA VISION</h3>
                 <p>Preencha manualmente ou envie um documento (CNH, RG, Holerite, PDF) para leitura via IA.</p>
             </div>
-            <button type="button" class="ld-nl-close" id="ld-add-close"><i class="fas fa-times"></i></button>
+            <button type="button" class="psm-btn-close" id="ld-add-close"><i class="fas fa-times"></i></button>
         </div>
 
-        <div class="ld-nl-body">
+        <div class="psm-body">
             <!-- DROPZONE IA VISION OCR -->
             <div class="ld-ocr-box" id="ldOcrBox">
                 <input type="file" id="ldOcrFileInput" accept="image/*,.pdf" style="display:none;">
@@ -159,9 +159,9 @@
             </form>
         </div>
 
-        <footer class="ld-nl-footer">
-            <button type="button" class="ld-nl-btn ld-nl-btn-secondary" id="ld-add-cancel">CANCELAR</button>
-            <button type="button" class="ld-nl-btn" id="ld-add-save"><i class="fas fa-plus"></i> SALVAR LEAD</button>
+        <footer class="psm-footer">
+            <button type="button" class="psm-btn psm-btn-ghost" id="ld-add-cancel">CANCELAR</button>
+            <button type="button" class="psm-btn" id="ld-add-save"><i class="fas fa-plus"></i> SALVAR LEAD</button>
         </footer>
     </div>
 </div>
@@ -173,17 +173,17 @@
 </div>
 
 <!-- ============ FERRAMENTAS DE ETAPA ============ -->
-<div class="v2-submodal-overlay" id="ctoolsOverlay" style="display:none;">
-    <div class="v2-submodal fla-modal" style="width:min(780px,94vw);">
-        <div class="v2-submodal-header">
-            <div>
-                <span class="fla-eyebrow">AÇÕES EM MASSA DA ETAPA</span>
+<div class="psm-overlay" id="ctoolsOverlay" style="display:none;">
+    <div class="psm-modal" style="width:min(780px,94vw);">
+        <div class="psm-header">
+            <div class="psm-header-text">
+                <span class="psm-eyebrow">AÇÕES EM MASSA DA ETAPA</span>
                 <h3>ETAPA <span id="ctools-status" style="color:var(--primary);">NOVO</span></h3>
                 <p>Execute disparos de mensagens ou mova múltiplos leads ao mesmo tempo.</p>
             </div>
-            <button type="button" class="btn-close-submodal" id="ctools-close"><i class="fas fa-times"></i></button>
+            <button type="button" class="psm-btn-close" id="ctools-close"><i class="fas fa-times"></i></button>
         </div>
-        <div class="v2-submodal-body fla-console">
+        <div class="psm-body fla-console">
             <div class="ctools-section" id="ctools-send-wrap">
                 <div class="fla-section-head">
                     <div><strong><i class="fas fa-paper-plane"></i> DISPARAR MENSAGEM EM MASSA</strong><span>Envia mensagem para todos os leads desta etapa</span></div>
@@ -229,16 +229,16 @@
 </div>
 
 <!-- ============ PROGRESSO DA AÇÃO EM MASSA ============ -->
-<div class="v2-submodal-overlay" id="ctoolsProgress" style="display:none;">
-    <div class="v2-submodal fla-modal" style="width:min(600px, 94vw);">
-        <div class="v2-submodal-header">
-            <div>
-                <span class="fla-eyebrow">PROCESSANDO TAREFA</span>
+<div class="psm-overlay" id="ctoolsProgress" style="display:none;">
+    <div class="psm-modal" style="width:min(600px, 94vw);">
+        <div class="psm-header">
+            <div class="psm-header-text">
+                <span class="psm-eyebrow">PROCESSANDO TAREFA</span>
                 <h3 id="ctp-title">PROCESSANDO...</h3>
             </div>
-            <button type="button" class="btn-close-submodal" id="ctp-close"><i class="fas fa-times"></i></button>
+            <button type="button" class="psm-btn-close" id="ctp-close"><i class="fas fa-times"></i></button>
         </div>
-        <div class="v2-submodal-body fla-console">
+        <div class="psm-body fla-console">
             <div class="fla-job" id="fla-job">
                 <div class="fla-job-head"><strong id="ctp-status">Aguardando...</strong><span id="ctp-pct">0%</span></div>
                 <div class="fla-progress"><i id="ctp-fill" style="width:0%"></i></div>
@@ -251,9 +251,9 @@
             </div>
             <div class="ctp-log" id="ctp-log" style="margin-top:10px;"></div>
         </div>
-        <footer class="fla-editor-footer">
-            <button type="button" class="btn-retro btn-secondary-retro" id="ctp-cancel"><i class="fas fa-ban"></i> CANCELAR</button>
-            <button type="button" class="btn-retro" id="ctp-done-btn" style="display:none;"><i class="fas fa-check"></i> CONCLUIR</button>
+        <footer class="psm-footer">
+            <button type="button" class="psm-btn psm-btn-ghost" id="ctp-cancel"><i class="fas fa-ban"></i> CANCELAR</button>
+            <button type="button" class="psm-btn" id="ctp-done-btn" style="display:none;"><i class="fas fa-check"></i> CONCLUIR</button>
         </footer>
     </div>
 </div>

@@ -1,14 +1,14 @@
 const STAGES = [
-    { key: 'novo', label: 'NOVO', color: '#3b82f6', dark: false, icon: 'fa-user-plus' },
-    { key: 'contato', label: 'EM CONTATO', color: '#ffbd16', dark: true, icon: 'fa-phone-volume' },
-    { key: 'confirmado', label: 'CONFIRMADO', color: '#ff7417', dark: false, icon: 'fa-circle-check' },
-    { key: 'concluido', label: 'CONCLUÍDO', color: '#10b981', dark: false, icon: 'fa-trophy' }
+    { key: 'novos', label: 'NOVOS LEADS', color: '#3b82f6', dark: false, icon: 'fa-user-plus' },
+    { key: 'enviados', label: 'ENVIADOS', color: '#ffbd16', dark: true, icon: 'fa-paper-plane' },
+    { key: 'sim', label: 'SIM - INTERESSE', color: '#10b981', dark: false, icon: 'fa-thumbs-up' },
+    { key: 'nao', label: 'SEM INTERESSE', color: '#df4632', dark: false, icon: 'fa-thumbs-down' }
 ];
 
 const TRANSITIONS = [
-    { from: 'novo', to: 'contato', key: 'novo_contato' },
-    { from: 'contato', to: 'confirmado', key: 'contato_confirmado' },
-    { from: 'confirmado', to: 'concluido', key: 'confirmado_concluido' }
+    { from: 'novos', to: 'enviados', key: 'novos_enviados' },
+    { from: 'enviados', to: 'sim', key: 'enviados_sim' },
+    { from: 'enviados', to: 'nao', key: 'enviados_nao' }
 ];
 
 const TAPER = 0.08;
