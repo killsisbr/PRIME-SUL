@@ -519,76 +519,181 @@
 
 <!-- ============ SUBMODAL ANIMADO: CRIAR DISPARO A PARTIR DOS LEADS DO FUNIL ============ -->
 <div class="v2-submodal-overlay" id="fl-dispatch-modal" style="display:none; z-index:13300;">
-    <div class="v2-submodal fla-editor" id="fl-dispatch-shell"
-        style="width: min(900px, 96vw) !important; max-width: min(900px, 96vw) !important; max-height:88vh; display:flex; flex-direction:column;">
-        <div class="v2-submodal-header">
-            <div>
-                <span class="fla-eyebrow"><i class="fas fa-bullhorn"></i> DISPARO EM MASSA</span>
-                <h3>CRIAR CAMPANHA DE DISPARO</h3>
-                <p>Envio comercial para leads selecionados da etapa.</p>
+    <div class="v2-submodal fl-sched-modal-pro" id="fl-dispatch-shell">
+        <!-- HEADER NEO-BRUTALIST -->
+        <div class="fl-sched-head">
+            <div class="fl-sched-head-info">
+                <span class="fl-sched-eyebrow"><i class="fas fa-shield-halved"></i> PROTEÇÃO ANTI-BAN • DISPARO DO VENDEDOR</span>
+                <h3 id="flDispatchModalTitle"><i class="fas fa-paper-plane" style="color:var(--primary, #0284c7);"></i> DISPARAR MENSAGENS NO WHATSAPP</h3>
             </div>
-            <button type="button" class="btn-close-submodal" id="fl-dispatch-close"><i
-                    class="fas fa-times"></i></button>
+            <div class="fl-sched-head-actions">
+                <button type="button" class="fl-sched-close-btn" id="fl-dispatch-close" title="Fechar (ESC)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
-        <div class="v2-submodal-body fla-editor-body"
-            style="padding:20px; display:flex; flex-direction:row; gap:20px; flex:1; min-height:0;">
 
-            <div class="fla-col-left" style="flex: 1; display:flex; flex-direction:column; gap:12px; min-width:0;">
-                <div class="fla-field">
-                    <label class="fla-label">Nome do Disparo</label>
-                    <input type="text" id="fl-disp-name" class="ps-input"
-                        placeholder="Ex: Oferta Especial - Etapa Novo">
+        <div class="fl-sched-body">
+            <div class="fl-sched-grid">
+                <!-- COLUNA 1: PÚBLICO E QUANTIDADE -->
+                <div class="fl-sched-col fl-col-audience">
+                    <div class="fl-panel-card">
+                        <div class="fl-panel-title">
+                            <span class="fl-step-badge">1</span>
+                            <span>QUEM VAI RECEBER?</span>
+                        </div>
+
+                        <div class="fl-field-box">
+                            <label class="fl-field-lbl">Nome da Campanha:</label>
+                            <input type="text" id="fl-disp-name" class="ps-input" placeholder="Ex: Disparo - Etapa Novo">
+                        </div>
+
+                        <!-- QUANTIDADE DE LEADS SELECIONADOS -->
+                        <div class="fl-field-box">
+                            <div class="fl-qty-header">
+                                <label class="fl-field-lbl">Destinatários Selecionados:</label>
+                                <span class="fl-qty-live-tag"><b id="fl-disp-target-count">0</b> LEADS</span>
+                            </div>
+                            <div class="fl-meta-summary-bar">
+                                <span id="fl-disp-duration-badge"><i class="fas fa-stopwatch"></i> Duração estimada: ~<b id="flDispDurationMin">1</b> min</span>
+                            </div>
+                        </div>
+
+                        <!-- LISTA / CHIPS DOS LEADS SELECIONADOS -->
+                        <div class="fl-field-box flex-1">
+                            <label class="fl-field-lbl"><i class="fas fa-users"></i> Leads da Etapa:</label>
+                            <div class="fl-disp-targets-summary" id="fl-disp-targets-summary"></div>
+                        </div>
+
+                        <!-- MOMENTO DO ENVIO -->
+                        <div class="fl-field-box">
+                            <label class="fl-field-lbl">Momento do Envio:</label>
+                            <div class="fl-timing-mode-switch">
+                                <button type="button" class="fl-time-mode-btn active" id="flBtnModeNow">
+                                    <i class="fas fa-bolt"></i> DISPARAR AGORA
+                                </button>
+                                <button type="button" class="fl-time-mode-btn" id="flBtnModeSchedule">
+                                    <i class="far fa-clock"></i> AGENDAR HORÁRIO
+                                </button>
+                            </div>
+                            <input type="checkbox" id="fl-disp-immediate" checked style="display:none;">
+
+                            <div class="fl-schedule-time-box" id="flScheduleTimeBox" style="display:none;">
+                                <div class="fl-time-input-row">
+                                    <input type="time" class="ps-input fl-time-input" id="fl-disp-time" min="08:00" max="19:00" value="10:00">
+                                    <div class="fl-quick-hours">
+                                        <button type="button" class="fl-hour-chip" data-h="10:00">10:00</button>
+                                        <button type="button" class="fl-hour-chip" data-h="14:30">14:30</button>
+                                        <button type="button" class="fl-hour-chip" data-h="16:00">16:00</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="fla-field" style="flex:1; display:flex; flex-direction:column; min-height:0;">
-                    <label class="fla-label">Destinatários Selecionados (<span id="fl-disp-target-count">0</span>
-                        leads)</label>
-                    <div class="fl-disp-targets-summary" id="fl-disp-targets-summary"
-                        style="flex:1; overflow-y:auto; padding:8px; border:2px solid var(--holo-border, #27364d); border-radius:12px; background:rgba(0,0,0,0.2);">
+
+                <!-- COLUNA 2: MENSAGEM & MODELOS -->
+                <div class="fl-sched-col fl-col-message">
+                    <div class="fl-panel-card">
+                        <div class="fl-panel-title">
+                            <span class="fl-step-badge">2</span>
+                            <span>QUAL A MENSAGEM?</span>
+                        </div>
+
+                        <div class="fl-field-box">
+                            <label class="fl-field-lbl"><i class="fas fa-wand-magic-sparkles" style="color:#eab308;"></i> Usar Modelo Pronto:</label>
+                            <select id="fl-disp-template" class="ps-select fl-template-select">
+                                <option value="">✨ Escolher Modelo Comercial Pronto...</option>
+                            </select>
+                        </div>
+
+                        <div class="fl-field-box flex-1">
+                            <div class="fl-msg-lbl-row">
+                                <label class="fl-field-lbl"><i class="fas fa-pen-to-square"></i> Texto que o cliente vai ler:</label>
+                                <span class="fl-char-count" id="flCharCount">0 carac.</span>
+                            </div>
+                            <textarea id="fl-disp-message" class="ps-textarea fl-msg-textarea" rows="5" required placeholder="Olá {nome}! Tudo bem? Sou da Prime Sul e temos condições exclusivas pré-aprovadas para você. Vamos conversar?"></textarea>
+
+                            <!-- VARIÁVEIS RÁPIDAS -->
+                            <div class="fl-tags-row">
+                                <span class="fl-tags-label">Inserir no texto:</span>
+                                <button type="button" class="fl-tag-btn" data-tag="{nome}">+ {nome}</button>
+                                <button type="button" class="fl-tag-btn" data-tag="{cidade}">+ {cidade}</button>
+                                <button type="button" class="fl-tag-btn" data-tag="{telefone}">+ {telefone}</button>
+                            </div>
+                        </div>
+
+                        <!-- INFO ANTI-BAN -->
+                        <div class="fl-antiban-notice">
+                            <i class="fas fa-shield-halved"></i>
+                            <div>
+                                <strong>Blindagem Anti-Ban Ativa</strong>
+                                <span>Cadência inteligente e revezamento automático de chips para proteção máxima.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUNA 3: PRÉVIA REAL DO WHATSAPP -->
+                <div class="fl-sched-col fl-col-preview">
+                    <div class="fl-panel-card fl-preview-card">
+                        <div class="fl-panel-title">
+                            <span class="fl-step-badge">3</span>
+                            <span>COMO O CLIENTE VÊ</span>
+                        </div>
+
+                        <!-- PHONE WHATSAPP MOCKUP -->
+                        <div class="dp-wa-phone-frame">
+                            <div class="dp-wa-phone-bar">
+                                <div class="dp-wa-phone-notch"></div>
+                            </div>
+                            <div class="dp-wa-phone-header">
+                                <div class="dp-wa-phone-back"><i class="fas fa-arrow-left"></i></div>
+                                <div class="dp-wa-phone-av"><i class="fas fa-user"></i></div>
+                                <div class="dp-wa-phone-meta">
+                                    <span class="dp-wa-phone-name" id="flLivePreviewContactName">Maria Silva</span>
+                                    <small class="dp-wa-phone-status">online agora</small>
+                                </div>
+                                <div class="dp-wa-phone-actions">
+                                    <i class="fas fa-video"></i>
+                                    <i class="fas fa-phone"></i>
+                                    <i class="fas fa-ellipsis-vertical"></i>
+                                </div>
+                            </div>
+
+                            <div class="dp-wa-phone-chat" id="flLiveChatArea">
+                                <div class="dp-wa-msg-date"><span>HOJE</span></div>
+                                <div class="dp-wa-bubble">
+                                    <div class="dp-wa-bubble-text" id="flLivePreviewMessage">
+                                        Olá Maria! Tudo bem? Sou da Prime Sul e temos condições exclusivas de crédito pré-aprovadas para você. Vamos conversar?
+                                    </div>
+                                    <div class="dp-wa-bubble-meta">
+                                        <span id="flLiveMsgTime">14:32</span>
+                                        <i class="fas fa-check-double" style="color:#53bdeb;"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dp-wa-phone-bottom">
+                                <i class="far fa-face-smile"></i>
+                                <div class="dp-wa-fake-input">Mensagem</div>
+                                <i class="fas fa-paperclip"></i>
+                                <div class="dp-wa-mic-btn"><i class="fas fa-microphone"></i></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="fla-col-right" style="flex: 1; display:flex; flex-direction:column; gap:12px; min-width:0;">
-                <div class="fla-field">
-                    <label class="fla-label">Template Comercial Pronto</label>
-                    <select id="fl-disp-template" class="ps-select" style="margin-bottom:6px;">
-                        <option value="">Digitar mensagem personalizada...</option>
-                    </select>
-                </div>
-                <div class="fla-field" style="flex:1; display:flex; flex-direction:column; min-height:0;">
-                    <label class="fla-label">Mensagem do WhatsApp</label>
-                    <textarea id="fl-disp-message" class="ps-textarea" style="flex:1; min-height:120px; resize:none;"
-                        placeholder="Olá {nome}! Tudo bem? Temos uma oportunidade especial para você..."></textarea>
-                    <small class="fl-disp-hint"
-                        style="color:var(--holo-muted, #94a3b8); font-size:.65rem; margin-top:4px; display:block;">
-                        Variáveis dinâmicas: <code>{nome}</code>, <code>{cidade}</code>, <code>{telefone}</code>
-                    </small>
-                </div>
-                <div class="fla-row" style="display:flex; gap:12px;">
-                    <div style="flex:1;">
-                        <label class="fla-label">Horário de Envio</label>
-                        <input type="time" id="fl-disp-time" class="ps-input" value="10:00">
-                    </div>
-                    <div style="flex:1;">
-                        <label class="fla-label">Disparo Imediato</label>
-                        <label class="fl-check-pill"
-                            style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--holo-surface, #0f1624); border-radius:8px; border:1px solid var(--holo-border, #27364d); margin-top:2px; cursor:pointer;">
-                            <input type="checkbox" id="fl-disp-immediate"
-                                style="cursor:pointer; width:16px; height:16px; accent-color:#00a884;">
-                            <span style="font-size:0.75rem; font-weight:700; color:#e9edef;">Iniciar Agora</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
         </div>
-        <footer class="fla-editor-footer"
-            style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid var(--holo-border, #27364d);">
-            <button type="button" class="btn-retro btn-secondary-retro" id="fl-disp-cancel">CANCELAR</button>
-            <button type="button" class="btn-retro" id="fl-disp-submit"
-                style="background:#00a884; color:#111b21; font-weight:900; border:none; padding:8px 18px;">
-                <i class="fas fa-paper-plane"></i> CONFIRMAR E AGENDAR
-            </button>
-        </footer>
+
+        <!-- FOOTER NEO-BRUTALIST -->
+        <div class="fl-sched-foot">
+            <div class="fl-foot-right">
+                <button type="button" class="btn-retro fl-btn-cancel" id="fl-disp-cancel">Cancelar</button>
+                <button type="button" class="btn-retro fl-btn-submit" id="fl-disp-submit">
+                    <i class="fas fa-bolt"></i> DISPARAR AGORA
+                </button>
+            </div>
+        </div>
     </div>
 </div>

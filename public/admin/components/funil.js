@@ -693,6 +693,97 @@ export async function init() {
     const dispModal = document.getElementById('fl-dispatch-modal');
     const createCampBtn = document.getElementById('fl-btn-create-campaign');
 
+    function updateFlLivePreview() {
+        const msgArea = document.getElementById('fl-disp-message');
+        const previewEl = document.getElementById('flLivePreviewMessage');
+        const countEl = document.getElementById('flCharCount');
+        const timeEl = document.getElementById('flLiveMsgTime');
+
+        const text = msgArea ? msgArea.value : '';
+        if (countEl) countEl.textContent = `${text.length} carac.`;
+
+        if (timeEl) {
+            const now = new Date();
+            timeEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        if (!previewEl) return;
+        if (!text.trim()) {
+            previewEl.textContent = 'Digite sua mensagem para visualizar a prévia aqui...';
+            previewEl.style.color = '#94a3b8';
+            previewEl.style.fontStyle = 'italic';
+            return;
+        }
+        previewEl.style.color = '#111827';
+        previewEl.style.fontStyle = 'normal';
+
+        const selectedLeads = currentStageLeads.filter(l => selectedLeadIds.has(l.id));
+        const sample = selectedLeads[0] || {};
+        const sampleName = (sample.name || 'Maria Silva').split(' ')[0];
+        const sampleCity = sample.city || 'Curitiba';
+        const samplePhone = sample.phone || '(41) 99999-0000';
+
+        let rendered = escapeHtml(text)
+            .replace(/\{nome\}/gi, `<strong style="color:#059669; background:#dcfce7; padding:0 3px; border-radius:3px;">${escapeHtml(sampleName)}</strong>`)
+            .replace(/\{cidade\}/gi, `<strong style="color:#0284c7; background:#e0f2fe; padding:0 3px; border-radius:3px;">${escapeHtml(sampleCity)}</strong>`)
+            .replace(/\{telefone\}/gi, `<strong style="color:#7c3aed; background:#ede9fe; padding:0 3px; border-radius:3px;">${escapeHtml(samplePhone)}</strong>`)
+            .replace(/\n/g, '<br>');
+
+        previewEl.innerHTML = rendered;
+    }
+
+    function setFlDispatchMode(mode) {
+        const btnNow = document.getElementById('flBtnModeNow');
+        const btnSched = document.getElementById('flBtnModeSchedule');
+        const timeBox = document.getElementById('flScheduleTimeBox');
+        const immCheck = document.getElementById('fl-disp-immediate');
+        const submitBtn = document.getElementById('fl-disp-submit');
+
+        const isNow = (mode === 'now');
+        if (btnNow) btnNow.classList.toggle('active', isNow);
+        if (btnSched) btnSched.classList.toggle('active', !isNow);
+        if (timeBox) timeBox.style.display = isNow ? 'none' : 'block';
+        if (immCheck) immCheck.checked = isNow;
+
+        if (submitBtn) {
+            const count = selectedLeadIds.size || 0;
+            submitBtn.innerHTML = isNow
+                ? `<i class="fas fa-bolt"></i> DISPARAR ${count ? count + ' ' : ''}MENSAGENS AGORA`
+                : `<i class="far fa-calendar-check"></i> CONFIRMAR AGENDAMENTO (${count})`;
+        }
+    }
+
+    document.getElementById('flBtnModeNow')?.addEventListener('click', () => setFlDispatchMode('now'));
+    document.getElementById('flBtnModeSchedule')?.addEventListener('click', () => setFlDispatchMode('schedule'));
+
+    // Chips de horário rápido
+    document.querySelectorAll('.fl-hour-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const h = chip.getAttribute('data-h');
+            const timeInput = document.getElementById('fl-disp-time');
+            if (timeInput && h) timeInput.value = h;
+            document.querySelectorAll('.fl-hour-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        });
+    });
+
+    // Inserir variáveis/tags rápidas
+    document.querySelectorAll('.fl-tag-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tag = btn.getAttribute('data-tag');
+            const msgArea = document.getElementById('fl-disp-message');
+            if (!msgArea || !tag) return;
+            const start = msgArea.selectionStart || msgArea.value.length;
+            const end = msgArea.selectionEnd || msgArea.value.length;
+            msgArea.value = msgArea.value.substring(0, start) + tag + msgArea.value.substring(end);
+            msgArea.focus();
+            msgArea.selectionStart = msgArea.selectionEnd = start + tag.length;
+            updateFlLivePreview();
+        });
+    });
+
+    document.getElementById('fl-disp-message')?.addEventListener('input', updateFlLivePreview);
+
     createCampBtn?.addEventListener('click', async () => {
         if (!selectedLeadIds.size) {
             toast('Selecione ao menos um lead para criar o disparo!', 'err');
@@ -708,19 +799,32 @@ export async function init() {
         const countSpan = document.getElementById('fl-disp-target-count');
         if (countSpan) countSpan.textContent = selectedLeadIds.size;
 
+        const durBadge = document.getElementById('flDispDurationMin');
+        if (durBadge) {
+            durBadge.textContent = Math.max(1, Math.ceil(selectedLeadIds.size * 0.4));
+        }
+
+        const selectedLeads = currentStageLeads.filter(l => selectedLeadIds.has(l.id));
+
         const summaryBox = document.getElementById('fl-disp-targets-summary');
         if (summaryBox) {
-            const selectedLeads = currentStageLeads.filter(l => selectedLeadIds.has(l.id));
             summaryBox.innerHTML = selectedLeads.map(l => `
                 <span class="fl-disp-target-chip"><i class="fas fa-user"></i> ${escapeHtml(l.name)} (${escapeHtml(l.phone)})</span>
             `).join('');
+        }
+
+        // Configura contato de demonstração no preview do WhatsApp
+        const sampleLead = selectedLeads[0] || { name: 'Maria Silva' };
+        const phoneNameEl = document.getElementById('flLivePreviewContactName');
+        if (phoneNameEl) {
+            phoneNameEl.textContent = sampleLead.name || 'Maria Silva';
         }
 
         // Carrega templates comerciais disponíveis
         try {
             const tmplSelect = document.getElementById('fl-disp-template');
             if (tmplSelect) {
-                tmplSelect.innerHTML = '<option value="">Digitar mensagem personalizada...</option>' +
+                tmplSelect.innerHTML = '<option value="">✨ Escolher Modelo Comercial Pronto...</option>' +
                     templates.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
             }
         } catch (e) {}
@@ -730,15 +834,18 @@ export async function init() {
             msgArea.value = `Olá {nome}! Tudo bem? Sou da Prime Sul e temos condições exclusivas de crédito pré-aprovadas para você. Vamos conversar?`;
         }
 
+        setFlDispatchMode('now');
+        updateFlLivePreview();
+
         if (dispModal) {
             dispModal.style.display = 'flex';
             const shell = document.getElementById('fl-dispatch-shell');
             if (shell) {
                 runAnime({
                     targets: shell,
-                    scale: [0.92, 1],
+                    scale: [0.94, 1],
                     opacity: [0, 1],
-                    duration: 320,
+                    duration: 250,
                     easing: 'easeOutCubic'
                 });
             }
@@ -754,6 +861,7 @@ export async function init() {
         const found = templates.find(t => String(t.id) === String(tmplId));
         if (found) {
             msgArea.value = found.content || found.message || '';
+            updateFlLivePreview();
         }
     });
 
@@ -765,7 +873,7 @@ export async function init() {
                 targets: shell,
                 scale: [1, 0.95],
                 opacity: [1, 0],
-                duration: 200,
+                duration: 180,
                 easing: 'easeInQuad',
                 complete: () => {
                     dispModal.style.display = 'none';
