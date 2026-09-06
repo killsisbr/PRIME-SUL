@@ -46,6 +46,18 @@ router.patch('/numbers/:id', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Remove número cadastrado
+router.delete('/numbers/:id', async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        const row = await db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?' + (req.user.role === 'admin' ? '' : ' AND seller_id = ?'),
+            req.user.role === 'admin' ? [id, req.user.organization_id] : [id, req.user.organization_id, req.user.id]);
+        if (!row) return res.status(404).json({ error: 'Número não encontrado' });
+        await db.run('DELETE FROM bot_numbers WHERE id = ?', [id]);
+        res.json({ ok: true, message: 'Número removido com sucesso' });
+    } catch (e) { next(e); }
+});
+
 // Estimativa de leads que a campanha atingiria com os filtros informados
 router.post('/targets/count', async (req, res, next) => {
     try {

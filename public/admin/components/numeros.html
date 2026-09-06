@@ -1,33 +1,71 @@
-<div class="fiscal-container" style="padding: 12px; font-family: var(--font-body);">
-    <h1 class="v2-title" style="display: none;">NÚMEROS ANTI-BAN</h1>
-
-    <div class="ps-head">
-        <div>
-            <div class="ps-head-title"><i class="fas fa-shield-halved" style="color: var(--bad);"></i> NÚMEROS DESCARTÁVEIS</div>
-            <p class="ps-head-desc">Os números descartáveis são usados pelo bot principal para o primeiro contato. Ao atingir o limite diário, o número entra em resfriamento (cooldown) para evitar banimento.</p>
+<div class="num-wrapper">
+    <!-- BARRA DE KPIS ANTI-BAN -->
+    <div class="num-kpi-bar">
+        <div class="num-kpi kpi-active">
+            <div class="num-kpi-icon"><i class="fas fa-circle-check"></i></div>
+            <div class="num-kpi-data">
+                <strong id="numKpiAtivos">0</strong>
+                <span>CHIPS ATIVOS</span>
+            </div>
+        </div>
+        <div class="num-kpi kpi-cooling">
+            <div class="num-kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="num-kpi-data">
+                <strong id="numKpiCooling">0</strong>
+                <span>RESFRIANDO</span>
+            </div>
+        </div>
+        <div class="num-kpi kpi-banned">
+            <div class="num-kpi-icon"><i class="fas fa-ban"></i></div>
+            <div class="num-kpi-data">
+                <strong id="numKpiBanidos">0</strong>
+                <span>BANIDOS</span>
+            </div>
+        </div>
+        <div class="num-kpi kpi-msgs">
+            <div class="num-kpi-icon"><i class="fas fa-paper-plane"></i></div>
+            <div class="num-kpi-data">
+                <strong id="numKpiMsgs">0</strong>
+                <span>ENVIOS HOJE</span>
+            </div>
         </div>
     </div>
 
-    <div class="ps-alert ps-alert-warn">
-        <i class="fas fa-triangle-exclamation"></i>
-        <div><strong>Como funciona</strong><span class="ps-alert-sub">O número enviou muitas mensagens e caiu? Marque como banido para retirá-lo de circulação imediatamente.</span></div>
-    </div>
-
-    <div class="ps-alert ps-alert-info">
-        <i class="fas fa-circle-info"></i>
-        <div><strong>Para que serve este painel</strong><span class="ps-alert-sub">Aqui você vê a saúde de cada número, entende quem está em cooldown e decide quando reativar ou isolar um slot.</span></div>
-    </div>
-
-    <div class="ps-card">
-        <div class="ps-card-title"><i class="fas fa-phone"></i> Cadastrar novo número</div>
-        <div class="ps-grid-add">
-            <div class="ps-field"><label for="numNumber">Número (com DDI 55)</label><input type="text" class="ps-input" id="numNumber" placeholder="5511999991234"></div>
-            <div class="ps-field"><label for="numLabel">Rótulo</label><input type="text" class="ps-input" id="numLabel" placeholder="bot-01"></div>
-            <button class="btn-retro" onclick="addNumber()"><i class="fas fa-plus"></i> ADICIONAR</button>
+    <!-- CADASTRO RÁPIDO -->
+    <div class="num-card-add">
+        <div class="num-card-header">
+            <div class="num-card-title">
+                <i class="fas fa-plus-circle" style="color:var(--primary);"></i>
+                <span>CADASTRAR NOVO CHIP DE DISPARO</span>
+            </div>
+            <span class="num-card-hint"><i class="fas fa-shield-halved"></i> Proteção anti-ban ativa</span>
         </div>
+        <form class="num-add-form" onsubmit="event.preventDefault(); addNumber();">
+            <div class="num-field">
+                <label for="numNumber"><i class="fas fa-phone"></i> Telefone com DDD (DDI 55)</label>
+                <input type="text" id="numNumber" class="ps-input" placeholder="Ex: 5541999991234" autocomplete="off" autofocus>
+            </div>
+            <div class="num-field">
+                <label for="numLabel"><i class="fas fa-tag"></i> Identificação / Rótulo</label>
+                <input type="text" id="numLabel" class="ps-input" placeholder="Ex: Chip 01 - Principal" autocomplete="off">
+            </div>
+            <button type="submit" class="btn-retro num-btn-submit">
+                <i class="fas fa-plus"></i> ADICIONAR CHIP
+            </button>
+        </form>
+    </div>
 
-        <div id="numbersList">
-            <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando números...</div>
+    <!-- LISTA DE CHIPS CADASTRADOS -->
+    <div class="num-list-section">
+        <div class="num-list-header">
+            <div class="num-list-title">
+                <i class="fas fa-list-check" style="color:var(--primary);"></i>
+                <span>CHIPS EM OPERAÇÃO</span>
+            </div>
+            <span class="num-count-tag" id="numTotalTag">CARREGANDO...</span>
+        </div>
+        <div id="numbersList" class="num-list-container">
+            <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando chips...</div>
         </div>
     </div>
 </div>

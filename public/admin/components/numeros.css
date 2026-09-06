@@ -1,0 +1,377 @@
+/* ==========================================================================
+   PRIME SUL — NÚMEROS DESCARTÁVEIS & ANTI-BAN (PREMIUM NEO-BRUTALISTA)
+   ========================================================================== */
+
+.num-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 4px;
+    font-family: var(--font-body, 'Outfit', sans-serif);
+    color: var(--dark, #181716);
+}
+
+/* --- KPI BAR --- */
+.num-kpi-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+.num-kpi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--card-bg, #ffffff);
+    border: 2.5px solid var(--dark, #181716);
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 var(--dark, #181716);
+}
+.num-kpi-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 2px solid var(--dark, #181716);
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.kpi-active .num-kpi-icon { background: #dcfce7; color: #16a34a; }
+.kpi-cooling .num-kpi-icon { background: #fef9c3; color: #ca8a04; }
+.kpi-banned .num-kpi-icon { background: #fee2e2; color: #dc2626; }
+.kpi-msgs .num-kpi-icon { background: #e0f2fe; color: var(--primary, #0284c7); }
+
+.num-kpi-data {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.num-kpi-data strong {
+    font-family: var(--font-title, 'Bebas Neue', sans-serif);
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--dark, #181716);
+}
+.num-kpi-data span {
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #64748b);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- CARD DE CADASTRO --- */
+.num-card-add {
+    background: var(--card-bg, #ffffff);
+    border: 2.5px solid var(--dark, #181716);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 4px 4px 0 var(--dark, #181716);
+}
+.num-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.num-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-title, 'Bebas Neue', sans-serif);
+    font-size: 1.35rem;
+    letter-spacing: 0.5px;
+    color: var(--dark, #181716);
+}
+.num-card-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1.5px solid var(--dark, #181716);
+    border-radius: 999px;
+    background: #f0fdf4;
+    color: #16a34a;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}
+
+.num-add-form {
+    display: grid;
+    grid-template-columns: 1.3fr 1.1fr auto;
+    gap: 12px;
+    align-items: flex-end;
+}
+.num-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.num-field label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--dark, #181716);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.num-field .ps-input {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: 2.5px solid var(--dark, #181716);
+    border-radius: 10px;
+}
+.num-btn-submit {
+    height: 44px;
+    padding: 0 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent, #facc15) !important;
+    color: var(--dark, #181716) !important;
+    border: 2.5px solid var(--dark, #181716) !important;
+    border-radius: 10px !important;
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    box-shadow: 3px 3px 0 var(--dark, #181716);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.num-btn-submit:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--dark, #181716);
+}
+
+/* --- LISTA DE CHIPS --- */
+.num-list-section {
+    background: var(--card-bg, #ffffff);
+    border: 2.5px solid var(--dark, #181716);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 4px 4px 0 var(--dark, #181716);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 220px;
+}
+.num-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 2px dashed #e2e8f0;
+}
+.num-list-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-title, 'Bebas Neue', sans-serif);
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+    color: var(--dark, #181716);
+}
+.num-count-tag {
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: var(--text-muted, #64748b);
+    letter-spacing: 0.6px;
+}
+
+.num-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* ITEM CARD */
+.num-row-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--bg, #f8fafc);
+    border: 2px solid var(--dark, #181716);
+    border-radius: 12px;
+    box-shadow: 2.5px 2.5px 0 var(--dark, #181716);
+    transition: transform 0.15s ease;
+}
+.num-row-card:hover {
+    transform: translateY(-1px);
+    border-color: var(--primary, #0284c7);
+}
+
+.num-row-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+.num-chip-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 2px solid var(--dark, #181716);
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.num-chip-badge.st-ativo { background: #dcfce7; color: #16a34a; }
+.num-chip-badge.st-resfriado { background: #fef9c3; color: #ca8a04; }
+.num-chip-badge.st-banido { background: #fee2e2; color: #dc2626; }
+
+.num-row-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.num-row-phone {
+    font-family: var(--font-title, 'Bebas Neue', sans-serif);
+    font-size: 1.35rem;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    color: var(--dark, #181716);
+}
+.num-row-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted, #64748b);
+}
+.num-meta-label {
+    background: #fff;
+    border: 1.5px solid var(--dark, #181716);
+    padding: 1px 7px;
+    border-radius: 6px;
+    color: var(--dark, #181716);
+    font-weight: 800;
+}
+
+.num-row-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 140px;
+}
+.num-msgs-count {
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: var(--dark, #181716);
+}
+.num-msgs-count b {
+    color: var(--primary, #0284c7);
+}
+.num-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--dark, #181716);
+}
+.num-bar-fill {
+    height: 100%;
+    background: #16a34a;
+    transition: width 0.3s ease;
+}
+
+.num-row-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.num-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border: 1.5px solid var(--dark, #181716);
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+.num-status-pill.st-ativo { background: #dcfce7; color: #15803d; }
+.num-status-pill.st-resfriado { background: #fef9c3; color: #a16207; }
+.num-status-pill.st-banido { background: #fee2e2; color: #b91c1c; }
+.num-status-pill .pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.num-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.num-act-btn {
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid var(--dark, #181716);
+    border-radius: 8px;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    font-size: 0.78rem;
+    color: var(--dark, #181716);
+    transition: all 0.15s ease;
+}
+.num-act-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 2px 2px 0 var(--dark, #181716);
+}
+.num-act-btn.btn-reset:hover { background: #dcfce7; color: #15803d; }
+.num-act-btn.btn-ban:hover { background: #fef9c3; color: #a16207; }
+.num-act-btn.btn-del:hover { background: #fee2e2; color: #b91c1c; }
+
+/* EMPTY STATE */
+.num-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted, #64748b);
+}
+.num-empty-state i {
+    font-size: 2.2rem;
+    color: var(--primary, #0284c7);
+}
+.num-empty-state strong {
+    font-size: 0.95rem;
+    color: var(--dark, #181716);
+}
+.num-empty-state span {
+    font-size: 0.74rem;
+}
+
+@media (max-width: 768px) {
+    .num-kpi-bar { grid-template-columns: repeat(2, 1fr); }
+    .num-add-form { grid-template-columns: 1fr; }
+    .num-row-card { flex-direction: column; align-items: stretch; gap: 10px; }
+    .num-row-right { justify-content: space-between; }
+}

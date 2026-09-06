@@ -272,7 +272,7 @@
         });
 
         // ================= DYNAMIC MODAL =================
-        const COMPONENTS_WITH_CSS = ['hub', 'funil', 'leads', 'bots', 'timeline', 'marketing', 'campanhas', 'config', 'templates', 'disparo'];
+        const COMPONENTS_WITH_CSS = ['hub', 'funil', 'leads', 'bots', 'timeline', 'marketing', 'campanhas', 'config', 'templates', 'disparo', 'numeros'];
         let activeComponent = null;
         let activeModule = null;
         let _isOpening = false;
@@ -315,6 +315,23 @@
                 const htmlText = await htmlRes.text();
                 body.innerHTML = htmlText;
                 titleEl.textContent = title.toUpperCase();
+                titleEl.style.display = 'block';
+
+                const iconMap = {
+                    numeros: 'fa-shield-halved',
+                    disparo: 'fa-paper-plane',
+                    bots: 'fa-comments',
+                    leads: 'fa-address-book',
+                    funil: 'fa-filter',
+                    templates: 'fa-file-lines',
+                    vendedores: 'fa-user-tie',
+                    config: 'fa-cog'
+                };
+                const orbit = document.querySelector('.dynamic-modal-orbit');
+                if (orbit) {
+                    const iconName = iconMap[componentName] || 'fa-bolt';
+                    orbit.innerHTML = `<i class="fas ${iconName}"></i>`;
+                }
                 
                 const modalHeader = document.querySelector('.dynamic-modal-header');
                 if (body.querySelector('.v2-hide-header')) {
@@ -322,9 +339,6 @@
                 } else {
                     modalHeader.style.display = 'flex';
                 }
-
-                if (body.querySelector('.v2-title')) titleEl.style.display = 'none';
-                else titleEl.style.display = 'block';
 
                 let module = null;
                 try {
