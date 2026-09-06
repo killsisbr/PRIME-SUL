@@ -408,6 +408,14 @@ export async function init() {
 
         checkTimeCollision(totalDurationMin);
 
+        if (activeTargets.length) {
+            const first = activeTargets[0];
+            const nameEl = document.getElementById('dpLivePreviewContactName');
+            if (nameEl) nameEl.textContent = first.name || 'Maria Silva';
+        }
+        updateLivePreview();
+        updateSubmitBtnText();
+
         if (!activeTargets.length) {
             container.innerHTML = '<div class="dp-loading"><i class="fas fa-triangle-exclamation"></i> Nenhum lead disponível! Todos os leads desta etapa já foram agendados em outros disparos.</div>';
             return;
@@ -425,10 +433,10 @@ export async function init() {
                 <span class="dp-lead-stage-pill">${esc((l.status || 'NOVO').toUpperCase())}</span>
                 <div class="dp-lead-actions-group">
                     <button type="button" class="dp-lead-act-btn sub" data-action="sub" data-id="${l.id}" title="Substituir por outro lead da fila">
-                        <i class="fas fa-rotate"></i> Substituir
+                        <i class="fas fa-rotate"></i>
                     </button>
                     <button type="button" class="dp-lead-act-btn del" data-action="del" data-id="${l.id}" title="Remover lead do disparo">
-                        <i class="fas fa-trash"></i> Remover
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>`).join('');
@@ -502,7 +510,6 @@ export async function init() {
         const titleEl = document.getElementById('dpSchedModalTitle');
         const msgArea = document.getElementById('dpSchedMessage');
         const delBtn = document.getElementById('dpSchedDeleteBtn');
-        const submitBtn = document.getElementById('dpSchedSubmitBtn');
         const rangeInput = document.getElementById('dpSchedRange');
 
         deselectedLeadIds.clear();
@@ -529,12 +536,12 @@ export async function init() {
             });
 
             if (delBtn) delBtn.style.display = 'inline-flex';
-            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> SALVAR ALTERAÇÕES';
+            setDispatchMode('schedule');
         } else {
             if (idInput) idInput.value = '';
-            if (titleEl) titleEl.textContent = 'AGENDAR NOVO DISPARO COMERCIAL';
+            if (titleEl) titleEl.textContent = 'DISPARAR MENSAGENS NO WHATSAPP';
             if (timeInput) timeInput.value = initialTimeStr;
-            if (msgArea) msgArea.value = '';
+            if (msgArea) msgArea.value = 'Olá {nome}! Vi que solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
             
             selectedQuantity = 10;
             if (rangeInput) rangeInput.value = 10;
@@ -544,23 +551,25 @@ export async function init() {
             });
 
             if (delBtn) delBtn.style.display = 'none';
-            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> CONFIRMAR AGENDAMENTO';
+            setDispatchMode('now');
         }
 
         document.querySelectorAll('.dp-stage-cb').forEach(cb => {
             const isSelected = cb.value === targetStage;
             cb.checked = isSelected;
-            cb.parentElement.classList.toggle('active', isSelected);
+            cb.closest('.dp-stage-pill')?.classList.toggle('active', isSelected);
         });
 
         const tmplSelect = document.getElementById('dpSchedTemplateSelect');
         if (tmplSelect) {
-            tmplSelect.innerHTML = '<option value="">Escolher Template Comercial Pronto...</option>' +
+            tmplSelect.innerHTML = '<option value="">Escolher Modelo Comercial Pronto...</option>' +
                 templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
         }
 
         modal.style.display = 'flex';
         await loadLeadsForSchedule();
+        updateLivePreview();
+        updateSubmitBtnText();
     }
 
     function closeScheduleModal() {
@@ -763,6 +772,114 @@ export async function init() {
         };
     });
 
+    // ================= ENRIQUECIMENTO MODAL DE DISPARO =================
+    let _dispatchMode = 'now'; // 'now' | 'schedule'
+
+    function setDispatchMode(mode) {
+        _dispatchMode = mode;
+        const btnModeNow = document.getElementById('dpBtnModeNow');
+        const btnModeSched = document.getElementById('dpBtnModeSchedule');
+        const timeBox = document.getElementById('dpScheduleTimeBox');
+
+        if (btnModeNow) btnModeNow.classList.toggle('active', mode === 'now');
+        if (btnModeSched) btnModeSched.classList.toggle('active', mode === 'schedule');
+        if (timeBox) timeBox.style.display = (mode === 'schedule') ? 'block' : 'none';
+        updateSubmitBtnText();
+    }
+
+    function updateSubmitBtnText() {
+        const submitBtn = document.getElementById('dpSchedSubmitBtn');
+        const campaignId = document.getElementById('dpSchedCampaignId')?.value;
+        if (!submitBtn) return;
+        if (campaignId) {
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> SALVAR ALTERAÇÕES';
+            return;
+        }
+        if (_dispatchMode === 'now') {
+            submitBtn.innerHTML = `<i class="fas fa-bolt"></i> DISPARAR ${selectedQuantity} MENSAGENS AGORA`;
+        } else {
+            submitBtn.innerHTML = `<i class="fas fa-calendar-check"></i> CONFIRMAR AGENDAMENTO (${selectedQuantity} LEADS)`;
+        }
+    }
+
+    function updateLivePreview() {
+        const msgArea = document.getElementById('dpSchedMessage');
+        const previewEl = document.getElementById('dpLivePreviewMessage');
+        const charCountEl = document.getElementById('dpCharCount');
+        const contactNameEl = document.getElementById('dpLivePreviewContactName');
+        const msgTimeEl = document.getElementById('dpLiveMsgTime');
+
+        const raw = (msgArea?.value || '').trim() || 'Olá {nome}! Vi que você solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
+        
+        if (charCountEl) {
+            charCountEl.textContent = `${(msgArea?.value || '').length} carac.`;
+        }
+
+        const firstLead = (typeof allLeads !== 'undefined' && allLeads.length) ? allLeads[0] : null;
+        const firstName = firstLead?.name ? firstLead.name.split(' ')[0] : 'Maria';
+        const fullName = firstLead?.name || 'Maria Silva';
+        const city = firstLead?.city || 'Porto Alegre';
+        const renda = firstLead?.renda ? `R$ ${Number(firstLead.renda).toLocaleString('pt-BR')}` : 'R$ 3.500';
+
+        if (contactNameEl) {
+            contactNameEl.textContent = fullName;
+        }
+
+        let rendered = raw
+            .replace(/\{nome\}/gi, firstName)
+            .replace(/\{cidade\}/gi, city)
+            .replace(/\{renda\}/gi, renda);
+
+        if (previewEl) {
+            previewEl.innerHTML = esc(rendered).replace(/\n/g, '<br>');
+        }
+
+        if (msgTimeEl) {
+            const d = new Date();
+            msgTimeEl.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+    }
+
+    window.insertTmplVar = function(v) {
+        const msgArea = document.getElementById('dpSchedMessage');
+        if (!msgArea) return;
+        const start = msgArea.selectionStart || msgArea.value.length;
+        const end = msgArea.selectionEnd || msgArea.value.length;
+        const text = msgArea.value;
+        msgArea.value = text.substring(0, start) + v + text.substring(end);
+        msgArea.selectionStart = msgArea.selectionEnd = start + v.length;
+        msgArea.focus();
+        updateLivePreview();
+    };
+
+    document.getElementById('dpBtnModeNow')?.addEventListener('click', () => setDispatchMode('now'));
+    document.getElementById('dpBtnModeSchedule')?.addEventListener('click', () => setDispatchMode('schedule'));
+
+    document.querySelectorAll('.dp-hour-chip').forEach(btn => {
+        btn.onclick = () => {
+            const t = document.getElementById('dpSchedTime');
+            if (t) {
+                t.value = btn.dataset.h;
+                renderSchedTargetLeads();
+            }
+        };
+    });
+
+    document.querySelectorAll('.dp-tag-btn').forEach(btn => {
+        btn.onclick = () => window.insertTmplVar(btn.dataset.tag);
+    });
+
+    document.getElementById('dpQueueToggleBtn')?.addEventListener('click', () => {
+        const g = document.getElementById('dpSchedTargetGrid');
+        const arr = document.getElementById('dpQueueArrow');
+        if (!g) return;
+        const isHidden = g.style.display === 'none';
+        g.style.display = isHidden ? 'flex' : 'none';
+        if (arr) arr.innerHTML = isHidden ? '<i class="fas fa-chevron-up"></i>' : '<i class="fas fa-chevron-down"></i>';
+    });
+
+    document.getElementById('dpSchedMessage')?.addEventListener('input', updateLivePreview);
+
     // Mudança no horário ou cadência -> Recalcula colisão
     document.getElementById('dpSchedTime')?.addEventListener('change', () => renderSchedTargetLeads());
     document.getElementById('dpSchedCadence')?.addEventListener('change', () => renderSchedTargetLeads());
@@ -772,7 +889,10 @@ export async function init() {
         const tmplId = e.target.value;
         const t = templates.find(x => String(x.id) === String(tmplId));
         const msgArea = document.getElementById('dpSchedMessage');
-        if (t && msgArea) msgArea.value = t.body || t.text || '';
+        if (t && msgArea) {
+            msgArea.value = t.body || t.text || '';
+            updateLivePreview();
+        }
     });
 
     // Submissão do agendamento (Criação ou Edição)
@@ -797,18 +917,6 @@ export async function init() {
         if (submitBtn) submitBtn.disabled = true;
 
         try {
-            // Calcula a data exata com base no dia da semana selecionado
-            const now = new Date();
-            const currentDay = now.getDay();
-            let distance = selectedDay - currentDay;
-            if (distance < 0) distance += 7; // Se o dia já passou nesta semana, agenda para a próxima
-            
-            const targetDate = new Date();
-            targetDate.setDate(now.getDate() + distance);
-            
-            const dateStr = targetDate.toISOString().slice(0, 10);
-            const schedAt = `${dateStr} ${timeVal}:00`;
-
             if (campaignId) {
                 await api(`/campaigns/${campaignId}`, {
                     method: 'PUT',
@@ -819,19 +927,51 @@ export async function init() {
                 });
                 toast('Disparo atualizado com sucesso!', 'ok');
             } else {
-                const body = {
-                    name: `Disparo Comercial (${activeTargets.length} leads - ${timeVal})`,
-                    message: msgVal,
-                    lead_ids: activeTargets.map(l => l.id),
-                    filters: { status: getSelectedStages(), limit: selectedQuantity },
-                    scheduled_at: schedAt
-                };
+                if (_dispatchMode === 'now') {
+                    // Disparo imediato: cria e dispara imediatamente na fila
+                    const body = {
+                        name: `Disparo Imediato (${activeTargets.length} leads)`,
+                        message: msgVal,
+                        lead_ids: activeTargets.map(l => l.id),
+                        filters: { status: getSelectedStages(), limit: selectedQuantity },
+                        scheduled_at: null
+                    };
 
-                await api('/campaigns', {
-                    method: 'POST',
-                    body: JSON.stringify(body)
-                });
-                toast(`Disparo de ${activeTargets.length} leads agendado para ${timeVal} com sucesso!`, 'ok');
+                    const fresh = await api('/campaigns', {
+                        method: 'POST',
+                        body: JSON.stringify(body)
+                    });
+
+                    // Inicia imediatamente
+                    await api(`/campaigns/${fresh.id}/start`, { method: 'POST' }).catch(() => {});
+                    toast(`🚀 Disparo de ${activeTargets.length} leads iniciado agora com sucesso!`, 'ok');
+                } else {
+                    // Disparo agendado para horário futuro
+                    const now = new Date();
+                    const currentDay = now.getDay();
+                    let distance = selectedDay - currentDay;
+                    if (distance < 0) distance += 7;
+                    
+                    const targetDate = new Date();
+                    targetDate.setDate(now.getDate() + distance);
+                    
+                    const dateStr = targetDate.toISOString().slice(0, 10);
+                    const schedAt = `${dateStr} ${timeVal}:00`;
+
+                    const body = {
+                        name: `Disparo Agendado (${activeTargets.length} leads - ${timeVal})`,
+                        message: msgVal,
+                        lead_ids: activeTargets.map(l => l.id),
+                        filters: { status: getSelectedStages(), limit: selectedQuantity },
+                        scheduled_at: schedAt
+                    };
+
+                    await api('/campaigns', {
+                        method: 'POST',
+                        body: JSON.stringify(body)
+                    });
+                    toast(`🕒 Disparo de ${activeTargets.length} leads agendado para ${timeVal} com sucesso!`, 'ok');
+                }
             }
 
             closeScheduleModal();
@@ -926,4 +1066,6 @@ export async function init() {
     return {};
 }
 
-export async function destroy() {}
+export async function destroy() {
+    window.insertTmplVar = undefined;
+}

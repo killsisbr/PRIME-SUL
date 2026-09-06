@@ -109,124 +109,238 @@
     </div>
 </div>
 
-<!-- ============ SUBMODAL: COCKPIT DARK/NEON MODERN POPUP AGENDAMENTO ============ -->
+<!-- ============ SUBMODAL: DISPARO COMERCIAL (NOVO DESIGN ENRIQUECIDO & SEM CONFUSÃO) ============ -->
 <div class="v2-submodal-overlay" id="dpScheduleModal" style="display:none; z-index:13400;">
-    <div class="v2-submodal dp-cockpit-modal">
-        <!-- HEADER COCKPIT HIGH-TECH -->
-        <div class="dp-cockpit-header">
-            <div class="dp-cockpit-header-left">
-                <span class="dp-cockpit-eyebrow"><span class="dp-pulse-dot"></span> CENTRO DE COMANDO • PROTEÇÃO ANTI-BAN & FILTRO 7 DIAS</span>
-                <h3 id="dpSchedModalTitle"><i class="fas fa-rocket" style="color:#10b981;"></i> AGENDAR NOVO DISPARO COMERCIAL</h3>
+    <div class="v2-submodal dp-sched-modal-pro">
+        <!-- HEADER NEO-BRUTALIST -->
+        <div class="dp-sched-head">
+            <div class="dp-sched-head-info">
+                <span class="dp-sched-eyebrow"><i class="fas fa-shield-halved"></i> PROTEÇÃO ANTI-BAN • ROTAÇÃO INTELIGENTE DE CHIPS</span>
+                <h3 id="dpSchedModalTitle"><i class="fas fa-paper-plane" style="color:var(--primary, #0284c7);"></i> DISPARAR MENSAGENS COMERCIAIS</h3>
             </div>
-            <button type="button" class="dp-cockpit-close-btn" id="dp-btn-close-sched-modal"><i class="fas fa-times"></i></button>
+            <div class="dp-sched-head-actions">
+                <button type="button" class="dp-sched-close-btn" id="dp-btn-close-sched-modal" title="Fechar (ESC)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
 
-        <div class="dp-cockpit-body">
+        <div class="dp-sched-body">
             <!-- ALERTA DE COLISÃO DE HORÁRIO -->
-            <div class="dp-cockpit-collision-alert" id="dpCollisionAlert" style="display:none;">
+            <div class="dp-sched-collision-alert" id="dpCollisionAlert" style="display:none;">
                 <i class="fas fa-triangle-exclamation"></i>
                 <div>
                     <strong>HORÁRIO INDISPONÍVEL PARA AGENDAMENTO!</strong>
-                    <span id="dpCollisionText">Já existe outro disparo agendado nesse intervalo. Escolha outro horário para evitar banimento!</span>
+                    <span id="dpCollisionText">Já existe outro disparo agendado nesse intervalo. Escolha outro horário para evitar colisão!</span>
                 </div>
             </div>
 
-            <form id="dpSchedForm" class="dp-cockpit-grid-form">
+            <form id="dpSchedForm" class="dp-sched-grid">
                 <input type="hidden" id="dpSchedCampaignId" value="">
 
-                <!-- COLUNA ESQUERDA: PARÂMETROS E MENSAGEM -->
-                <div class="dp-cockpit-col-left">
-                    <!-- CARD 1: HORÁRIO E CADÊNCIA -->
-                    <div class="dp-cockpit-card">
-                        <div class="dp-card-head"><i class="fas fa-sliders" style="color:#6366f1;"></i> CONFIGURAÇÕES DO ENVIO</div>
-                        <div class="dp-cockpit-row2">
-                            <div class="dp-field-group">
-                                <label><i class="far fa-clock"></i> Horário Comercial *</label>
-                                <div class="dp-input-icon-wrap">
-                                    <input type="time" class="dp-cockpit-input" id="dpSchedTime" required min="08:00" max="18:00" value="10:00">
-                                </div>
-                            </div>
-                            <div class="dp-field-group">
-                                <label><i class="fas fa-tachometer-alt"></i> Cadência Anti-Ban *</label>
-                                <select class="dp-cockpit-select" id="dpSchedCadence">
-                                    <option value="15">⚡ 15 segundos / lead (Rápido)</option>
-                                    <option value="30" selected>🛡️ 30 segundos / lead (Recomendado)</option>
-                                    <option value="45">🐢 45 segundos / lead (Conservador)</option>
-                                </select>
-                            </div>
+                <!-- COLUNA 1: PÚBLICO E QUANTIDADE -->
+                <div class="dp-sched-col dp-col-audience">
+                    <div class="dp-panel-card">
+                        <div class="dp-panel-title">
+                            <span class="step-badge">1</span>
+                            <span>QUEM VAI RECEBER?</span>
                         </div>
-                    </div>
 
-                    <!-- CARD 2: MENSAGEM & TEMPLATES -->
-                    <div class="dp-cockpit-card flex-1">
-                        <div class="dp-card-head"><i class="fas fa-comment-dots" style="color:#10b981;"></i> CONTEÚDO DA MENSAGEM</div>
-                        <div class="dp-field-group">
-                            <label><i class="fas fa-wand-magic-sparkles"></i> Template Comercial Pronto</label>
-                            <select class="dp-cockpit-select" id="dpSchedTemplateSelect">
-                                <option value="">✨ Escolher Template Comercial Pronto...</option>
-                            </select>
-                        </div>
-                        <div class="dp-field-group margin-top-8">
-                            <label><i class="fas fa-pen-to-square"></i> Mensagem Personalizada *</label>
-                            <textarea class="dp-cockpit-textarea" id="dpSchedMessage" rows="3" required placeholder="Olá {nome}! Vi que solicitou uma simulação de crédito. Posso te enviar os valores agora?"></textarea>
-                        </div>
-                        <div class="dp-tag-helper-strip">
-                            <span>Inserir Variável:</span>
-                            <span class="dp-tag-chip" onclick="insertTmplVar('{nome}')">{nome}</span>
-                            <span class="dp-tag-chip" onclick="insertTmplVar('{cidade}')">{cidade}</span>
-                            <span class="dp-tag-chip" onclick="insertTmplVar('{renda}')">{renda}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- COLUNA DIREITA: ALVOS E SEGMENTAÇÃO -->
-                <div class="dp-cockpit-col-right">
-                    <div class="dp-cockpit-card flex-1">
-                        <div class="dp-card-head-split">
-                            <div class="dp-card-head"><i class="fas fa-bullseye" style="color:#f59e0b;"></i> SEGMENTAÇÃO DE LEADS ALVO</div>
-                            <div class="dp-cockpit-badge-group">
-                                <span class="dp-cockpit-live-count"><b id="dpSchedCountVal">10</b> LEADS</span>
-                                <span class="dp-cockpit-duration" id="dpSchedDurationBadge"><i class="fas fa-stopwatch"></i> ~5 MIN</span>
+                        <!-- ETAPAS DO FUNIL -->
+                        <div class="dp-field-box">
+                            <label class="dp-field-lbl">Etapa do Lead no Funil:</label>
+                            <div class="dp-stages-pills">
+                                <label class="dp-stage-pill active">
+                                    <input type="checkbox" class="dp-stage-cb" value="novo" checked>
+                                    <span class="pill-dot"></span>
+                                    <span>Novos Leads</span>
+                                </label>
+                                <label class="dp-stage-pill">
+                                    <input type="checkbox" class="dp-stage-cb" value="contato">
+                                    <span class="pill-dot"></span>
+                                    <span>Em Contato</span>
+                                </label>
+                                <label class="dp-stage-pill">
+                                    <input type="checkbox" class="dp-stage-cb" value="confirmado">
+                                    <span class="pill-dot"></span>
+                                    <span>Confirmados</span>
+                                </label>
                             </div>
                         </div>
 
-                        <!-- CONTROLE DE QUANTIDADE SLIDER & CHIPS -->
-                        <div class="dp-cockpit-slider-box">
-                            <input type="range" class="dp-cockpit-range-slider" id="dpSchedRange" min="1" max="100" value="10">
-                            <div class="dp-cockpit-preset-row">
+                        <!-- QUANTIDADE DE DISPAROS -->
+                        <div class="dp-field-box">
+                            <div class="dp-qty-header">
+                                <label class="dp-field-lbl">Quantos leads enviar?</label>
+                                <span class="dp-qty-live-tag"><b id="dpSchedCountVal">10</b> LEADS</span>
+                            </div>
+
+                            <div class="dp-presets-grid">
                                 <button type="button" class="dp-preset-btn" data-val="5">5</button>
                                 <button type="button" class="dp-preset-btn active" data-val="10">10</button>
                                 <button type="button" class="dp-preset-btn" data-val="25">25</button>
                                 <button type="button" class="dp-preset-btn" data-val="50">50</button>
                                 <button type="button" class="dp-preset-btn" data-val="100">100 MAX</button>
                             </div>
-                        </div>
 
-                        <!-- CHIPS DE FILTRO DE ETAPAS -->
-                        <div class="dp-cockpit-filter-strip">
-                            <span>ETAPAS:</span>
-                            <div class="dp-cockpit-stage-chips">
-                                <label class="dp-stage-chip-neon active"><input type="checkbox" class="dp-stage-cb" value="novo" checked> NOVO</label>
-                                <label class="dp-stage-chip-neon"><input type="checkbox" class="dp-stage-cb" value="contato"> EM CONTATO</label>
-                                <label class="dp-stage-chip-neon"><input type="checkbox" class="dp-stage-cb" value="confirmado"> CONFIRMADO</label>
+                            <input type="range" class="dp-range-slider" id="dpSchedRange" min="1" max="100" value="10">
+
+                            <div class="dp-meta-summary-bar">
+                                <span id="dpSchedDurationBadge"><i class="fas fa-stopwatch"></i> Duração estimada: ~5 min</span>
                             </div>
                         </div>
 
-                        <!-- LISTA DE LEADS SELECIONADOS COM AÇÕES DE REMOVER E SUBSTITUIR -->
-                        <div class="dp-cockpit-leads-scroll" id="dpSchedTargetGrid">
-                            <div class="dp-loading"><i class="fas fa-spinner fa-spin"></i> Carregando alvos...</div>
+                        <!-- QUANDO DISPARAR (AGORA OU AGENDAR) -->
+                        <div class="dp-field-box">
+                            <label class="dp-field-lbl">Momento do Envio:</label>
+                            <div class="dp-timing-mode-switch">
+                                <button type="button" class="dp-time-mode-btn active" id="dpBtnModeNow">
+                                    <i class="fas fa-bolt"></i> DISPARAR AGORA
+                                </button>
+                                <button type="button" class="dp-time-mode-btn" id="dpBtnModeSchedule">
+                                    <i class="far fa-clock"></i> AGENDAR HORÁRIO
+                                </button>
+                            </div>
+
+                            <div class="dp-schedule-time-box" id="dpScheduleTimeBox" style="display:none;">
+                                <div class="dp-time-input-row">
+                                    <input type="time" class="ps-input dp-time-input" id="dpSchedTime" min="08:00" max="19:00" value="10:00">
+                                    <div class="dp-quick-hours">
+                                        <button type="button" class="dp-hour-chip" data-h="10:00">10:00</button>
+                                        <button type="button" class="dp-hour-chip" data-h="14:30">14:30</button>
+                                        <button type="button" class="dp-hour-chip" data-h="16:00">16:00</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cadência mantida para o backend / algoritmo de cálculo -->
+                            <select class="dp-cadence-select-hidden" id="dpSchedCadence" style="display:none;">
+                                <option value="15">15s</option>
+                                <option value="30" selected>30s</option>
+                                <option value="45">45s</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUNA 2: MENSAGEM & MODELOS -->
+                <div class="dp-sched-col dp-col-message">
+                    <div class="dp-panel-card">
+                        <div class="dp-panel-title">
+                            <span class="step-badge">2</span>
+                            <span>QUAL A MENSAGEM?</span>
+                        </div>
+
+                        <!-- TEMPLATE SELECTOR -->
+                        <div class="dp-field-box">
+                            <label class="dp-field-lbl"><i class="fas fa-wand-magic-sparkles" style="color:#eab308;"></i> Usar Modelo Pronto:</label>
+                            <select class="ps-select dp-template-select" id="dpSchedTemplateSelect">
+                                <option value="">✨ Escolher Modelo Comercial Pronto...</option>
+                            </select>
+                        </div>
+
+                        <!-- TEXTAREA DA MENSAGEM -->
+                        <div class="dp-field-box flex-1">
+                            <div class="dp-msg-lbl-row">
+                                <label class="dp-field-lbl"><i class="fas fa-pen-to-square"></i> Texto que o cliente vai ler:</label>
+                                <span class="dp-char-count" id="dpCharCount">0 carac.</span>
+                            </div>
+                            <textarea class="ps-textarea dp-msg-textarea" id="dpSchedMessage" rows="5" required placeholder="Olá {nome}! Vi que você pediu uma simulação de crédito. Posso te enviar as propostas agora?"></textarea>
+                            
+                            <!-- VARIÁVEIS RÁPIDAS -->
+                            <div class="dp-tags-row">
+                                <span class="dp-tags-label">Inserir no texto:</span>
+                                <button type="button" class="dp-tag-btn" data-tag="{nome}">+ {nome}</button>
+                                <button type="button" class="dp-tag-btn" data-tag="{cidade}">+ {cidade}</button>
+                                <button type="button" class="dp-tag-btn" data-tag="{renda}">+ {renda}</button>
+                            </div>
+                        </div>
+
+                        <!-- INFO ANTI-BAN -->
+                        <div class="dp-antiban-notice">
+                            <i class="fas fa-shield-halved"></i>
+                            <div>
+                                <strong>Blindagem Anti-Ban Ativa</strong>
+                                <span>Os disparos são espaçados em 30s e revezam automaticamente entre os seus chips conectados.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUNA 3: PRÉVIA REAL DO WHATSAPP + DESTINATÁRIOS -->
+                <div class="dp-sched-col dp-col-preview">
+                    <div class="dp-panel-card dp-preview-card">
+                        <div class="dp-panel-title">
+                            <span class="step-badge">3</span>
+                            <span>COMO O CLIENTE VÊ</span>
+                        </div>
+
+                        <!-- PHONE WHATSAPP MOCKUP -->
+                        <div class="dp-wa-phone-frame">
+                            <div class="dp-wa-phone-bar">
+                                <div class="dp-wa-phone-notch"></div>
+                            </div>
+                            <div class="dp-wa-phone-header">
+                                <div class="dp-wa-phone-back"><i class="fas fa-arrow-left"></i></div>
+                                <div class="dp-wa-phone-av"><i class="fas fa-user"></i></div>
+                                <div class="dp-wa-phone-meta">
+                                    <span class="dp-wa-phone-name" id="dpLivePreviewContactName">Maria Silva</span>
+                                    <small class="dp-wa-phone-status">online agora</small>
+                                </div>
+                                <div class="dp-wa-phone-actions">
+                                    <i class="fas fa-video"></i>
+                                    <i class="fas fa-phone"></i>
+                                    <i class="fas fa-ellipsis-vertical"></i>
+                                </div>
+                            </div>
+
+                            <div class="dp-wa-phone-chat" id="dpLiveChatArea">
+                                <div class="dp-wa-msg-date"><span>HOJE</span></div>
+                                <div class="dp-wa-bubble">
+                                    <div class="dp-wa-bubble-text" id="dpLivePreviewMessage">
+                                        Olá Maria! Vi que você pediu uma simulação de crédito. Posso te enviar os valores agora?
+                                    </div>
+                                    <div class="dp-wa-bubble-meta">
+                                        <span id="dpLiveMsgTime">14:32</span>
+                                        <i class="fas fa-check-double" style="color:#53bdeb;"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dp-wa-phone-bottom">
+                                <i class="far fa-face-smile"></i>
+                                <div class="dp-wa-fake-input">Mensagem</div>
+                                <i class="fas fa-paperclip"></i>
+                                <div class="dp-wa-mic-btn"><i class="fas fa-microphone"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE LEADS QUEUE -->
+                        <div class="dp-leads-queue-box">
+                            <div class="dp-queue-header" id="dpQueueToggleBtn">
+                                <span><i class="fas fa-users"></i> Ver destinatários na fila</span>
+                                <span class="dp-queue-arrow" id="dpQueueArrow"><i class="fas fa-chevron-down"></i></span>
+                            </div>
+                            <div class="dp-leads-list-drawer" id="dpSchedTargetGrid" style="display:none;">
+                                <div class="dp-loading"><i class="fas fa-spinner fa-spin"></i> Carregando alvos...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </form>
         </div>
 
-        <!-- FOOTER COCKPIT -->
-        <div class="dp-cockpit-footer">
-            <button type="button" class="dp-cockpit-btn danger" id="dpSchedDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Excluir Disparo</button>
-            <div style="margin-left:auto; display:flex; gap:10px;">
-                <button type="button" class="dp-cockpit-btn secondary" id="dpSchedCancelBtn">Cancelar</button>
-                <button type="submit" form="dpSchedForm" class="dp-cockpit-btn primary" id="dpSchedSubmitBtn"><i class="fas fa-paper-plane"></i> CONFIRMAR AGENDAMENTO</button>
+        <!-- FOOTER NEO-BRUTALIST -->
+        <div class="dp-sched-foot">
+            <button type="button" class="btn-retro dp-btn-del" id="dpSchedDeleteBtn" style="display:none;">
+                <i class="fas fa-trash-can"></i> Excluir Disparo
+            </button>
+
+            <div class="dp-foot-right">
+                <button type="button" class="btn-retro dp-btn-cancel" id="dpSchedCancelBtn">Cancelar</button>
+                <button type="submit" form="dpSchedForm" class="btn-retro dp-btn-submit" id="dpSchedSubmitBtn">
+                    <i class="fas fa-bolt"></i> DISPARAR 10 MENSAGENS AGORA
+                </button>
             </div>
         </div>
     </div>
