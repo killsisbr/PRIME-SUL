@@ -1,5 +1,5 @@
 <div class="num-wrapper">
-    <!-- BARRA DE KPIS ANTI-BAN -->
+    <!-- BARRA DE KPIS ANTI-BAN & WHATSAPP -->
     <div class="num-kpi-bar">
         <div class="num-kpi kpi-active">
             <div class="num-kpi-icon"><i class="fas fa-circle-check"></i></div>
@@ -8,18 +8,18 @@
                 <span>CHIPS ATIVOS</span>
             </div>
         </div>
+        <div class="num-kpi kpi-wa">
+            <div class="num-kpi-icon"><i class="fab fa-whatsapp"></i></div>
+            <div class="num-kpi-data">
+                <strong id="numKpiWaConectados">0</strong>
+                <span>WHATSAPP CONECTADOS</span>
+            </div>
+        </div>
         <div class="num-kpi kpi-cooling">
             <div class="num-kpi-icon"><i class="fas fa-hourglass-half"></i></div>
             <div class="num-kpi-data">
                 <strong id="numKpiCooling">0</strong>
                 <span>RESFRIANDO</span>
-            </div>
-        </div>
-        <div class="num-kpi kpi-banned">
-            <div class="num-kpi-icon"><i class="fas fa-ban"></i></div>
-            <div class="num-kpi-data">
-                <strong id="numKpiBanidos">0</strong>
-                <span>BANIDOS</span>
             </div>
         </div>
         <div class="num-kpi kpi-msgs">
@@ -49,8 +49,8 @@
                 <label for="numLabel"><i class="fas fa-tag"></i> Identificação / Rótulo</label>
                 <input type="text" id="numLabel" class="ps-input" placeholder="Ex: Chip 01 - Principal" autocomplete="off">
             </div>
-            <button type="submit" class="btn-retro num-btn-submit">
-                <i class="fas fa-plus"></i> ADICIONAR CHIP
+            <button type="submit" class="btn-retro num-btn-submit" id="numSubmitBtn">
+                <i class="fas fa-plus"></i> ADICIONAR E CONECTAR
             </button>
         </form>
     </div>
@@ -66,6 +66,47 @@
         </div>
         <div id="numbersList" class="num-list-container">
             <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando chips...</div>
+        </div>
+    </div>
+
+    <!-- SUBMODAL QR CODE SCAN -->
+    <div class="num-qr-overlay" id="numQrModal" style="display:none;">
+        <div class="num-qr-box">
+            <div class="num-qr-head">
+                <div class="num-qr-title">
+                    <i class="fab fa-whatsapp" style="color:#25d366; font-size:1.4rem;"></i>
+                    <span>CONECTAR WHATSAPP AO CHIP</span>
+                </div>
+                <button type="button" class="num-qr-close" onclick="closeQrModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="num-qr-body">
+                <div class="num-qr-chip-info">
+                    <div class="num-qr-phone" id="numQrPhone">—</div>
+                    <div class="num-qr-meta" id="numQrLabel">Chip de Disparo</div>
+                </div>
+
+                <div class="num-qr-screen" id="numQrScreen">
+                    <div class="num-qr-spinner" id="numQrSpinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Gerando QR Code...</span>
+                    </div>
+                    <img id="numQrImg" src="" alt="QR Code WhatsApp" style="display:none;">
+                    <div id="numQrSuccess" class="num-qr-success" style="display:none;">
+                        <i class="fas fa-circle-check"></i>
+                        <strong>WhatsApp Conectado!</strong>
+                        <span>O chip está pronto para uso nos disparos.</span>
+                    </div>
+                </div>
+
+                <div class="num-qr-instructions">
+                    <div class="num-qr-step"><span class="step-num">1</span> Abra o <b>WhatsApp</b> no celular</div>
+                    <div class="num-qr-step"><span class="step-num">2</span> Toque em <b>Aparelhos conectados</b></div>
+                    <div class="num-qr-step"><span class="step-num">3</span> Aponte a câmera para o <b>QR Code</b></div>
+                </div>
+            </div>
+            <div class="num-qr-foot">
+                <button type="button" class="btn-retro num-qr-cancel-btn" onclick="closeQrModal()">FECHAR</button>
+            </div>
         </div>
     </div>
 </div>

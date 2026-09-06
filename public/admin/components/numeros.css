@@ -345,6 +345,8 @@
 .num-act-btn.btn-reset:hover { background: #dcfce7; color: #15803d; }
 .num-act-btn.btn-ban:hover { background: #fef9c3; color: #a16207; }
 .num-act-btn.btn-del:hover { background: #fee2e2; color: #b91c1c; }
+.num-act-btn.btn-disconnect { color: #dc2626; }
+.num-act-btn.btn-disconnect:hover { background: #fee2e2; color: #991b1b; }
 
 /* EMPTY STATE */
 .num-empty-state {
@@ -374,4 +376,235 @@
     .num-add-form { grid-template-columns: 1fr; }
     .num-row-card { flex-direction: column; align-items: stretch; gap: 10px; }
     .num-row-right { justify-content: space-between; }
+}
+
+/* --- WHATSAPP CONNECTION & QR CODE SUBMODAL --- */
+.kpi-wa .num-kpi-icon { background: #dcfce7; color: #16a34a; }
+
+.num-wa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 850;
+    border: 1.5px solid var(--dark, #181716);
+    background: #fff;
+}
+.num-wa-badge.wa-connected { background: #dcfce7; color: #15803d; border-color: #15803d; }
+.num-wa-badge.wa-connecting { background: #fef9c3; color: #a16207; border-color: #a16207; animation: pulseGlow 1.5s infinite; }
+.num-wa-badge.wa-offline { background: #f1f5f9; color: #64748b; border-color: #94a3b8; }
+
+@keyframes pulseGlow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+.num-btn-connect {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1.5px solid var(--dark, #181716);
+    border-radius: 8px;
+    background: #25d366;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--dark, #181716);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.num-btn-connect:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--dark, #181716);
+    background: #22c55e;
+}
+.num-btn-connect.is-connecting {
+    background: #eab308;
+    color: #181716;
+}
+
+/* SUBMODAL QR CODE */
+.num-qr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 13500;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: psmIn 0.2s cubic-bezier(.16, 1, .3, 1);
+}
+.num-qr-box {
+    width: min(440px, 94vw);
+    background: var(--card-bg, #ffffff);
+    border: 3px solid var(--dark, #181716);
+    border-radius: 20px;
+    box-shadow: 8px 8px 0 var(--dark, #181716);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.num-qr-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--paper, #faf6f0);
+    border-bottom: 2.5px solid var(--dark, #181716);
+}
+.num-qr-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-title, 'Bebas Neue', sans-serif);
+    font-size: 1.35rem;
+    letter-spacing: 0.5px;
+    color: var(--dark, #181716);
+}
+.num-qr-close {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--dark, #181716);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+}
+.num-qr-close:hover {
+    background: var(--bad, #ef4444);
+    color: #fff;
+}
+
+.num-qr-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    background: var(--card-bg, #ffffff);
+}
+.num-qr-chip-info {
+    text-align: center;
+}
+.num-qr-phone {
+    font-family: var(--font-title, 'Bebas Neue', sans-serif);
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--dark, #181716);
+    letter-spacing: 0.5px;
+}
+.num-qr-meta {
+    margin-top: 3px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted, #64748b);
+}
+
+.num-qr-screen {
+    width: 250px;
+    height: 250px;
+    border: 2.5px solid var(--dark, #181716);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 4px 4px 0 var(--dark, #181716);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    overflow: hidden;
+    position: relative;
+}
+.num-qr-screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+.num-qr-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted, #64748b);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+.num-qr-spinner i {
+    font-size: 2rem;
+    color: var(--primary, #0284c7);
+}
+.num-qr-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    color: #16a34a;
+}
+.num-qr-success i {
+    font-size: 3rem;
+}
+.num-qr-success strong {
+    font-size: 1.1rem;
+    color: var(--dark, #181716);
+}
+.num-qr-success span {
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+}
+
+.num-qr-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    background: var(--bg, #f8fafc);
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+.num-qr-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--dark, #181716);
+}
+.step-num {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--dark, #181716);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.num-qr-foot {
+    padding: 12px 18px;
+    background: var(--paper, #faf6f0);
+    border-top: 2px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+}
+.num-qr-cancel-btn {
+    padding: 8px 18px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    border: 2px solid var(--dark, #181716);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
 }
