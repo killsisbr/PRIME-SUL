@@ -26,7 +26,7 @@ function cleanTags(v) {
 }
 
 async function triggerStageAutomation(lead, status, sellerId) {
-    if (!lead || !['novo', 'contato'].includes(status)) return;
+    if (!lead || !['novos', 'enviados'].includes(status)) return;
     try {
         const cfg = await stageConfig.get(status, sellerId, lead.organization_id || 1);
         if (cfg.auto_send && cfg.message) {
@@ -91,7 +91,7 @@ async function createLead({ seller_id, organization_id = 1, name, phone, phone2,
 
     const score = scoreService.computeScore({
         name: name.trim(), city, origem: origem.toUpperCase(), limite_est,
-        renda, valor_desejado, prioridade, status: 'novo'
+        renda, valor_desejado, prioridade, status: 'novos'
     });
     const result = await db.run(
         `INSERT INTO leads (organization_id, seller_id, name, phone, phone2, phone3, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
@@ -266,7 +266,7 @@ async function updateLead(id, seller_id, fields) {
 }
 
 async function updateStatus(id, seller_id, status) {
-    const allowed = ['novo', 'contato', 'confirmado', 'concluido', 'bloqueado', 'duplicado'];
+    const allowed = ['novos', 'enviados', 'sim', 'nao', 'bloqueado', 'duplicado'];
     if (!allowed.includes(status)) {
         const e = new Error('Status inválido');
         e.status = 400;
@@ -367,10 +367,10 @@ async function funnelBySeller(seller_id) {
     const row = await db.get(
         `SELECT
             (SELECT COUNT(*) FROM leads WHERE seller_id = ?) AS total,
-            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'novo') AS novo,
-            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'contato') AS contato,
-            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'confirmado') AS confirmado,
-            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'concluido') AS concluido,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'novos') AS novos,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'enviados') AS enviados,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'sim') AS sim,
+            (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'nao') AS nao,
             (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'bloqueado') AS bloqueado,
             (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND status = 'duplicado') AS duplicado,
             (SELECT COUNT(*) FROM leads WHERE seller_id = ? AND date(created_at) = date('now')) AS hoje
@@ -379,27 +379,27 @@ async function funnelBySeller(seller_id) {
     );
 
     const pipeline = {
-        novo: row.novo,
-        contato: row.contato,
-        confirmado: row.confirmado,
-        concluido: row.concluido
+        novos: row.novos,
+        enviados: row.enviados,
+        sim: row.sim,
+        nao: row.nao
     };
-    const total = row.novo + row.contato + row.confirmado + row.concluido;
+    const total = row.novos + row.enviados + row.sim + row.nao;
 
     const rate = (a, b) => (a > 0 ? Math.round((b / a) * 100) : 0);
     const conversoes = {
-        novo_contato: rate(pipeline.novo, pipeline.contato),
-        contato_confirmado: rate(pipeline.contato, pipeline.confirmado),
-        confirmado_concluido: rate(pipeline.confirmado, pipeline.concluido)
+        novos_enviados: rate(pipeline.novos, pipeline.enviados),
+        enviados_sim: rate(pipeline.enviados, pipeline.sim),
+        sim_ratio: rate(pipeline.enviados, pipeline.sim)
     };
 
     return {
         total,
         hoje: row.hoje,
-        descartados: row.bloqueado + row.duplicado,
+        descartados: row.bloqueado + row.duplicado + row.nao,
         stages: pipeline,
         conversoes,
-        taxa_global: total ? Math.round((pipeline.concluido / total) * 100) : 0,
+        taxa_global: total ? Math.round((pipeline.sim / total) * 100) : 0,
         ...await countsBySeller(seller_id)
     };
 }

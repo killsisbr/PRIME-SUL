@@ -45,9 +45,9 @@ function computeScore(lead) {
 
     // Estágio atual do funil
     switch ((lead.status || '').toLowerCase()) {
-        case 'concluido': s += 20; break;
-        case 'confirmado': s += 15; break;
-        case 'contato': s += 5; break;
+        case 'sim': s += 20; break;
+        case 'enviados': s += 5; break;
+        case 'nao':
         case 'bloqueado':
         case 'duplicado': s -= 5; break;
     }

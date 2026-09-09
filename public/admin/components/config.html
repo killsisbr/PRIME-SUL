@@ -53,6 +53,38 @@
     </div>
 
     <div class="cfg-tabpanel" data-cfg-panel="antiban" hidden>
+        <div class="ps-card" style="border-left: 6px solid var(--brand, #3b82f6); margin-bottom: 14px;">
+            <div class="ps-card-title" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                <span><i class="fas fa-toggle-on" style="color: var(--brand);"></i> Modo de Operação dos Números de Disparo</span>
+                <span id="cfgModeBadge" style="background:#10b981; color:#fff; font-weight:800; padding:4px 10px; border-radius:999px; font-size:0.75rem;">MODO HÍBRIDO (DESCARTÁVEL)</span>
+            </div>
+            <p class="ps-hint" style="margin-bottom: 12px;">Alterne entre o modo de triagem anti-ban descartável e o modo de disparo direto pelo número do próprio vendedor a qualquer momento.</p>
+
+            <div class="cfg-mode-options" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                <label class="cfg-mode-card active" id="cfgModeCardDisposable" style="border: 2.5px solid var(--dark); border-radius: 12px; padding: 14px; cursor: pointer; background: #f0fdf4; display: flex; flex-direction: column; gap: 8px; transition: all .15s ease;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 900; font-size: 0.95rem; color: #166534;"><i class="fas fa-shield-virus"></i> Modo Híbrido Anti-Ban (Descartável)</span>
+                        <input type="radio" name="cfg_dispatch_mode" value="true" id="cfgModeRadioDisposable" checked style="accent-color: #10b981; width: 18px; height: 18px; cursor:pointer;">
+                    </div>
+                    <p style="font-size: 0.8rem; line-height: 1.4; color: #374151; margin: 0;">
+                        <strong>Fluxo de Triagem:</strong> O vendedor cadastra o lead &rarr; O bot descartável dispara o contato inicial &rarr; Quando o cliente responde <strong>"SIM"</strong>, o bot repassa ao vendedor via Handoff e libera o bot operacional do vendedor.
+                    </p>
+                    <span style="font-size: 0.72rem; font-weight: 800; color: #047857; margin-top: auto;">🛡️ Recomendado: Reduz risco de banimento nos números dos vendedores</span>
+                </label>
+
+                <label class="cfg-mode-card" id="cfgModeCardDirect" style="border: 2px solid #cbd5e1; border-radius: 12px; padding: 14px; cursor: pointer; background: #fff; display: flex; flex-direction: column; gap: 8px; transition: all .15s ease;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: 900; font-size: 0.95rem; color: #1e293b;"><i class="fas fa-bolt"></i> Modo Direto do Vendedor</span>
+                        <input type="radio" name="cfg_dispatch_mode" value="false" id="cfgModeRadioDirect" style="accent-color: #3b82f6; width: 18px; height: 18px; cursor:pointer;">
+                    </div>
+                    <p style="font-size: 0.8rem; line-height: 1.4; color: #475569; margin: 0;">
+                        <strong>Fluxo Direto:</strong> O vendedor cadastra o lead e já pode disparar <strong>imediatamente pelo seu próprio número de WhatsApp</strong> (conectado em Meu WhatsApp), sem passar pela triagem do bot descartável.
+                    </p>
+                    <span style="font-size: 0.72rem; font-weight: 800; color: #2563eb; margin-top: auto;">⚡ Contato imediato com a linha direta do operador</span>
+                </label>
+            </div>
+        </div>
+
         <div class="ps-card">
             <div class="ps-card-title"><i class="fas fa-shield-halved" style="color: var(--bad);"></i> Limites Anti-Ban</div>
             <div class="ps-grid-3">

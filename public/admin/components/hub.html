@@ -4,7 +4,14 @@
             <span class="hub-brand-icon"><i class="fas fa-rocket"></i></span>
             <div><span class="hub-eyebrow">CENTRAL DE CRESCIMENTO</span><h1>HUB DE DISPARO</h1><p>Estratégia anti-ban: alcance quente, banimento sob controle.</p></div>
         </div>
-        <span class="hub-live-badge" id="hub-live-badge"><i class="fas fa-circle"></i> DADOS AO VIVO</span>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-left:auto;">
+            <button type="button" id="btn-hub-toggle-mode" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border:2.5px solid var(--dark); border-radius:999px; background:#f0fdf4; font:900 0.72rem var(--font-body); cursor:pointer; box-shadow:2.5px 2.5px 0 var(--dark); transition:all .15s ease;" title="Clique para alternar entre Modo Descartável e Modo Direto">
+                <i class="fas fa-shield-virus" id="hub-mode-icon" style="color:#10b981;"></i>
+                <span id="hub-mode-label" style="color:#166534;">MODO: DESCARTÁVEL</span>
+                <span style="background:var(--dark); color:#fff; font-size:0.58rem; padding:2px 6px; border-radius:4px; letter-spacing:0.4px;">MUDAR</span>
+            </button>
+            <span class="hub-live-badge" id="hub-live-badge"><i class="fas fa-circle"></i> DADOS AO VIVO</span>
+        </div>
     </header>
 
     <main class="hub-console">

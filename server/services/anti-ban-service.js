@@ -58,27 +58,41 @@ async function registerSlot(organizationId, sellerId, slotIndex, label) {
     return db.get('SELECT * FROM bot_numbers WHERE organization_id = ? AND number = ?', [organizationId, number]);
 }
 
+async function isDisposableMode() {
+    const row = await db.get("SELECT value FROM settings WHERE key = 'cfg_disposable_bots_mode'");
+    return row ? row.value !== 'false' : true;
+}
+
 async function pickBestNumber(organizationId = 1, sellerId = null) {
     await ensureFresh();
     const limit = await currentLimit();
+    const disposable = await isDisposableMode();
+    const orderClause = disposable
+        ? '(CASE WHEN seller_id IS NULL THEN 0 ELSE 1 END), messages_sent ASC, id ASC'
+        : (sellerId ? '(CASE WHEN seller_id = ? THEN 0 ELSE 1 END), messages_sent ASC, id ASC' : 'messages_sent ASC, id ASC');
+    const orderParams = (!disposable && sellerId) ? [sellerId] : [];
+
     return db.get(`
         SELECT * FROM bot_numbers
         WHERE organization_id = ? AND status = 'ativo'
           AND (seller_id IS NULL OR seller_id = ?)
           AND messages_sent < COALESCE(daily_limit_override, ?)
-        ORDER BY messages_sent ASC, id ASC
+        ORDER BY ${orderClause}
         LIMIT 1
-    `, [organizationId, sellerId, limit]);
+    `, [organizationId, sellerId, limit, ...orderParams]);
 }
 
 // Escolhe o número menos usado e já incrementa o contador no mesmo UPDATE
-// (via subquery), evitando que duas chamadas concorrentes (campanha,
-// follow-up, handoff, todos no mesmo setInterval) escolham o mesmo número
-// antes de qualquer uma delas registrar o uso — o que estourava o limite
-// diário em silêncio antes do cooldown ser acionado.
+// (via subquery), respeitando o modo descartável vs direto
 async function reserveNumber(organizationId = 1, sellerId = null) {
     await ensureFresh();
     const limit = await currentLimit();
+    const disposable = await isDisposableMode();
+    const orderClause = disposable
+        ? '(CASE WHEN seller_id IS NULL THEN 0 ELSE 1 END), messages_sent ASC, id ASC'
+        : (sellerId ? '(CASE WHEN seller_id = ? THEN 0 ELSE 1 END), messages_sent ASC, id ASC' : 'messages_sent ASC, id ASC');
+    const orderParams = (!disposable && sellerId) ? [sellerId] : [];
+
     const n = await db.get(`
         UPDATE bot_numbers
         SET messages_sent = messages_sent + 1, messages_reset_at = date('now')
@@ -87,11 +101,11 @@ async function reserveNumber(organizationId = 1, sellerId = null) {
             WHERE organization_id = ? AND status = 'ativo'
               AND (seller_id IS NULL OR seller_id = ?)
               AND messages_sent < COALESCE(daily_limit_override, ?)
-            ORDER BY messages_sent ASC, id ASC
+            ORDER BY ${orderClause}
             LIMIT 1
         )
         RETURNING *
-    `, [organizationId, sellerId, limit]);
+    `, [organizationId, sellerId, limit, ...orderParams]);
     if (!n) return null;
 
     const effectiveLimit = n.daily_limit_override ?? limit;
@@ -162,7 +176,7 @@ async function setStatus(number_id, status, organizationId = 1, sellerId = undef
 
 // Mantido em sync com campaign-service.js#TARGETABLE_STATUSES
 async function shouldSend(lead) {
-    return ['novo', 'contato', 'confirmado', 'concluido'].includes(lead.status);
+    return ['novos', 'enviados', 'sim'].includes(lead.status);
 }
 
 module.exports = {

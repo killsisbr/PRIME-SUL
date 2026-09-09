@@ -32,8 +32,8 @@ async function saveForSeller(status, config, sellerId, organizationId = 1) {
         message: String(config.message || '').trim().slice(0, 4000),
         number_id: Number(config.number_id) || null
     };
-    if (clean.auto_send && !['novo', 'contato'].includes(status)) {
-        const e = new Error('Auto-disparo permitido somente nas etapas Novo ou Em contato'); e.status = 400; throw e;
+    if (clean.auto_send && !['novos', 'enviados'].includes(status)) {
+        const e = new Error('Auto-disparo permitido somente nas etapas Novos ou Enviados'); e.status = 400; throw e;
     }
     if (clean.auto_send && !clean.message) { const e = new Error('Mensagem obrigatória para ativar o auto-disparo'); e.status = 400; throw e; }
     if (clean.number_id) {

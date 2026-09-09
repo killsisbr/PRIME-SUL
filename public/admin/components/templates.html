@@ -19,21 +19,37 @@
 </div>
 
 <div class="v2-submodal-overlay" id="tpOverlay" style="display:none;">
-    <div class="v2-submodal" style="max-width:520px;">
+    <div class="v2-submodal" style="max-width:580px; width:94vw;">
         <div class="v2-submodal-header">
-            <div><h3>NOVO TEMPLATE</h3><p>Mensagem reutilizável pra usar na criação de campanhas</p></div>
+            <div>
+                <h3 id="tpModalTitle">NOVO TEMPLATE</h3>
+                <p id="tpModalSub">Mensagem reutilizável pra usar na criação de campanhas</p>
+            </div>
             <button type="button" class="btn-close-submodal" id="tp-close"><i class="fas fa-times"></i></button>
         </div>
         <div class="v2-submodal-body">
-            <div class="ps-field"><label for="tp-name">Nome do template</label><input type="text" class="ps-input" id="tp-name" placeholder="Ex: Abordagem inicial — crédito consignado"></div>
-            <div class="ps-field"><label for="tp-purpose">Finalidade</label>
+            <input type="hidden" id="tp-id" value="">
+            <div class="ps-field">
+                <label for="tp-name">Nome do template</label>
+                <input type="text" class="ps-input" id="tp-name" placeholder="Ex: Abordagem inicial — crédito consignado">
+            </div>
+            <div class="ps-field">
+                <label for="tp-purpose">Finalidade</label>
                 <select class="ps-select" id="tp-purpose">
                     <option value="screening">Triagem (usado em campanhas)</option>
                     <option value="handoff">Handoff (repasse ao vendedor)</option>
                     <option value="followup">Follow-up</option>
                 </select>
             </div>
-            <div class="ps-field"><label for="tp-body">Mensagem (usa {nome})</label><textarea class="ps-textarea" id="tp-body" rows="5" placeholder="Olá {nome}! ..."></textarea></div>
+            <div class="ps-field">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <label for="tp-body" style="margin:0;">Mensagem (usa {nome})</label>
+                    <button type="button" id="tp-insert-nome-btn" style="padding:2px 8px; font-size:0.65rem; border:1.5px solid var(--dark); border-radius:6px; background:var(--card-bg, #fff); font-weight:850; cursor:pointer;">
+                        + Inserir {nome}
+                    </button>
+                </div>
+                <textarea class="ps-textarea" id="tp-body" rows="6" placeholder="Olá {nome}! ..."></textarea>
+            </div>
             <label class="ps-toggle-row"><input type="checkbox" id="tp-shared" checked><label style="margin:0;">Compartilhado (visível pra todos os vendedores)</label></label>
             <button type="button" class="ps-btn-save" id="tp-save"><i class="fas fa-save"></i> SALVAR TEMPLATE</button>
         </div>

@@ -9,6 +9,11 @@ const botFlow = require('./services/bot-flow-service');
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 
+// Necessário quando atrás de reverse proxy (Nginx, Cloudflare) para req.ip correto
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
 app.disable('x-powered-by');
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -34,10 +39,12 @@ app.use('/api/handoffs', require('./routes/handoffs'));
 app.use('/api/templates', require('./routes/templates'));
 app.use('/api/sends', require('./routes/sends'));
 app.use('/api/public', require('./routes/public'));
+app.use('/api/copilot', require('./routes/copilot'));
 
-// TEMPORÁRIO — editor de site via IA (só admin). Ver server/routes/ai-editor.js
-// pra instruções de como remover isso depois.
-app.use('/api/ai-editor', require('./routes/ai-editor'));
+// TEMPORÁRIO — editor de site via IA (só admin). Desativado em produção.
+if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/ai-editor', require('./routes/ai-editor'));
+}
 
 // Imagens enviadas (status de marketing) — data/ fica fora do git, não junto do front estático
 app.use('/uploads', express.static(path.join(__dirname, '..', 'data', 'uploads')));
@@ -135,5 +142,15 @@ async function bootstrap() {
 
 bootstrap().catch((err) => {
     console.error('[fatal]', err);
+    process.exit(1);
+});
+
+// --- Handlers globais de erros não capturados ---
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[FATAL] unhandledRejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('[FATAL] uncaughtException:', err);
     process.exit(1);
 });

@@ -11,8 +11,8 @@ const followupService = require('../services/followup-service');
 const router = express.Router();
 router.use(auth);
 
-const ALL_STATUSES = ['novo', 'contato', 'confirmado', 'concluido', 'bloqueado', 'duplicado'];
-const MESSAGE_STATUSES = ['novo', 'contato'];
+const ALL_STATUSES = ['novos', 'enviados', 'sim', 'nao', 'bloqueado', 'duplicado'];
+const MESSAGE_STATUSES = ['novos', 'enviados'];
 const MANUAL_SEND_LIMIT = Number(process.env.MANUAL_SEND_LIMIT) || 6;
 const MANUAL_SEND_WINDOW_MS = Number(process.env.MANUAL_SEND_WINDOW_MS) || 60 * 1000;
 const operatorRateLimits = new Map();
@@ -101,7 +101,7 @@ router.post('/recalc', async (req, res, next) => {
         const rows = await db.all(
             `SELECT id FROM leads WHERE seller_id = ? AND status = ?
              ORDER BY id ASC${lim ? ' LIMIT ' + lim : ''}`,
-            [req.user.id, status || 'novo']
+            [req.user.id, status || 'novos']
         );
         if (!rows.length) return res.status(400).json({ error: 'Nenhum lead nessa coluna' });
         const job = await jobQueue.enqueue({
@@ -123,7 +123,7 @@ router.post('/move', async (req, res, next) => {
         const rows = await db.all(
             `SELECT id FROM leads WHERE seller_id = ? AND status = ?
              ORDER BY id ASC${lim ? ' LIMIT ' + lim : ''}`,
-            [req.user.id, status || 'novo']
+            [req.user.id, status || 'novos']
         );
         if (!rows.length) return res.status(400).json({ error: 'Nenhum lead nessa coluna' });
         const job = await jobQueue.enqueue({
@@ -140,7 +140,7 @@ router.post('/move', async (req, res, next) => {
 router.post('/send', async (req, res, next) => {
     try {
         const { status, message, limit, number_id } = req.body;
-        if (!MESSAGE_STATUSES.includes(status || 'novo')) return res.status(400).json({ error: 'Disparo automático permitido somente em Novo ou Em contato' });
+        if (!MESSAGE_STATUSES.includes(status || 'novos')) return res.status(400).json({ error: 'Disparo automático permitido somente em Novos ou Enviados' });
         if (!message || !message.trim()) return res.status(400).json({ error: 'Mensagem obrigatória' });
 
         const now = Date.now();
@@ -158,10 +158,10 @@ router.post('/send', async (req, res, next) => {
         const campaign = await campaignService.createCampaign({
             seller_id: req.user.id,
             organization_id: req.user.organization_id,
-            name: `[COLUNA ${String(status || 'novo').toUpperCase()}] Disparo manual`,
+            name: `[COLUNA ${String(status || 'novos').toUpperCase()}] Disparo manual`,
             message,
             number_ids: number_id ? [Number(number_id)] : [],
-            filters: { status: [status || 'novo'], limit: parseLimit(limit) || undefined }
+            filters: { status: [status || 'novos'], limit: parseLimit(limit) || undefined }
         });
         const started = await campaignService.startCampaign(campaign.id);
         res.status(201).json({ campaign, job_id: started.job_id, started: started.started });

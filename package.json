@@ -7,7 +7,7 @@
     "start": "node server/server.js",
     "dev": "node --watch server/server.js",
     "seed": "node server/database/seed.js",
-    "test": "node --test --test-concurrency=1",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
     "check": "node scripts/check.js"
   },
   "dependencies": {

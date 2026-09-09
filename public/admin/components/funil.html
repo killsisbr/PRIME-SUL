@@ -147,6 +147,13 @@
                 <option value="baixa">Baixa</option>
             </select>
             <span class="fl-crm-count-badge" id="fl-crm-total-count">0 leads no CRM</span>
+            <div class="fl-auto-dispatch-box" title="Auto-dispara o bot do vendedor assim que o cliente responder SIM na triagem fria">
+                <label class="fl-switch-compact">
+                    <input type="checkbox" id="fl-auto-handoff-toggle" checked>
+                    <span class="fl-slider-compact"></span>
+                </label>
+                <span class="fl-auto-dispatch-label"><i class="fas fa-bolt text-green"></i> Auto-disparo ao receber "SIM"</span>
+            </div>
             <button type="button" class="btn-retro" id="fl-btn-new-lead-crm"
                 style="padding:6px 14px; font-size:.76rem; background:#10b981; color:#fff; cursor:pointer; margin-left:auto;">
                 <i class="fas fa-plus"></i> NOVO LEAD
@@ -315,6 +322,9 @@
                 </div>
             </div>
             <div class="fl-client-header-actions">
+                <button type="button" class="fl-btn-seller-bot-header" id="fl-c-seller-bot-btn" style="display:none;" title="Disparar mensagem oficial pelo bot do vendedor agora">
+                    <i class="fas fa-robot"></i> DISPARAR MEU BOT
+                </button>
                 <button type="button" class="fl-wa-cta-btn" id="fl-c-wa-btn">
                     <i class="fab fa-whatsapp"></i> ABRIR WHATSAPP
                 </button>

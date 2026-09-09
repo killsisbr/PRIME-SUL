@@ -171,15 +171,47 @@ export async function init() {
             if (search) params.search = search;
             if (prio) params.prioridade = prio;
 
-            const leads = await api('/leads?' + new URLSearchParams(params));
+            const [leads, handoffsList, handoffConfig] = await Promise.all([
+                api('/leads?' + new URLSearchParams(params)),
+                api('/handoffs').catch(() => []),
+                api('/handoffs/config').catch(() => ({ auto_handoff: true }))
+            ]);
+
             const countEl = document.getElementById('fl-crm-total-count');
             if (countEl) countEl.textContent = `${leads.length} lead${leads.length !== 1 ? 's' : ''} no CRM`;
 
-            const grouped = { novo: [], contato: [], confirmado: [], concluido: [] };
+            // Mapeia status de handoff por lead_id
+            const handoffMap = new Map();
+            (handoffsList || []).forEach(h => {
+                if (!handoffMap.has(h.lead_id)) handoffMap.set(h.lead_id, h);
+            });
+
+            // Sincroniza o switch de auto-disparo do vendedor
+            const autoToggle = document.getElementById('fl-auto-handoff-toggle');
+            if (autoToggle) {
+                autoToggle.checked = !!handoffConfig.auto_handoff;
+                autoToggle.onchange = async () => {
+                    try {
+                        await api('/handoffs/config', {
+                            method: 'PUT',
+                            body: JSON.stringify({ auto_handoff: autoToggle.checked })
+                        });
+                        toast(`Auto-disparo do vendedor ${autoToggle.checked ? 'ativado' : 'desativado'}!`, 'ok');
+                    } catch (err) {
+                        toast('Erro ao alterar auto-disparo: ' + err.message, 'err');
+                        autoToggle.checked = !autoToggle.checked;
+                    }
+                };
+            }
+
+            const grouped = { novos: [], enviados: [], sim: [], nao: [] };
             leads.forEach(l => {
-                const st = (l.status || 'novo').toLowerCase();
+                let st = (l.status || 'novos').toLowerCase();
+                if (st === 'novo') st = 'novos';
+                if (st === 'contato') st = 'enviados';
+                if (st === 'confirmado' || st === 'concluido') st = 'sim';
                 if (grouped[st]) grouped[st].push(l);
-                else grouped.novo.push(l);
+                else grouped.novos.push(l);
             });
 
             const AV_COLORS = ['av-blue', 'av-orange', 'av-green', 'av-dark', 'av-yellow'];
@@ -196,8 +228,30 @@ export async function init() {
                     const prevStage = stageIdx > 0 ? STAGES[stageIdx - 1].key : null;
                     const nextStage = stageIdx < STAGES.length - 1 ? STAGES[stageIdx + 1].key : null;
 
+                    // Handoff badge para leads em SIM
+                    let handoffBadgeHtml = '';
+                    let sellerBotBtnHtml = '';
+                    if (s.key === 'sim') {
+                        const h = handoffMap.get(l.id);
+                        if (h && h.status === 'sent') {
+                            handoffBadgeHtml = `<span class="fl-handoff-pill sent" title="Contato oficial realizado"><i class="fas fa-check-double"></i> Vendedor Contatou</span>`;
+                        } else {
+                            handoffBadgeHtml = `<span class="fl-handoff-pill pending" title="Cliente respondeu SIM ao bot descartável!"><i class="fas fa-star"></i> ⭐ RETORNOU SIM</span>`;
+                            sellerBotBtnHtml = `
+                                <button type="button" class="fl-btn-seller-bot" data-lead-id="${l.id}" data-lead-name="${escapeHtml(l.name)}" title="Disparar mensagem oficial pelo bot do vendedor agora">
+                                    <i class="fas fa-robot"></i> DISPARAR MEU BOT
+                                </button>`;
+                        }
+                    }
+
+                    const cleanPhone = (l.phone || '').replace(/\D/g, '');
+                    const waLinkHtml = cleanPhone ? `
+                        <a href="https://wa.me/${cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone}" target="_blank" class="fl-btn-wa-link" onclick="event.stopPropagation();" title="Abrir conversa no WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>` : '';
+
                     return `
-                    <article class="fl-crm-card pri-${l.prioridade || 'media'}" data-id="${l.id}">
+                    <article class="fl-crm-card pri-${l.prioridade || 'media'} ${s.key === 'sim' ? 'is-qualified' : ''}" data-id="${l.id}">
                         <div class="fl-crm-card-top">
                             <span class="fl-client-av ${AV_COLORS[(l.id || 0) % AV_COLORS.length]}">${escapeHtml(init2)}</span>
                             <div class="fl-crm-card-main">
@@ -207,13 +261,16 @@ export async function init() {
                             <span class="fl-client-score ${scoreCls(l.score)}"><i class="fas fa-bolt"></i> ${score}</span>
                         </div>
                         <div class="fl-crm-card-chips">
+                            ${handoffBadgeHtml}
                             <span class="fl-chip origin">${escapeHtml(l.origem || '—')}</span>
                             ${limitChip}
                             ${l.city ? `<span class="fl-tag">${escapeHtml(l.city)}</span>` : ''}
                         </div>
+                        ${sellerBotBtnHtml}
                         <div class="fl-crm-card-actions">
                             ${prevStage ? `<button type="button" class="fl-crm-move-btn" data-move-to="${prevStage}" title="Recuar para ${prevStage.toUpperCase()}"><i class="fas fa-chevron-left"></i></button>` : '<span></span>'}
                             <button type="button" class="fl-btn-fiche"><i class="fas fa-id-card"></i> FICHA</button>
+                            ${waLinkHtml}
                             ${nextStage ? `<button type="button" class="fl-crm-move-btn" data-move-to="${nextStage}" title="Avançar para ${nextStage.toUpperCase()}"><i class="fas fa-chevron-right"></i></button>` : '<span></span>'}
                         </div>
                     </article>`;
@@ -242,8 +299,29 @@ export async function init() {
                 easing: 'easeOutQuad'
             });
 
-            // Handlers dos cards e movimentação no Kanban
+            // Handlers dos cards, botões de ação e movimentação no Kanban
             boardEl.querySelectorAll('.fl-crm-card').forEach(card => {
+                // Clique no botão Disparar Meu Bot
+                const sellerBotBtn = card.querySelector('.fl-btn-seller-bot');
+                if (sellerBotBtn) {
+                    sellerBotBtn.addEventListener('click', async e => {
+                        e.stopPropagation();
+                        const leadId = sellerBotBtn.dataset.leadId;
+                        const leadName = sellerBotBtn.dataset.leadName;
+                        sellerBotBtn.disabled = true;
+                        sellerBotBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> DISPARANDO...';
+                        try {
+                            const res = await api(`/handoffs/lead/${leadId}/send`, { method: 'POST' });
+                            toast(`✅ Bot do vendedor disparou com sucesso para ${leadName}!`, 'ok');
+                            await loadCrmKanban();
+                        } catch (err) {
+                            toast('Erro ao disparar: ' + err.message, 'err');
+                            sellerBotBtn.disabled = false;
+                            sellerBotBtn.innerHTML = '<i class="fas fa-robot"></i> DISPARAR MEU BOT';
+                        }
+                    });
+                }
+
                 card.addEventListener('click', e => {
                     const moveBtn = e.target.closest('[data-move-to]');
                     if (moveBtn) {
@@ -1123,6 +1201,34 @@ export async function init() {
             document.getElementById('fl-c-vendedor').textContent = lead.seller_name || 'Atribuído ao vendedor';
             document.getElementById('fl-c-obs').value = lead.obs || '';
             document.getElementById('fl-c-created-at').textContent = `Cadastrado em ${new Date(lead.created_at).toLocaleDateString('pt-BR')} (${relTime(lead.created_at)})`;
+
+            // Botão Disparar Meu Bot do Vendedor
+            const sellerBotHeaderBtn = document.getElementById('fl-c-seller-bot-btn');
+            if (sellerBotHeaderBtn) {
+                const isQualified = (lead.status === 'sim' || lead.status === 'confirmado');
+                sellerBotHeaderBtn.style.display = isQualified ? 'inline-flex' : 'none';
+                if (isQualified) {
+                    sellerBotHeaderBtn.onclick = async () => {
+                        sellerBotHeaderBtn.disabled = true;
+                        sellerBotHeaderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> DISPARANDO...';
+                        try {
+                            const res = await api(`/handoffs/lead/${lead.id}/send`, { method: 'POST' });
+                            toast(`✅ Bot do vendedor disparou com sucesso para ${lead.name}!`, 'ok');
+                            sellerBotHeaderBtn.innerHTML = '<i class="fas fa-check"></i> DISPARADO';
+                            setTimeout(() => {
+                                sellerBotHeaderBtn.disabled = false;
+                                sellerBotHeaderBtn.innerHTML = '<i class="fas fa-robot"></i> REENVIAR MEU BOT';
+                            }, 3000);
+                            await loadData();
+                            if (activeViewMode === 'crm') await loadCrmKanban();
+                        } catch (err) {
+                            toast('Erro ao disparar: ' + err.message, 'err');
+                            sellerBotHeaderBtn.disabled = false;
+                            sellerBotHeaderBtn.innerHTML = '<i class="fas fa-robot"></i> DISPARAR MEU BOT';
+                        }
+                    };
+                }
+            }
 
             // Botão WhatsApp (Abre popup flutuante emulado arrastável)
             document.getElementById('fl-c-wa-btn').onclick = () => {

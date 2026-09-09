@@ -97,9 +97,9 @@ router.get('/', async (req, res, next) => {
                 FROM sends
                 GROUP BY campaign_id
             ) s ON s.campaign_id = c.id
-            WHERE c.seller_id = ?
+            WHERE (c.organization_id = ? AND (? = 'admin' OR c.seller_id = ?))
             ORDER BY c.created_at DESC
-        `, [req.user.id]);
+        `, [req.user.organization_id, req.user.role, req.user.id]);
         res.json({
             campaigns: rows,
             config: {

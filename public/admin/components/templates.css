@@ -1,20 +1,90 @@
-#dynamicModalBody:has(.tp-root) { display: flex; flex-direction: column; min-height: 0; overflow: visible !important; padding: 18px !important; }
+/* ============ POPUP 99% DA TELA — TEMPLATES DE MENSAGEM ============ */
+#dynamicModalOverlay:has(.tp-root),
+#dynamicModalOverlay.is-templates {
+    padding: 0.5vh 0.5vw !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#dynamicModalOverlay:has(.tp-root) .hud-modal,
+#dynamicModalOverlay.is-templates .hud-modal,
+.hud-modal:has(.tp-root) {
+    width: 99vw !important;
+    max-width: 99vw !important;
+    height: 98.5vh !important;
+    max-height: 98.5vh !important;
+    margin: auto !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 6px 6px 0 var(--dark, #181716) !important;
+}
+
+#dynamicModalOverlay:has(.tp-root) #dynamicModalBody,
+#dynamicModalOverlay.is-templates #dynamicModalBody,
+#dynamicModalBody:has(.tp-root) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding: 16px 22px !important;
+}
+
 .tp-root { flex: 1; display: flex; flex-direction: column; gap: 14px; min-height: 0; font-family: var(--font-body); }
 
 .tp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.tp-stats > div { padding: 11px 14px; border: 3px solid var(--dark); border-radius: 13px; background: var(--card); box-shadow: var(--shadow-sm); }
-.tp-stats b { display: block; font: 1.8rem/1 var(--font-title); color: var(--primary); letter-spacing: .5px; }
-.tp-stats span { display: block; margin-top: 4px; color: var(--text-muted); font-size: .55rem; font-weight: 900; letter-spacing: .8px; }
+.tp-stats > div { padding: 12px 16px; border: 3px solid var(--dark); border-radius: 13px; background: var(--card); box-shadow: var(--shadow-sm); }
+.tp-stats b { display: block; font: 2rem/1 var(--font-title); color: var(--primary); letter-spacing: .5px; }
+.tp-stats span { display: block; margin-top: 4px; color: var(--text-muted); font-size: .6rem; font-weight: 900; letter-spacing: .8px; }
 
 .tp-list { display: flex; flex-direction: column; gap: 10px; }
-.tp-row { display: flex; gap: 18px; align-items: center; padding: 13px 16px; border: 3px solid var(--dark); border-radius: 14px; background: var(--card); box-shadow: 3px 3px 0 rgba(24,23,22,.15); }
-.tp-row-main { flex: 1; min-width: 0; }
-.tp-row-main strong { font-family: var(--font-title); font-size: 1.2rem; letter-spacing: .4px; color: var(--dark); }
+.tp-row {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    padding: 14px 18px;
+    border: 3px solid var(--dark);
+    border-radius: 14px;
+    background: var(--card);
+    box-shadow: 3px 3px 0 rgba(24,23,22,.15);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.tp-row:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--dark);
+    border-color: var(--primary);
+    background: #ffffff;
+}
 
-.tp-metric { text-align: center; min-width: 70px; }
-.tp-metric b { display: block; font: 1.2rem var(--font-title); color: var(--dark); }
-.tp-metric span { display: block; font-size: .55rem; font-weight: 900; color: var(--text-muted); letter-spacing: .5px; margin-top: 2px; }
+.tp-row-main { flex: 1; min-width: 0; }
+.tp-row-main strong { font-family: var(--font-title); font-size: 1.25rem; letter-spacing: .4px; color: var(--dark); }
+.tp-row-body-snippet {
+    margin: 4px 0 0 0;
+    font-size: 0.74rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 650px;
+    font-weight: 500;
+}
+
+.tp-metric { text-align: center; min-width: 80px; }
+.tp-metric b { display: block; font: 1.25rem var(--font-title); color: var(--dark); }
+.tp-metric span { display: block; font-size: .56rem; font-weight: 900; color: var(--text-muted); letter-spacing: .5px; margin-top: 2px; }
 .tp-metric.dim b, .tp-metric.dim span { color: var(--text-muted); opacity: .6; }
+
+.tp-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+.tp-btn-edit { color: var(--dark); }
+.tp-btn-edit:hover { background: var(--primary); color: #fff; border-color: var(--dark); }
 
 @media (max-width: 900px) {
     .tp-row { flex-wrap: wrap; }

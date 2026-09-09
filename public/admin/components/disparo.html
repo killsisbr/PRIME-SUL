@@ -32,19 +32,31 @@
             <div class="dp-timeline-title">
                 <i class="fas fa-business-time" style="color:#ff7417;"></i> PROGRAMAÇÃO EM HORÁRIO COMERCIAL (08:00 - 18:00)
             </div>
-            <div class="dp-days-selector" id="dpDaysSelector">
-                <button type="button" class="dp-day-btn" data-day="1">SEG</button>
-                <button type="button" class="dp-day-btn" data-day="2">TER</button>
-                <button type="button" class="dp-day-btn active" data-day="3">QUA</button>
-                <button type="button" class="dp-day-btn" data-day="4">QUI</button>
-                <button type="button" class="dp-day-btn" data-day="5">SEX</button>
-                <button type="button" class="dp-day-btn" data-day="6">SÁB</button>
-                <button type="button" class="dp-day-btn" data-day="0">DOM</button>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto;">
+                <!-- Alternador de Visão: Régua Horária vs Agenda Preview -->
+                <div class="dp-view-mode-toggle" id="dpViewModeToggle">
+                    <button type="button" class="dp-vmode-btn active" id="dpBtnModeTrack" title="Régua de horário diária">
+                        <i class="fas fa-clock"></i> RÉGUA DO DIA
+                    </button>
+                    <button type="button" class="dp-vmode-btn" id="dpBtnModeAgenda" title="Agenda preview da semana, 15 dias e mensal">
+                        <i class="fas fa-calendar-days"></i> AGENDA PREVIEW
+                        <span class="dp-vmode-badge">TOP</span>
+                    </button>
+                </div>
+                <div class="dp-days-selector" id="dpDaysSelector">
+                    <button type="button" class="dp-day-btn" data-day="1">SEG</button>
+                    <button type="button" class="dp-day-btn" data-day="2">TER</button>
+                    <button type="button" class="dp-day-btn active" data-day="3">QUA</button>
+                    <button type="button" class="dp-day-btn" data-day="4">QUI</button>
+                    <button type="button" class="dp-day-btn" data-day="5">SEX</button>
+                    <button type="button" class="dp-day-btn" data-day="6">SÁB</button>
+                    <button type="button" class="dp-day-btn" data-day="0">DOM</button>
+                </div>
             </div>
         </div>
 
         <!-- RÉGUA DO HORÁRIO COMERCIAL ULTRAPRO (08H ÀS 18H) -->
-        <div class="dp-24h-bar-container">
+        <div class="dp-24h-bar-container" id="dp24hBarContainer">
             <div class="dp-24h-labels">
                 <span>08:00 ☕</span>
                 <span>09:00</span>
@@ -93,6 +105,34 @@
             <div class="dp-24h-footer">
                 <span id="dp-24h-sub"><i class="fas fa-eye"></i> VISUALIZANDO AGENDAMENTOS DO DIA</span>
                 <small><i class="fas fa-mouse-pointer"></i> Passe o mouse para ver o horário exato e clique para agendar!</small>
+            </div>
+        </div>
+
+        <!-- VISUALIZAÇÃO EM AGENDA PREVIEW (SEMANA, 15 DIAS, MENSAL) -->
+        <div class="dp-agenda-view-container" id="dpAgendaViewContainer" style="display:none;">
+            <div class="dp-agenda-sub-bar">
+                <div class="dp-ag-period-group">
+                    <button type="button" class="dp-ag-period-btn active" data-period="7d">
+                        <i class="fas fa-calendar-week"></i> 7 DIAS (SEMANA)
+                    </button>
+                    <button type="button" class="dp-ag-period-btn" data-period="15d">
+                        <i class="fas fa-calendar-days"></i> 15 DIAS
+                    </button>
+                    <button type="button" class="dp-ag-period-btn" data-period="30d">
+                        <i class="fas fa-calendar"></i> MENSAL (30 DIAS)
+                    </button>
+                </div>
+
+                <div class="dp-ag-nav-group">
+                    <button type="button" class="dp-ag-nav-btn" id="dpAgPrev" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                    <button type="button" class="dp-ag-nav-btn today" id="dpAgToday" title="Ir para hoje">HOJE</button>
+                    <button type="button" class="dp-ag-nav-btn" id="dpAgNext" title="Próximo"><i class="fas fa-chevron-right"></i></button>
+                    <span class="dp-ag-range-text" id="dpAgRangeText">07 SET — 13 SET 2026</span>
+                </div>
+            </div>
+
+            <div class="dp-agenda-grid" id="dpAgendaGrid">
+                <div style="padding:20px; text-align:center; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Carregando agenda preview...</div>
             </div>
         </div>
     </div>

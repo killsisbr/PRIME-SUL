@@ -20,12 +20,12 @@ router.get('/stats', async (req, res, next) => {
         if (req.user.role !== 'admin') return res.status(403).json({ error: 'Somente admin' });
         const rows = await db.all(`
             SELECT
-                t.id, t.name, t.purpose, t.active, t.seller_id, t.created_at,
+                t.id, t.name, t.purpose, t.body, t.active, t.seller_id, t.created_at,
                 COUNT(DISTINCT c.id) AS campaigns_count,
                 COUNT(s.id) AS sends_count,
                 SUM(CASE WHEN s.status IN ('confirmado','recusado') THEN 1 ELSE 0 END) AS responded_count,
                 SUM(CASE WHEN s.status = 'confirmado' THEN 1 ELSE 0 END) AS confirmado_count,
-                COUNT(DISTINCT CASE WHEN l.status = 'concluido' THEN l.id END) AS converted_count
+                COUNT(DISTINCT CASE WHEN l.status = 'sim' THEN l.id END) AS converted_count
             FROM message_templates t
             LEFT JOIN campaigns c ON c.template_id = t.id
             LEFT JOIN sends s ON s.campaign_id = c.id AND s.status IN ('sent','confirmado','recusado')
@@ -52,6 +52,33 @@ router.post('/', async (req, res, next) => {
         const r = await db.run(`INSERT INTO message_templates (organization_id,seller_id,name,purpose,body) VALUES (?,?,?,?,?)`,
             [req.user.organization_id, shared ? null : req.user.id, String(name).trim(), targetPurpose, String(body)]);
         res.status(201).json(await db.get('SELECT * FROM message_templates WHERE id=?', [r.lastID]));
+    } catch (e) { next(e); }
+});
+
+router.put('/:id', async (req, res, next) => {
+    try {
+        const { name, purpose, body, shared } = req.body;
+        const targetPurpose = (purpose && PURPOSES.includes(purpose)) ? purpose : 'screening';
+        if (!name || !body) return res.status(400).json({ error: 'Template inválido (nome e mensagem são obrigatórios)' });
+
+        const existing = await db.get('SELECT * FROM message_templates WHERE id=? AND organization_id=? AND active=1', [req.params.id, req.user.organization_id]);
+        if (!existing) return res.status(404).json({ error: 'Template não encontrado' });
+        if (req.user.role !== 'admin' && existing.seller_id !== req.user.id) {
+            return res.status(403).json({ error: 'Sem permissão para alterar este template' });
+        }
+
+        let sellerId = existing.seller_id;
+        if (req.user.role === 'admin' && typeof shared === 'boolean') {
+            sellerId = shared ? null : req.user.id;
+        }
+
+        await db.run(`
+            UPDATE message_templates
+            SET name=?, purpose=?, body=?, seller_id=?, updated_at=datetime('now')
+            WHERE id=? AND organization_id=?
+        `, [String(name).trim(), targetPurpose, String(body), sellerId, req.params.id, req.user.organization_id]);
+
+        res.json(await db.get('SELECT * FROM message_templates WHERE id=?', [req.params.id]));
     } catch (e) { next(e); }
 });
 

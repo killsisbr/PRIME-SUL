@@ -1,8 +1,51 @@
 /* ============ PRIME SUL — DISPARO COMERCIAL (PALETA CLÍNICA HOLO CYBER-MEDICAL) ============ */
 
-#dynamicModalBody:has(.dp-saas-root) { display: flex; flex-direction: column; min-height: 0; overflow: visible !important; padding: 14px 18px !important; }
+/* ============ POPUP 99% DA TELA (MODAL FULLSCREEN ULTRA PRO) ============ */
+#dynamicModalOverlay:has(.dp-saas-root),
+#dynamicModalOverlay.is-disparo,
+#dynamicModalOverlay.modal-fullscreen-99 {
+    padding: 0.5vh 0.5vw !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
 
-.dp-saas-root { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; font-family: var(--font-body, 'Outfit', sans-serif); color: var(--holo-text, #f8fafc); }
+#dynamicModalOverlay:has(.dp-saas-root) .hud-modal,
+#dynamicModalOverlay.is-disparo .hud-modal,
+#dynamicModalOverlay.modal-fullscreen-99 .hud-modal,
+.hud-modal:has(.dp-saas-root) {
+    width: 99vw !important;
+    max-width: 99vw !important;
+    height: 98.5vh !important;
+    max-height: 98.5vh !important;
+    margin: auto !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 6px 6px 0 var(--dark, #181716) !important;
+}
+
+#dynamicModalOverlay:has(.dp-saas-root) #dynamicModalBody,
+#dynamicModalOverlay.is-disparo #dynamicModalBody,
+#dynamicModalOverlay.modal-fullscreen-99 #dynamicModalBody,
+#dynamicModalBody:has(.dp-saas-root) {
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 14px 20px !important;
+}
+
+.dp-saas-root {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    width: 100%;
+    font-family: var(--font-body, 'Outfit', sans-serif);
+    color: var(--holo-text, #f8fafc);
+}
 
 /* ============ HEADER ============ */
 .dp-saas-header {
@@ -969,7 +1012,170 @@
 .phone-input-bar i { color: var(--holo-muted, #94a3b8); font-size: .6rem; }
 .phone-input-bar span { flex: 1; padding: 4px 8px; border-radius: 999px; background: var(--holo-card, #172134); font-size: .52rem; color: var(--holo-muted, #94a3b8); border: 1px solid var(--holo-border, #27364d); }
 
+/* ============ DISPARO COMERCIAL — AGENDA PREVIEW ============ */
+.dp-view-mode-toggle {
+    display: inline-flex; align-items: center; background: #070a12;
+    border: 1.5px solid var(--holo-border, #27364d); border-radius: 12px; padding: 3px; gap: 3px;
+}
+.dp-vmode-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+    border: 1.5px solid transparent; border-radius: 9px; background: transparent;
+    font: 900 .68rem var(--font-body); color: #94a3b8; cursor: pointer;
+    transition: all .15s ease; user-select: none;
+}
+.dp-vmode-btn:hover { color: #f8fafc; background: rgba(255,255,255,.05); }
+.dp-vmode-btn.active {
+    background: var(--holo-primary, #0ea5e9); color: #fff; border-color: var(--holo-primary, #0ea5e9);
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+}
+.dp-vmode-badge {
+    background: #ff7417; color: #fff; font-size: .52rem; font-weight: 900;
+    padding: 2px 5px; border-radius: 4px; letter-spacing: .5px;
+    animation: dpPulseHot 1.8s infinite;
+}
+@keyframes dpPulseHot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: .85; }
+}
+
+.dp-agenda-view-container {
+    display: flex; flex-direction: column; gap: 12px; padding: 14px;
+    border: 2px solid var(--holo-border, #27364d); border-radius: 16px; background: var(--holo-card, #172134);
+}
+
+.dp-agenda-sub-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding-bottom: 10px; border-bottom: 1px solid rgba(39, 54, 77, 0.6);
+}
+
+.dp-ag-period-group {
+    display: inline-flex; align-items: center; background: #070a12;
+    border: 1.5px solid var(--holo-border, #27364d); border-radius: 10px; padding: 2px; gap: 3px;
+}
+.dp-ag-period-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+    border: 1px solid transparent; border-radius: 8px; background: transparent;
+    font: 900 .66rem var(--font-body); color: #94a3b8; cursor: pointer;
+    transition: all .12s ease; user-select: none;
+}
+.dp-ag-period-btn:hover { color: #f8fafc; background: rgba(255,255,255,.05); }
+.dp-ag-period-btn.active {
+    background: #1e293b; border-color: var(--holo-primary, #0ea5e9); color: #fff;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.3);
+}
+
+.dp-ag-nav-group {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.dp-ag-nav-btn {
+    width: 30px; height: 30px; display: grid; place-items: center;
+    border: 1.5px solid var(--holo-border, #27364d); border-radius: 8px; background: #070a12;
+    color: #94a3b8; font-size: .7rem; cursor: pointer; transition: all .12s ease;
+}
+.dp-ag-nav-btn:hover { background: #1e293b; color: #fff; border-color: var(--holo-primary, #0ea5e9); }
+.dp-ag-nav-btn.today {
+    width: auto; padding: 0 10px; font: 900 .64rem var(--font-body); letter-spacing: .5px;
+}
+.dp-ag-range-text {
+    font: 900 .86rem var(--font-title, 'Bebas Neue', sans-serif); letter-spacing: .8px;
+    color: #f8fafc; padding: 0 6px;
+}
+
+/* GRADE DA AGENDA */
+.dp-agenda-grid {
+    display: grid; gap: 10px; min-height: 280px;
+}
+.dp-agenda-grid.grid-7d {
+    grid-template-columns: repeat(7, 1fr);
+}
+.dp-agenda-grid.grid-15d {
+    grid-template-columns: repeat(5, 1fr);
+}
+.dp-agenda-grid.grid-30d {
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.dp-ag-day-col {
+    display: flex; flex-direction: column; gap: 8px; padding: 10px;
+    border: 1.5px solid var(--holo-border, #27364d); border-radius: 12px;
+    background: #0f1624; min-height: 240px; transition: all .15s ease;
+}
+.dp-ag-day-col:hover {
+    border-color: var(--holo-primary, #0ea5e9); transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,.4);
+}
+.dp-ag-day-col.is-today {
+    background: #131c2e; border-color: #10b981;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+}
+
+.dp-ag-day-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 6px; border-bottom: 1px solid rgba(39, 54, 77, 0.6);
+}
+.dp-ag-day-name {
+    font: 900 .62rem var(--font-body); color: #94a3b8; text-transform: uppercase;
+}
+.dp-ag-day-num {
+    font: 900 1.15rem/.9 var(--font-title, 'Bebas Neue', sans-serif); color: #f8fafc;
+}
+.dp-ag-today-badge {
+    background: #10b981; color: #fff; font: 900 .5rem var(--font-body);
+    padding: 2px 6px; border-radius: 999px; letter-spacing: .4px;
+}
+
+.dp-ag-camps-list {
+    flex: 1; display: flex; flex-direction: column; gap: 6px;
+    overflow-y: auto; max-height: 200px;
+}
+
+.dp-ag-camp-card {
+    padding: 7px 9px; border: 1.5px solid var(--holo-border, #27364d); border-radius: 8px;
+    background: #172134; display: flex; flex-direction: column; gap: 3px; cursor: pointer;
+    transition: all .12s ease; border-left: 4px solid var(--holo-primary, #0ea5e9);
+}
+.dp-ag-camp-card:hover {
+    background: #1e293b; border-color: var(--holo-primary, #0ea5e9); transform: scale(1.02);
+}
+.dp-ag-camp-card.running { border-left-color: #10b981; }
+.dp-ag-camp-card.paused { border-left-color: #ffb800; }
+.dp-ag-camp-card.completed { border-left-color: #64748b; }
+
+.dp-ag-camp-time {
+    font: 900 .6rem var(--font-body); color: #94a3b8; display: flex; align-items: center; justify-content: space-between;
+}
+.dp-ag-camp-title {
+    font: 800 .68rem var(--font-body); color: #f8fafc;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dp-ag-camp-sub {
+    font: 700 .56rem var(--font-body); color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-ag-empty-day {
+    flex: 1; display: grid; place-items: center; text-align: center; padding: 20px 4px;
+    color: #64748b; font: 700 .62rem var(--font-body);
+}
+.dp-ag-empty-day i { font-size: 1.2rem; margin-bottom: 4px; display: block; }
+
+.dp-ag-btn-schedule-day {
+    padding: 5px; border: 1px dashed var(--holo-border, #27364d); border-radius: 6px;
+    background: transparent; color: var(--holo-primary, #0ea5e9); font: 900 .6rem var(--font-body);
+    text-align: center; cursor: pointer; margin-top: auto; transition: all .12s ease;
+}
+.dp-ag-btn-schedule-day:hover {
+    background: rgba(14, 165, 233, 0.15); border-color: var(--holo-primary, #0ea5e9);
+}
+
+@media (max-width: 1024px) {
+    .dp-agenda-grid.grid-7d { grid-template-columns: repeat(4, 1fr); }
+    .dp-agenda-grid.grid-15d { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 860px) {
+    .dp-agenda-grid.grid-7d { grid-template-columns: repeat(2, 1fr); }
+    .dp-agenda-grid.grid-15d { grid-template-columns: repeat(2, 1fr); }
+    .dp-agenda-grid.grid-30d { grid-template-columns: repeat(2, 1fr); }
     .dp-saas-metrics-grid { grid-template-columns: repeat(2, 1fr); }
     .dp-saas-categories-grid { grid-template-columns: 1fr; }
     .dp-tmpl-modal-grid { grid-template-columns: 1fr; }

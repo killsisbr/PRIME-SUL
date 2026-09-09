@@ -66,6 +66,7 @@ let runtimeEnabled = true;
 function setRuntimeEnabled(value) { runtimeEnabled = !!value; }
 function isRuntimeEnabled() { return runtimeEnabled; }
 function envEnabled() { return process.env.BOT_ENABLED === 'true'; }
+function isMock() { return process.env.MOCK_WHATSAPP === 'true'; }
 
 function enabled() {
     return envEnabled() && runtimeEnabled;
@@ -75,6 +76,39 @@ async function connect(number, label) {
     if (!enabled()) {
         console.warn(`[whatsapp] BOT_ENABLED=false — bot ${number} não conecta (dry-run)`);
         return null;
+    }
+    if (isMock()) {
+        const existing = bots.get(number);
+        if (existing && existing.status === 'connected') return existing.sock;
+        const entry = {
+            sock: {
+                sendMessage: async (jid, content) => {
+                    console.log(`[whatsapp-mock] 📨 Mensagem para ${jid}:`, content?.text || content);
+                    return { key: { id: 'mock_' + Date.now() } };
+                },
+                sendPresenceUpdate: async () => {},
+                chatModify: async () => {},
+                end: () => {}
+            },
+            status: 'connected',
+            lastActivity: Date.now(),
+            connectedAt: Date.now(),
+            qr: null,
+            label: label || 'mock-bot',
+            startedAt: Date.now(),
+            forceClosing: false,
+            realNumber: number,
+            pushName: 'Simulador WhatsApp (Mock)',
+            qrTimer: null
+        };
+        bots.set(number, entry);
+        botEvents.log(number, 'connected', 'Bot conectado em MODO SIMULAÇÃO (Mock)', label);
+        console.log(`[whatsapp-mock] ✅ Bot ${number} (${label || 'sem label'}) conectado em MODO SIMULAÇÃO.`);
+        db.run('UPDATE bot_numbers SET real_number = ?, push_name = ? WHERE number = ?', [number, 'Simulador WhatsApp', number]).catch(() => {});
+        connectedHandlers.forEach(h => {
+            try { h(number); } catch (e) { console.error('[whatsapp-mock] erro no connectedHandler:', e.message); }
+        });
+        return entry.sock;
     }
     if (bots.has(number)) {
         const existing = bots.get(number);
@@ -207,6 +241,40 @@ function onMessage(fn) { messageHandlers.push(fn); }
 function onConnected(fn) { connectedHandlers.push(fn); }
 
 async function sendMessage(botNumber, toPhone, text, options = {}) {
+    if (isMock()) {
+        let bot = bots.get(botNumber);
+        if (!bot || bot.status !== 'connected') {
+            await connect(botNumber, 'mock-bot');
+            bot = bots.get(botNumber);
+        }
+        const normalizedPhone = normalizePhone(toPhone);
+        if (!normalizedPhone) {
+            return { sent: false, reason: 'invalid_phone' };
+        }
+        const organizationId = Number(options.organizationId) || 1;
+        const key = contactKey(organizationId, normalizedPhone);
+        if (!key) {
+            return { sent: false, reason: 'invalid_phone' };
+        }
+
+        pruneRecentContactSends();
+        const lastSentAt = recentContactSends.get(key);
+        if (!options.skipCooldown && lastSentAt && CONTACT_COOLDOWN_MS > 0 && Date.now() - lastSentAt < CONTACT_COOLDOWN_MS) {
+            return { sent: false, reason: 'cooldown' };
+        }
+
+        if (!options.skipOptOut && await isOptedOut(organizationId, normalizedPhone)) {
+            return { sent: false, reason: 'opt_out' };
+        }
+
+        await sleep(250);
+        const preview = (text || '').replace(/\r?\n/g, ' ').slice(0, 65);
+        console.log(`[whatsapp-mock] 🚀 Disparo simulado de [${botNumber}] para [${normalizedPhone}]: "${preview}..."`);
+        if (bot) bot.lastActivity = Date.now();
+        recentContactSends.set(key, Date.now());
+        botEvents.log(botNumber, 'send_ok', `Mock: Mensagem para ${normalizedPhone}`, bot ? bot.label : '');
+        return { sent: true, mock: true };
+    }
     const bot = bots.get(botNumber);
     if (!bot || bot.status !== 'connected') {
         console.warn(`[whatsapp] Bot ${botNumber} não conectado — msg não enviada para ${toPhone}`);
@@ -224,7 +292,7 @@ async function sendMessage(botNumber, toPhone, text, options = {}) {
 
     pruneRecentContactSends();
     const lastSentAt = recentContactSends.get(key);
-    if (lastSentAt && CONTACT_COOLDOWN_MS > 0 && Date.now() - lastSentAt < CONTACT_COOLDOWN_MS) {
+    if (!options.skipCooldown && lastSentAt && CONTACT_COOLDOWN_MS > 0 && Date.now() - lastSentAt < CONTACT_COOLDOWN_MS) {
         return { sent: false, reason: 'cooldown' };
     }
 
@@ -271,6 +339,10 @@ const STATUS_COLORS = {
 
 // Publica um status promocional no WhatsApp (status@broadcast) usando um bot conectado
 async function postStatus(botNumber, { text, imageUrl, caption, color = 'teal', font = 2 }) {
+    if (isMock()) {
+        console.log(`[whatsapp-mock] 📢 Status promocional simulado por [${botNumber}]: ${text || caption || 'Mídia'}`);
+        return { sent: true, mock: true };
+    }
     const bot = bots.get(botNumber);
     if (!bot || bot.status !== 'connected') {
         console.warn(`[whatsapp] Bot ${botNumber} não conectado — status não publicado`);
@@ -396,6 +468,7 @@ function forceReconnect(number, label) {
 
 // Health-check: detecta socket morto (deadlock) e conexões travadas sem QR
 async function healthCheck() {
+    if (isMock()) return 0;
     let fixed = 0;
     for (const [number, entry] of bots) {
         if (entry.status === 'connected') {
@@ -452,4 +525,19 @@ function status() {
     return out;
 }
 
-module.exports = { enabled, connect, disconnect, logout, sendMessage, archiveChat, unarchiveChat, postStatus, onMessage, onConnected, getQR, status, healthCheck, cleanupSessions, setRuntimeEnabled, isRuntimeEnabled, envEnabled };
+async function simulateIncomingMessage(fromPhone, text, toBotNumber) {
+    const norm = normalizePhone(fromPhone);
+    console.log(`[whatsapp-mock] 📥 Mensagem recebida simulada de [${norm}] para bot [${toBotNumber}]: "${text}"`);
+    const results = [];
+    for (const handler of messageHandlers) {
+        try {
+            const res = await handler({ botNumber: toBotNumber, phone: norm, text });
+            results.push(res);
+        } catch (err) {
+            console.error('[whatsapp-mock] Erro no messageHandler:', err.message);
+        }
+    }
+    return results;
+}
+
+module.exports = { enabled, connect, disconnect, logout, sendMessage, archiveChat, unarchiveChat, postStatus, onMessage, onConnected, getQR, status, healthCheck, cleanupSessions, setRuntimeEnabled, isRuntimeEnabled, envEnabled, isMock, simulateIncomingMessage };

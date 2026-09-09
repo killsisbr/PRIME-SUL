@@ -43,7 +43,10 @@
                     <span class="dynamic-modal-orbit"><i class="fas fa-bolt"></i></span>
                     <span id="dynamicModalTitle">FERRAMENTA</span>
                 </div>
-                <button type="button" class="dynamic-modal-close" onclick="closeDynamicModal()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+                <div class="dynamic-modal-actions">
+                    <button type="button" class="dynamic-modal-expand" id="dynamicModalExpandBtn" onclick="toggleDynamicModalFullscreen()" title="Maximizar / Restaurar (99% da tela)"><i class="fas fa-expand"></i></button>
+                    <button type="button" class="dynamic-modal-close" onclick="closeDynamicModal()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div id="dynamicModalBody"></div>
             <div id="dynamicModalFooter">
@@ -240,6 +243,30 @@
                 if (body.querySelector('.v2-title')) titleEl.style.display = 'none';
                 else titleEl.style.display = 'block';
 
+                // Disparo Comercial, Conversas WhatsApp e Templates abrem em 99% da tela (Modo Ultra Pro)
+                const expandBtn = document.getElementById('dynamicModalExpandBtn');
+                if (componentName === 'disparo' || componentName === 'bots' || componentName === 'templates') {
+                    overlay.classList.add('modal-fullscreen-99');
+                    if (componentName === 'disparo') overlay.classList.add('is-disparo');
+                    if (componentName === 'bots') overlay.classList.add('is-bots');
+                    if (componentName === 'templates') overlay.classList.add('is-templates');
+                    if (expandBtn) {
+                        expandBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                        expandBtn.title = 'Restaurar tamanho';
+                    }
+                } else {
+                    overlay.classList.remove('is-disparo');
+                    overlay.classList.remove('is-bots');
+                    overlay.classList.remove('is-templates');
+                    if (!overlay.dataset.userMaximized) {
+                        overlay.classList.remove('modal-fullscreen-99');
+                        if (expandBtn) {
+                            expandBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                            expandBtn.title = 'Maximizar (99% da tela)';
+                        }
+                    }
+                }
+
                 let module = null;
                 try {
                     module = await import(`/admin/components/${componentName}.js?cb=${Date.now()}-${Math.floor(Math.random()*100000)}`);
@@ -277,6 +304,18 @@
         }
         window.openToolV2 = openToolV2;
 
+        function toggleDynamicModalFullscreen() {
+            const overlay = document.getElementById('dynamicModalOverlay');
+            const isFull = overlay.classList.toggle('modal-fullscreen-99');
+            overlay.dataset.userMaximized = isFull ? 'true' : '';
+            const btn = document.getElementById('dynamicModalExpandBtn');
+            if (btn) {
+                btn.innerHTML = `<i class="fas ${isFull ? 'fa-compress' : 'fa-expand'}"></i>`;
+                btn.title = isFull ? 'Restaurar tamanho' : 'Maximizar (99% da tela)';
+            }
+        }
+        window.toggleDynamicModalFullscreen = toggleDynamicModalFullscreen;
+
         function closeDynamicModal() {
             const openSubmodal = [...document.querySelectorAll('.v2-submodal-overlay')]
                 .filter(el => getComputedStyle(el).display !== 'none').pop();
@@ -285,6 +324,16 @@
             if (openWorkspace) { openWorkspace.classList.remove('active'); return; }
             const overlay = document.getElementById('dynamicModalOverlay');
             overlay.classList.remove('active');
+            overlay.classList.remove('modal-fullscreen-99');
+            overlay.classList.remove('is-disparo');
+            overlay.classList.remove('is-bots');
+            overlay.classList.remove('is-templates');
+            delete overlay.dataset.userMaximized;
+            const expandBtn = document.getElementById('dynamicModalExpandBtn');
+            if (expandBtn) {
+                expandBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                expandBtn.title = 'Maximizar (99% da tela)';
+            }
             overlay.style.display = 'none';
             if (activeComponent) {
                 const css = document.getElementById(`v2-css-spec-${activeComponent}`);

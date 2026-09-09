@@ -23,6 +23,7 @@ router.get('/status', async (req, res, next) => {
             enabled: whatsapp.enabled(),
             envEnabled: whatsapp.envEnabled(),
             runtimeEnabled: whatsapp.isRuntimeEnabled(),
+            isMock: whatsapp.isMock(),
             cooldown_hours: await antiBan.currentCooldownHours(),
             daily_limit: await antiBan.currentLimit(),
             bots: visibleBots,
@@ -127,6 +128,20 @@ router.post('/disconnect', async (req, res, next) => {
             ? await whatsapp.logout(number)
             : await whatsapp.disconnect(number);
         res.json(result);
+    } catch (e) { next(e); }
+});
+
+// Simulação de resposta de cliente (apenas com MOCK_WHATSAPP=true)
+router.post('/mock-incoming', async (req, res, next) => {
+    try {
+        if (!whatsapp.isMock()) {
+            return res.status(400).json({ error: 'Modo simulação desativado no servidor' });
+        }
+        const { phone, text, botNumber } = req.body;
+        if (!phone || !text) return res.status(400).json({ error: 'phone e text são obrigatórios' });
+        const targetBot = botNumber || process.env.BOT_MAIN_NUMBER || '5511999990000';
+        const results = await whatsapp.simulateIncomingMessage(phone, text, targetBot);
+        res.json({ ok: true, phone, text, botNumber: targetBot, results });
     } catch (e) { next(e); }
 });
 

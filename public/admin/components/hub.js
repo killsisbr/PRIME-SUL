@@ -35,9 +35,56 @@ export async function init({ container }) {
     document.getElementById('btn-hub-numbers').onclick = () => window.openToolV2('numeros', 'Números Anti-Ban');
     document.getElementById('btn-hub-leads').onclick = () => window.openToolV2('leads', 'Leads');
     document.getElementById('btn-hub-config').onclick = () => window.openToolV2('config', 'Configuração');
-    document.getElementById('btn-hub-sellers').onclick = () => window.openToolV2('vendedores', 'Vendedores');
+    let _currentDisposable = true;
+
+    async function loadMode() {
+        try {
+            const m = await api('/config/mode');
+            _currentDisposable = m.disposable_bots_mode !== false;
+            updateModeUI(_currentDisposable);
+        } catch (e) {}
+    }
+
+    function updateModeUI(isDisp) {
+        const btn = document.getElementById('btn-hub-toggle-mode');
+        const icon = document.getElementById('hub-mode-icon');
+        const label = document.getElementById('hub-mode-label');
+        if (!btn || !icon || !label) return;
+
+        if (isDisp) {
+            btn.style.background = '#f0fdf4';
+            icon.className = 'fas fa-shield-virus';
+            icon.style.color = '#10b981';
+            label.textContent = 'MODO: DESCARTÁVEL (ANTI-BAN)';
+            label.style.color = '#166534';
+        } else {
+            btn.style.background = '#eff6ff';
+            icon.className = 'fas fa-bolt';
+            icon.style.color = '#3b82f6';
+            label.textContent = 'MODO: DIRETO (VENDEDOR)';
+            label.style.color = '#1e40af';
+        }
+    }
+
+    document.getElementById('btn-hub-toggle-mode')?.addEventListener('click', async () => {
+        try {
+            const nextMode = !_currentDisposable;
+            await api('/config/mode', {
+                method: 'POST',
+                body: JSON.stringify({ disposable_bots_mode: nextMode })
+            });
+            _currentDisposable = nextMode;
+            updateModeUI(_currentDisposable);
+            if (window.toast) {
+                window.toast(nextMode ? 'Ativado: Modo Híbrido Anti-Ban (Descartável)' : 'Ativado: Modo Direto do Vendedor');
+            }
+        } catch (e) {
+            if (window.toast) window.toast('Erro ao alternar modo: ' + e.message, 'err');
+        }
+    });
 
     loadStats();
+    loadMode();
     return {};
 }
 

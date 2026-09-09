@@ -6,7 +6,7 @@ const botEvents = require('./bot-events-service');
 
 const DEFAULT_DAYS = '3,7,14,30';
 const DEFAULT_MSG = 'Olá {nome}, tudo bem? Você pediu uma simulação de crédito e ainda não finalizou. Posso te encaminhar a proposta? Responda SIM para continuar.';
-const FOLLOWUP_STATUSES = ['novo', 'contato'];
+const FOLLOWUP_STATUSES = ['novos', 'enviados'];
 const BATCH_SIZE = 10;
 const DEFAULT_WINDOW_START = '09:00';
 const DEFAULT_WINDOW_END = '18:00';
@@ -67,7 +67,7 @@ async function schedule() {
         const leads = await db.all(`
             SELECT l.id, l.seller_id
             FROM leads l
-            WHERE l.status IN ('novo','contato')
+            WHERE l.status IN ('novos','enviados')
               AND l.seller_id IS NOT NULL
               AND NOT EXISTS (SELECT 1 FROM opt_outs o WHERE o.organization_id=l.organization_id AND o.phone=l.phone)
               AND NOT EXISTS (SELECT 1 FROM followups f WHERE f.lead_id = l.id AND f.bucket = ?)

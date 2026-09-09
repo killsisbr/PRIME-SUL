@@ -60,6 +60,28 @@ export async function init() {
     let alreadyScheduledLeadIds = new Set();
     let selectedQuantity = 10;
     let selectedDay = new Date().getDay(); // 0-6 (0=DOM, 1=SEG...)
+    let _dispViewMode = 'track'; // 'track' | 'agenda'
+    let _dispAgendaPeriod = '7d'; // '7d' | '15d' | '30d'
+    let _dispAgendaAnchor = new Date();
+
+    function startOfWeek(d) {
+        const res = new Date(d);
+        const day = res.getDay();
+        const diff = res.getDate() - day + (day === 0 ? -6 : 1);
+        res.setDate(diff);
+        res.setHours(0, 0, 0, 0);
+        return res;
+    }
+
+    function addDays(d, n) {
+        const res = new Date(d);
+        res.setDate(res.getDate() + n);
+        return res;
+    }
+
+    function dayKey(d) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
 
     function esc(s) { return escapeHtml(s); }
     function initials(n) { return (n || ' ').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase(); }
@@ -128,7 +150,11 @@ export async function init() {
         }
 
         updateNowPin();
-        renderScheduledTimelineBlocks();
+        if (_dispViewMode === 'agenda') {
+            renderDispAgenda();
+        } else {
+            renderScheduledTimelineBlocks();
+        }
         renderCategoryCards();
     }
 
@@ -208,6 +234,179 @@ export async function init() {
                 if (c) {
                     openScheduleModal('10:00', 'novo', c);
                 }
+            };
+        });
+    }
+
+    function switchDispView(mode) {
+        _dispViewMode = mode;
+        const btnTrack = document.getElementById('dpBtnModeTrack');
+        const btnAgenda = document.getElementById('dpBtnModeAgenda');
+        const trackContainer = document.getElementById('dp24hBarContainer');
+        const agendaContainer = document.getElementById('dpAgendaViewContainer');
+
+        if (mode === 'agenda') {
+            btnAgenda?.classList.add('active');
+            btnTrack?.classList.remove('active');
+            if (trackContainer) trackContainer.style.display = 'none';
+            if (agendaContainer) agendaContainer.style.display = 'flex';
+            renderDispAgenda();
+        } else {
+            btnTrack?.classList.add('active');
+            btnAgenda?.classList.remove('active');
+            if (trackContainer) trackContainer.style.display = 'flex';
+            if (agendaContainer) agendaContainer.style.display = 'none';
+            updateDaySelectionUI();
+        }
+    }
+
+    function getDispAgendaDays() {
+        const days = [];
+        if (_dispAgendaPeriod === '7d') {
+            const monday = startOfWeek(_dispAgendaAnchor);
+            for (let i = 0; i < 7; i++) {
+                days.push(addDays(monday, i));
+            }
+        } else if (_dispAgendaPeriod === '15d') {
+            const start = addDays(_dispAgendaAnchor, -7);
+            for (let i = 0; i < 15; i++) {
+                days.push(addDays(start, i));
+            }
+        } else if (_dispAgendaPeriod === '30d') {
+            const y = _dispAgendaAnchor.getFullYear();
+            const m = _dispAgendaAnchor.getMonth();
+            const last = new Date(y, m + 1, 0);
+            for (let d = 1; d <= last.getDate(); d++) {
+                days.push(new Date(y, m, d));
+            }
+        }
+        return days;
+    }
+
+    function renderDispAgenda() {
+        const container = document.getElementById('dpAgendaGrid');
+        if (!container) return;
+
+        const days = getDispAgendaDays();
+
+        // Atualiza texto da faixa de datas
+        const rangeText = document.getElementById('dpAgRangeText');
+        if (rangeText && days.length) {
+            const d1 = days[0];
+            const d2 = days[days.length - 1];
+            if (_dispAgendaPeriod === '30d') {
+                rangeText.textContent = d1.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
+            } else {
+                const f1 = d1.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase().replace('.', '');
+                const f2 = d2.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase().replace('.', '');
+                rangeText.textContent = `${f1} — ${f2}`;
+            }
+        }
+
+        const todayKey = dayKey(new Date());
+        const gridClass = _dispAgendaPeriod === '7d' ? 'grid-7d' : (_dispAgendaPeriod === '15d' ? 'grid-15d' : 'grid-30d');
+
+        container.className = `dp-agenda-grid ${gridClass}`;
+
+        container.innerHTML = days.map(d => {
+            const k = dayKey(d);
+            const isToday = k === todayKey;
+            const dayOfWeek = d.getDay();
+            const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase().replace('.', '');
+            const dayNum = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase().replace('.', '');
+
+            const dayCamps = allCampaigns.filter(c => {
+                if (c.scheduled_at) {
+                    const cDate = new Date(c.scheduled_at.replace(' ', 'T'));
+                    if (dayKey(cDate) === k) return true;
+                }
+                return getCampDay(c) === dayOfWeek;
+            });
+
+            const maxVisible = _dispAgendaPeriod === '7d' ? 4 : 2;
+            const visible = dayCamps.slice(0, maxVisible);
+            const remaining = dayCamps.length - maxVisible;
+
+            let campsHtml = '';
+            if (visible.length) {
+                campsHtml = visible.map(c => {
+                    let timeStr = '10:00';
+                    if (c.scheduled_at) {
+                        const cd = new Date(c.scheduled_at.replace(' ', 'T'));
+                        if (!isNaN(cd.getTime())) {
+                            timeStr = `${String(cd.getHours()).padStart(2, '0')}:${String(cd.getMinutes()).padStart(2, '0')}`;
+                        }
+                    }
+                    const total = extractCampaignTargetCount(c);
+                    const sent = c.total_sent || 0;
+                    const status = c.status || 'draft';
+                    return `
+                        <div class="dp-ag-camp-card ${status}" data-camp-id="${c.id}" title="Clique para detalhes">
+                            <div class="dp-ag-camp-time">
+                                <span><i class="far fa-clock"></i> ${timeStr}</span>
+                                <span>${sent}/${total}</span>
+                            </div>
+                            <div class="dp-ag-camp-title">${esc(c.name || 'Campanha')}</div>
+                            <div class="dp-ag-camp-sub">${esc(status.toUpperCase())}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (remaining > 0) {
+                    campsHtml += `<div style="font-size:0.6rem; color:var(--holo-muted, #94a3b8); text-align:center; padding:3px 0;">+ ${remaining} disparos</div>`;
+                }
+            } else {
+                campsHtml = `<div class="dp-ag-empty-day"><i class="far fa-calendar-check"></i> Sem disparos</div>`;
+            }
+
+            return `
+                <div class="dp-ag-day-col ${isToday ? 'is-today' : ''}" data-day-key="${k}" data-weekday="${dayOfWeek}">
+                    <div class="dp-ag-day-header">
+                        <div>
+                            <span class="dp-ag-day-name">${dayName}</span>
+                            <span class="dp-ag-day-num">${dayNum}</span>
+                        </div>
+                        ${isToday ? '<span class="dp-ag-today-badge">HOJE</span>' : ''}
+                    </div>
+                    <div class="dp-ag-camps-list">
+                        ${campsHtml}
+                    </div>
+                    <button type="button" class="dp-ag-btn-schedule-day" data-weekday="${dayOfWeek}" data-day-key="${k}">
+                        <i class="fas fa-plus"></i> Agendar
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        // Clicks nos botões de agendar dentro dos dias da agenda
+        container.querySelectorAll('.dp-ag-btn-schedule-day').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const weekday = Number(btn.dataset.weekday);
+                selectedDay = weekday;
+                updateDaySelectionUI();
+                openScheduleModal('10:00', 'novo');
+            };
+        });
+
+        // Click no card de campanha da agenda
+        container.querySelectorAll('.dp-ag-camp-card').forEach(card => {
+            card.onclick = (e) => {
+                e.stopPropagation();
+                const campId = card.dataset.campId;
+                const c = allCampaigns.find(x => String(x.id) === String(campId));
+                if (c) {
+                    openScheduleModal('10:00', 'novo', c);
+                }
+            };
+        });
+
+        // Click na coluna do dia para focar aquele dia
+        container.querySelectorAll('.dp-ag-day-col').forEach(col => {
+            col.onclick = () => {
+                const weekday = Number(col.dataset.weekday);
+                selectedDay = weekday;
+                updateDaySelectionUI();
             };
         });
     }
@@ -1040,6 +1239,40 @@ export async function init() {
             await loadTemplates();
             populateTmplForm();
         } catch (e) { toast(e.message, 'err'); }
+    });
+
+    // Controles do Alternador de Visão (Régua Diária vs Agenda Preview)
+    document.getElementById('dpBtnModeTrack')?.addEventListener('click', () => switchDispView('track'));
+    document.getElementById('dpBtnModeAgenda')?.addEventListener('click', () => switchDispView('agenda'));
+
+    // Botões de Período da Agenda Preview (7d, 15d, 30d)
+    document.querySelectorAll('.dp-ag-period-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.dp-ag-period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _dispAgendaPeriod = btn.dataset.period || '7d';
+            renderDispAgenda();
+        });
+    });
+
+    // Controles de Navegação da Agenda Preview
+    document.getElementById('dpAgPrev')?.addEventListener('click', () => {
+        if (_dispAgendaPeriod === '7d') _dispAgendaAnchor = addDays(_dispAgendaAnchor, -7);
+        else if (_dispAgendaPeriod === '15d') _dispAgendaAnchor = addDays(_dispAgendaAnchor, -15);
+        else _dispAgendaAnchor = new Date(_dispAgendaAnchor.getFullYear(), _dispAgendaAnchor.getMonth() - 1, 1);
+        renderDispAgenda();
+    });
+
+    document.getElementById('dpAgNext')?.addEventListener('click', () => {
+        if (_dispAgendaPeriod === '7d') _dispAgendaAnchor = addDays(_dispAgendaAnchor, 7);
+        else if (_dispAgendaPeriod === '15d') _dispAgendaAnchor = addDays(_dispAgendaAnchor, 15);
+        else _dispAgendaAnchor = new Date(_dispAgendaAnchor.getFullYear(), _dispAgendaAnchor.getMonth() + 1, 1);
+        renderDispAgenda();
+    });
+
+    document.getElementById('dpAgToday')?.addEventListener('click', () => {
+        _dispAgendaAnchor = new Date();
+        renderDispAgenda();
     });
 
     if (window.realtime) {

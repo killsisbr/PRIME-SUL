@@ -9,6 +9,41 @@ export async function init() {
         });
     });
 
+    function updateModeCards(isDisposable) {
+        const cardDisp = document.getElementById('cfgModeCardDisposable');
+        const cardDir = document.getElementById('cfgModeCardDirect');
+        const radioDisp = document.getElementById('cfgModeRadioDisposable');
+        const radioDir = document.getElementById('cfgModeRadioDirect');
+        const badge = document.getElementById('cfgModeBadge');
+
+        if (radioDisp) radioDisp.checked = isDisposable;
+        if (radioDir) radioDir.checked = !isDisposable;
+
+        if (cardDisp) {
+            cardDisp.classList.toggle('active', isDisposable);
+            cardDisp.style.borderColor = isDisposable ? 'var(--dark)' : '#cbd5e1';
+            cardDisp.style.background = isDisposable ? '#f0fdf4' : '#fff';
+        }
+        if (cardDir) {
+            cardDir.classList.toggle('active', !isDisposable);
+            cardDir.style.borderColor = !isDisposable ? 'var(--dark)' : '#cbd5e1';
+            cardDir.style.background = !isDisposable ? '#eff6ff' : '#fff';
+        }
+        if (badge) {
+            badge.textContent = isDisposable ? 'MODO HÍBRIDO (DESCARTÁVEL)' : 'MODO DIRETO (VENDEDOR)';
+            badge.style.background = isDisposable ? '#10b981' : '#3b82f6';
+        }
+    }
+
+    document.querySelectorAll('input[name="cfg_dispatch_mode"]').forEach(r => {
+        r.addEventListener('change', (e) => {
+            updateModeCards(e.target.value === 'true');
+        });
+    });
+
+    document.getElementById('cfgModeCardDisposable')?.addEventListener('click', () => updateModeCards(true));
+    document.getElementById('cfgModeCardDirect')?.addEventListener('click', () => updateModeCards(false));
+
     async function load() {
         try {
             const s = await api('/config');
@@ -22,6 +57,9 @@ export async function init() {
             if (s.cfg_batch) document.getElementById('cfgBatch').value = s.cfg_batch;
             if (s.cfg_recontact_days) document.getElementById('cfgRecontactDays').value = s.cfg_recontact_days;
             if (s.cfg_wa_slots) document.getElementById('cfgWaSlots').value = s.cfg_wa_slots;
+
+            const isDisp = s.cfg_disposable_bots_mode !== 'false';
+            updateModeCards(isDisp);
         } catch (e) { console.error(e); }
     }
 
@@ -31,6 +69,7 @@ export async function init() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SALVANDO...';
         btn.disabled = true;
         try {
+            const isDisp = document.getElementById('cfgModeRadioDisposable')?.checked ?? true;
             await api('/config', {
                 method: 'PUT',
                 body: JSON.stringify({
@@ -43,7 +82,8 @@ export async function init() {
                     cfg_delay: document.getElementById('cfgDelay').value,
                     cfg_batch: document.getElementById('cfgBatch').value,
                     cfg_recontact_days: document.getElementById('cfgRecontactDays').value,
-                    cfg_wa_slots: document.getElementById('cfgWaSlots').value
+                    cfg_wa_slots: document.getElementById('cfgWaSlots').value,
+                    cfg_disposable_bots_mode: isDisp ? 'true' : 'false'
                 })
             });
             toast('Configurações salvas!');

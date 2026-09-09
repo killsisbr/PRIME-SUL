@@ -2,14 +2,40 @@
    PRIME SUL — MEU WHATSAPP (TEMA CLARO LIMPO & NEOBRUTALISTA)
    ========================================================================== */
 
+/* ============ POPUP 99% DA TELA — CONVERSAS WHATSAPP ============ */
+#dynamicModalOverlay:has(.bt-root),
+#dynamicModalOverlay.is-bots,
+#dynamicModalOverlay:has(.wa-preview-container) {
+    padding: 0.5vh 0.5vw !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#dynamicModalOverlay:has(.bt-root) .hud-modal,
+#dynamicModalOverlay.is-bots .hud-modal,
+#dynamicModalOverlay:has(.wa-preview-container) .hud-modal,
+.hud-modal:has(.bt-root) {
+    width: 99vw !important;
+    max-width: 99vw !important;
+    height: 98.5vh !important;
+    max-height: 98.5vh !important;
+    margin: auto !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 6px 6px 0 var(--dark, #181716) !important;
+}
+
+#dynamicModalOverlay:has(.bt-root) #dynamicModalBody,
+#dynamicModalOverlay.is-bots #dynamicModalBody,
 #dynamicModalBody:has(.bt-root) {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    height: 100%;
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 100% !important;
     overflow: hidden !important;
-    padding: 10px 14px !important;
+    padding: 8px 12px !important;
     background: transparent !important;
 }
 
@@ -323,6 +349,15 @@
 }
 .wa-btn-popout {
     background: #25d366 !important;
+    color: #ffffff !important;
+}
+.wa-btn-close-modal {
+    background: #fee2e2 !important;
+    border-color: var(--bad, #ef4444) !important;
+    color: var(--bad, #ef4444) !important;
+}
+.wa-btn-close-modal:hover {
+    background: var(--bad, #ef4444) !important;
     color: #ffffff !important;
 }
 

@@ -83,7 +83,10 @@ async function pickNumbers(number_ids, organizationId = 1, sellerId = null) {
             [organizationId, sellerId, ...ids]
         );
     }
-    return db.all("SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND status = 'ativo' ORDER BY seller_id IS NULL, id ASC LIMIT 1", [organizationId, sellerId]);
+    const row = await db.get("SELECT value FROM settings WHERE key = 'cfg_disposable_bots_mode'");
+    const disposable = row ? row.value !== 'false' : true;
+    const orderClause = disposable ? "ORDER BY (seller_id IS NULL) DESC, id ASC" : "ORDER BY (seller_id IS NOT NULL) DESC, id ASC";
+    return db.all(`SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND status = 'ativo' ${orderClause} LIMIT 1`, [organizationId, sellerId]);
 }
 
 // Lista (não só conta) os leads que batem com os filtros — usado pra deixar o vendedor
@@ -135,7 +138,7 @@ async function createCampaign({ seller_id, organization_id = 1, name, message, n
         for (const sName of seedNames) {
             const res = await db.run(
                 `INSERT INTO leads (organization_id, seller_id, name, phone, city, status, origem, score, prioridade)
-                 VALUES (?, ?, ?, ?, 'Porto Alegre', 'novo', 'meta_ads', 80, 'alta')`,
+                 VALUES (?, ?, ?, ?, 'Porto Alegre', 'novos', 'SITE', 80, 'alta')`,
                 [organization_id, seller_id, sName, `(51) 9${Math.floor(10000000 + Math.random() * 89999999)}`]
             );
             const newLead = await db.get('SELECT * FROM leads WHERE id = ?', [res.lastID]);

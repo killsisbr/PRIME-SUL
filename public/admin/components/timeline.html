@@ -10,6 +10,16 @@
             </div>
         </div>
         <div class="tl-top-actions">
+            <!-- Switcher: Feed vs Agenda Preview -->
+            <div class="tl-view-switcher" id="tl-view-switcher">
+                <button type="button" class="tl-view-btn active" id="tl-btn-view-feed" title="Ver feed cronológico">
+                    <i class="fas fa-list-ul"></i> LINHA DO TEMPO
+                </button>
+                <button type="button" class="tl-view-btn" id="tl-btn-view-agenda" title="Ver agenda preview de disparos">
+                    <i class="fas fa-calendar-days"></i> AGENDA PREVIEW
+                    <span class="tl-agenda-badge-hot">TOP</span>
+                </button>
+            </div>
             <span class="tl-live-badge" id="tl-live"><i class="fas fa-circle"></i> MONITORAMENTO AO VIVO</span>
             <button type="button" class="tl-refresh-btn" id="tl-refresh" title="Atualizar agora">
                 <i class="fas fa-rotate-right"></i> ATUALIZAR
@@ -102,6 +112,74 @@
     <div class="tl-feed-container" id="tl-list">
         <div class="tl-loading"><i class="fas fa-spinner fa-spin"></i> Carregando telemetria dos bots...</div>
     </div>
+
+    <!-- ============ AGENDA PREVIEW DOS DISPAROS (VISÃO CALENDÁRIO / GRADE) ============ -->
+    <div class="tl-agenda-wrapper" id="tl-agenda-wrapper" style="display:none;">
+        <!-- Toolbar da Agenda -->
+        <div class="tl-agenda-toolbar">
+            <!-- Seletor de Período (Semana, 15 Dias, Mensal) -->
+            <div class="tl-agenda-period-group">
+                <button type="button" class="tl-ag-period-btn active" data-ag-period="7d">
+                    <i class="fas fa-calendar-week"></i> 7 DIAS (SEMANA)
+                </button>
+                <button type="button" class="tl-ag-period-btn" data-ag-period="15d">
+                    <i class="fas fa-calendar-days"></i> 15 DIAS
+                </button>
+                <button type="button" class="tl-ag-period-btn" data-ag-period="30d">
+                    <i class="fas fa-calendar"></i> 30 DIAS (MENSAL)
+                </button>
+            </div>
+
+            <!-- Navegador Temporal -->
+            <div class="tl-agenda-nav-group">
+                <button type="button" class="tl-ag-nav-btn" id="tl-ag-prev" title="Período Anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" class="tl-ag-nav-btn today" id="tl-ag-today" title="Ir para hoje">
+                    HOJE
+                </button>
+                <button type="button" class="tl-ag-nav-btn" id="tl-ag-next" title="Próximo Período">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <span class="tl-ag-range-label" id="tl-ag-range-label">07 SET — 13 SET 2026</span>
+            </div>
+
+            <!-- Filtro de tipo na agenda -->
+            <div class="tl-agenda-filter-group">
+                <select id="tl-ag-type-filter" class="tl-select">
+                    <option value="">TODOS OS EVENTOS &amp; DISPAROS</option>
+                    <option value="sends">APENAS DISPAROS (SUCESSO/FALHA)</option>
+                    <option value="campaigns">CAMPANHAS &amp; AGENDAMENTOS</option>
+                    <option value="cooldowns">COOLDOWNS &amp; PAUSAS</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- KPIs da Agenda Preview -->
+        <div class="tl-agenda-kpi-bar">
+            <div class="tl-ag-kpi-item">
+                <span class="tl-ag-kpi-label"><i class="fas fa-paper-plane" style="color:#10b981;"></i> TOTAL DE ENVIOS NO PERÍODO</span>
+                <strong class="tl-ag-kpi-val" id="tl-ag-kpi-total">0</strong>
+            </div>
+            <div class="tl-ag-kpi-item">
+                <span class="tl-ag-kpi-label"><i class="fas fa-chart-line" style="color:#3b82f6;"></i> MÉDIA DIÁRIA DE DISPAROS</span>
+                <strong class="tl-ag-kpi-val" id="tl-ag-kpi-avg">0/dia</strong>
+            </div>
+            <div class="tl-ag-kpi-item">
+                <span class="tl-ag-kpi-label"><i class="fas fa-fire" style="color:#f97316;"></i> DIA DE MAIOR PICO</span>
+                <strong class="tl-ag-kpi-val" id="tl-ag-kpi-peak">--</strong>
+            </div>
+            <div class="tl-ag-kpi-item">
+                <span class="tl-ag-kpi-label"><i class="fas fa-check-double" style="color:#8b5cf6;"></i> TAXA DE SUCESSO</span>
+                <strong class="tl-ag-kpi-val" id="tl-ag-kpi-rate">100%</strong>
+            </div>
+        </div>
+
+        <!-- Grade Dinâmica da Agenda (Semana / 15 dias / Mensal) -->
+        <div class="tl-agenda-grid-container" id="tl-agenda-grid-container">
+            <div class="tl-loading"><i class="fas fa-spinner fa-spin"></i> Montando grade da agenda preview...</div>
+        </div>
+    </div>
 </div>
 
 <!-- ============ SUBMODAL ANIMADO: INSPECTOR DE EVENTO (SUBPOPUP MERGED) ============ -->
@@ -147,6 +225,48 @@
         </div>
         <footer class="tl-inspector-footer">
             <button type="button" class="tl-btn-secondary" id="tli-done-btn"><i class="fas fa-check"></i> FECHAR INSPECTOR</button>
+        </footer>
+    </div>
+</div>
+
+<!-- ============ MODAL DRAWER: DETALHES DO DIA DA AGENDA ============ -->
+<div class="v2-submodal-overlay" id="tlDayOverlay" style="display:none; z-index:13150;">
+    <div class="tl-day-drawer-shell" id="tl-day-drawer-shell">
+        <div class="tl-inspector-header">
+            <div>
+                <span class="tl-eyebrow">AGENDA PREVIEW — DETALHAMENTO DO DIA</span>
+                <h3 id="tld-title">SEGUNDA-FEIRA, 07 DE SETEMBRO DE 2026</h3>
+                <p id="tld-subtitle">0 disparos e eventos registrados neste dia</p>
+            </div>
+            <button type="button" class="tl-close-btn" id="tld-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="tl-day-drawer-body">
+            <!-- Mini estatísticas do dia -->
+            <div class="tl-day-summary-pills">
+                <span class="tl-dsp-pill green"><i class="fas fa-check"></i> <b id="tld-sent-count">0</b> Enviados</span>
+                <span class="tl-dsp-pill red"><i class="fas fa-xmark"></i> <b id="tld-fail-count">0</b> Falhas</span>
+                <span class="tl-dsp-pill orange"><i class="fas fa-snowflake"></i> <b id="tld-cool-count">0</b> Cooldowns</span>
+                <span class="tl-dsp-pill blue"><i class="fas fa-bullhorn"></i> <b id="tld-camp-count">0</b> Campanhas</span>
+            </div>
+
+            <!-- Divisão por Turno -->
+            <div class="tl-day-shifts-strip">
+                <div class="tl-shift-col">
+                    <div class="tl-shift-head"><i class="fas fa-sun"></i> MANHÃ (06h - 12h) <span id="tld-shift-m-count">0</span></div>
+                    <div class="tl-shift-events" id="tld-shift-m-list"></div>
+                </div>
+                <div class="tl-shift-col">
+                    <div class="tl-shift-head"><i class="fas fa-cloud-sun"></i> TARDE (12h - 18h) <span id="tld-shift-a-count">0</span></div>
+                    <div class="tl-shift-events" id="tld-shift-a-list"></div>
+                </div>
+                <div class="tl-shift-col">
+                    <div class="tl-shift-head"><i class="fas fa-moon"></i> NOITE (18h - 24h) <span id="tld-shift-n-count">0</span></div>
+                    <div class="tl-shift-events" id="tld-shift-n-list"></div>
+                </div>
+            </div>
+        </div>
+        <footer class="tl-inspector-footer">
+            <button type="button" class="tl-btn-secondary" id="tld-done-btn"><i class="fas fa-check"></i> FECHAR VISÃO DO DIA</button>
         </footer>
     </div>
 </div>

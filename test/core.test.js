@@ -59,9 +59,9 @@ test('automação do funil é isolada por vendedor', async () => {
     const a = await db.get("SELECT id FROM sellers WHERE email='a@test'");
     const b = await db.get("SELECT id FROM sellers WHERE email='b@test'");
     const n = await db.run("INSERT INTO bot_numbers(organization_id,seller_id,number,label) VALUES(1,?,'5511333330000','Automação A')", [a.id]);
-    await stageConfig.saveForSeller('novo', { auto_send: true, message: 'Olá {nome}', number_id: n.lastID }, a.id, 1);
-    const own = await stageConfig.get('novo', a.id, 1);
-    const other = await stageConfig.get('novo', b.id, 1);
+    await stageConfig.saveForSeller('novos', { auto_send: true, message: 'Olá {nome}', number_id: n.lastID }, a.id, 1);
+    const own = await stageConfig.get('novos', a.id, 1);
+    const other = await stageConfig.get('novos', b.id, 1);
     assert.equal(own.auto_send, true);
     assert.equal(other.auto_send, undefined);
     await assert.rejects(() => stageConfig.saveForSeller('concluido', { auto_send: true, message: 'Oi' }, a.id, 1), /somente nas etapas/);
