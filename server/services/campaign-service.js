@@ -250,6 +250,64 @@ async function sendToLead(lead, message, sellerId, numberIds = []) {
     return { sent: true, campaign_id: campaign.id };
 }
 
+// Envio manual 1:1 a partir do chat do operador (popup WhatsApp).
+// NÃO cria campanha e NÃO aplica a trava de recontato de 7 dias nem o filtro de
+// estágio — o vendedor está conversando com o cliente em tempo real. Continua
+// respeitando opt-out (dentro do whatsapp-service) e a rotação/limite diário
+// anti-ban entre os números.
+async function sendManualToLead(lead, message, { sellerId = null } = {}) {
+    const text = String(message || '').trim();
+    if (!text) return { sent: false, reason: 'mensagem vazia' };
+
+    const phoneList = [lead.phone, lead.phone2, lead.phone3]
+        .filter(p => p && String(p).trim().length >= 8);
+    if (!phoneList.length) return { sent: false, reason: 'lead sem telefone válido' };
+
+    const organizationId = lead.organization_id || 1;
+    const num = await antiBan.reserveNumber(organizationId, sellerId);
+    if (!num) return { sent: false, reason: 'nenhum número WhatsApp disponível (limite diário atingido ou nenhum ativo)' };
+
+    let result = { sent: false, reason: 'not_connected' };
+    let usedPhone = phoneList[0];
+    for (const phone of phoneList) {
+        const res = await whatsapp.sendMessage(num.number, phone, text, {
+            organizationId,
+            sellerId,
+            skipCooldown: true
+        });
+        if (res.sent) { result = res; usedPhone = phone; break; }
+        result = res;
+        if (res.reason === 'not_connected') break;
+    }
+
+    if (!result.sent) {
+        await antiBan.releaseNumber(num.id); // não saiu — devolve a cota reservada
+        const reasonMap = {
+            not_connected: 'o número de WhatsApp não está conectado (escaneie o QR em "Meu WhatsApp")',
+            opt_out: 'este contato está na lista de bloqueio (opt-out)',
+            invalid_phone: 'o telefone do lead é inválido',
+            cooldown: 'aguarde alguns instantes antes de reenviar para este contato'
+        };
+        return { sent: false, reason: reasonMap[result.reason] || result.reason || 'falha no envio' };
+    }
+
+    await db.run(
+        `INSERT INTO sends (campaign_id, lead_id, number_id, status, wa_message, sent_at)
+         VALUES (NULL, ?, ?, 'sent', ?, datetime('now'))`,
+        [lead.id, num.id, text]
+    );
+    botEvents.log(num.number, 'send_ok', `Manual (chat) ${lead.name} → ${usedPhone}`, num.label);
+
+    if (lead.status === 'novos') {
+        await db.run("UPDATE leads SET status = 'enviados', updated_at = datetime('now') WHERE id = ?", [lead.id]);
+        try {
+            require('./websocket-service').broadcast(organizationId, { type: 'LEAD_UPDATE', lead_id: lead.id, status: 'enviados' });
+        } catch (e) { /* ws opcional */ }
+    }
+
+    return { sent: true, phone: usedPhone, number: num.number, number_label: num.label || null };
+}
+
 async function getAuthorizedCampaign(id, sellerId, role, organizationId) {
     const campaign = await db.get('SELECT * FROM campaigns WHERE id = ?', [numId(id)]);
     if (!campaign) { const e = new Error('Campanha não encontrada'); e.status = 404; throw e; }
@@ -566,6 +624,7 @@ module.exports = {
     updateCampaign,
     deleteCampaign,
     sendToLead,
+    sendManualToLead,
     countTargets,
     listTargets,
     startCampaign,

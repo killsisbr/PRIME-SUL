@@ -398,22 +398,38 @@
 
             const bubble = document.createElement('div');
             bubble.className = 'wa-msg-bubble out';
+            const metaId = 'wa-meta-' + Date.now();
             bubble.innerHTML = `
                 <div>${escapeHtml(msgText)}</div>
-                <div class="wa-msg-meta"><span>${timeStr}</span> <i class="fas fa-check-double" style="color:#34b7f1;"></i></div>`;
+                <div class="wa-msg-meta" id="${metaId}"><span>${timeStr}</span> <i class="fas fa-clock" style="opacity:.6;"></i></div>`;
             msgBox.appendChild(bubble);
             msgBox.scrollTop = msgBox.scrollHeight;
             inputEl.value = '';
+            if (sendBtn) sendBtn.disabled = true;
+
+            const setMeta = html => { const m = document.getElementById(metaId); if (m) m.innerHTML = `<span>${timeStr}</span> ${html}`; };
 
             try {
-                if (window.api) {
-                    await window.api(`/leads/${activeLead.id}/notes`, {
-                        method: 'POST',
-                        body: JSON.stringify({ note: `[WhatsApp Web] ${msgText}` })
-                    });
+                if (!window.api) throw new Error('Sessão expirada. Recarregue a página.');
+                const r = await window.api('/tools/send-lead', {
+                    method: 'POST',
+                    body: JSON.stringify({ lead_id: activeLead.id, message: msgText })
+                });
+                setMeta('<i class="fas fa-check-double" style="color:#34b7f1;"></i>');
+                if (window.toast) {
+                    const dest = r && r.phone ? ` (${r.phone})` : '';
+                    window.toast('Mensagem entregue no WhatsApp' + dest + '!');
                 }
-                if (window.toast) window.toast('Mensagem enviada com sucesso!');
-            } catch (e) {}
+            } catch (e) {
+                bubble.classList.add('wa-msg-failed');
+                setMeta('<i class="fas fa-triangle-exclamation" style="color:#ef4444;"></i>');
+                bubble.style.borderColor = '#ef4444';
+                if (window.toast) window.toast(e.message || 'Falha ao enviar a mensagem', 'err');
+                // devolve o texto pro campo pra facilitar reenviar
+                if (!inputEl.value) inputEl.value = msgText;
+            } finally {
+                if (sendBtn) sendBtn.disabled = false;
+            }
         }
 
         sendBtn.onclick = sendMessage;
@@ -651,7 +667,7 @@
                 sends.forEach(s => {
                     messages.push({
                         type: 'out',
-                        text: s.content || s.message || 'Mensagem enviada',
+                        text: s.wa_message || s.content || s.message || 'Mensagem enviada',
                         time: new Date(s.sent_at || s.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                     });
                 });

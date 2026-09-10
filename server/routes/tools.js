@@ -168,6 +168,52 @@ router.post('/send', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Envio manual 1:1 a partir do chat do operador (popup flutuante do WhatsApp).
+// Diferente de /send (que dispara para uma coluna inteira via campanha), aqui é
+// uma única mensagem para um lead específico, em tempo real.
+const CHAT_SEND_LIMIT = Number(process.env.CHAT_SEND_LIMIT) || 20;
+const chatRateLimits = new Map();
+
+router.post('/send-lead', async (req, res, next) => {
+    try {
+        const { lead_id, message } = req.body;
+        const text = String(message || '').trim();
+        if (!lead_id) return res.status(400).json({ error: 'lead_id obrigatório' });
+        if (!text) return res.status(400).json({ error: 'Mensagem obrigatória' });
+        if (text.length > 4000) return res.status(400).json({ error: 'Mensagem muito longa (máx. 4000 caracteres)' });
+
+        const lead = await leadService.getLead(lead_id, req.user.id);
+        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
+
+        const now = Date.now();
+        const recent = (chatRateLimits.get(req.user.id) || []).filter(ts => now - ts < MANUAL_SEND_WINDOW_MS);
+        if (recent.length >= CHAT_SEND_LIMIT) {
+            chatRateLimits.set(req.user.id, recent);
+            return res.status(429).json({
+                error: 'Muitas mensagens em sequência. Aguarde alguns segundos e tente de novo.',
+                retry_after_seconds: Math.max(1, Math.ceil((MANUAL_SEND_WINDOW_MS - (now - recent[0])) / 1000))
+            });
+        }
+        recent.push(now);
+        chatRateLimits.set(req.user.id, recent);
+
+        const result = await campaignService.sendManualToLead(lead, text, { sellerId: req.user.id });
+        if (!result.sent) {
+            return res.status(422).json({ error: `Não foi possível enviar: ${result.reason}`, reason: result.reason });
+        }
+
+        // Registra a mensagem no histórico do lead (aparece na Ficha)
+        try {
+            const timestamp = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            const entry = `[${timestamp}] [WhatsApp • ${result.number}] ${text}`;
+            const updatedObs = lead.obs ? `${entry}\n${lead.obs}` : entry;
+            await leadService.updateLead(lead_id, req.user.id, { obs: updatedObs });
+        } catch (e) { /* nota é acessório — não falha o envio */ }
+
+        res.status(201).json({ ok: true, ...result });
+    } catch (e) { next(e); }
+});
+
 // ---------- Handlers dos jobs ----------
 
 jobQueue.register('move_stage', async (job) => {
