@@ -1561,47 +1561,6 @@ export async function init() {
         };
     }
 
-    // Toggle para formulário manual (opcional)
-    const toggleManualBtn = document.getElementById('bt-toggle-manual');
-    const manualBox = document.getElementById('bt-manual-box');
-    if (toggleManualBtn && manualBox) {
-        toggleManualBtn.onclick = () => {
-            const isHidden = manualBox.style.display === 'none' || !manualBox.style.display;
-            manualBox.style.display = isHidden ? 'flex' : 'none';
-            toggleManualBtn.innerHTML = isHidden
-                ? '<i class="fas fa-chevron-up"></i> Ocultar entrada manual'
-                : '<i class="fas fa-keyboard"></i> Adicionar número manualmente (opcional)';
-        };
-    }
-
-    // Handler para adicionar número manual caso o usuário opte por digitar
-    const btAddBtn = document.getElementById('bt-add-btn');
-    if (btAddBtn) {
-        btAddBtn.onclick = async () => {
-            const numberInput = document.getElementById('bt-num');
-            const labelInput = document.getElementById('bt-label');
-            if (!numberInput) return;
-            const number = numberInput.value.trim();
-            const label = labelInput ? (labelInput.value.trim() || `WhatsApp ${number.slice(-8)}`) : `WhatsApp ${number.slice(-8)}`;
-            if (!number) {
-                if (toast) toast('Digite um número ou use o botão verde para escanear QR', 'err');
-                return;
-            }
-            try {
-                const res = await api('/whatsapp/connect', { method: 'POST', body: JSON.stringify({ number, label }) });
-                if (res.status === 'queued') {
-                    toast(res.message, 'info');
-                } else {
-                    toast('Conectando... aguarde o QR', 'info');
-                    await refresh();
-                    startQrPoll(number);
-                }
-            } catch (e) {
-                toast(e.message || 'Erro ao conectar', 'err');
-            }
-        };
-    }
-
     // Mensagem nova chegando ao vivo: recarrega a conversa aberta e a lista
     _onLiveMessage = (data) => {
         if (_activeLead && data && Number(data.lead_id) === _activeLead.id) {

@@ -243,7 +243,7 @@
             <div class="bt-hero">
                 <div class="bt-hero-icon"><i class="fab fa-whatsapp"></i></div>
                 <h1 class="bt-hero-headline">MEU WHATSAPP</h1>
-                <p class="bt-hero-desc">Conecte seu número e acompanhe o status em tempo real. Use os slots disponíveis ou adicione um número manualmente.</p>
+                <p class="bt-hero-desc">Conecte seu número e acompanhe o status em tempo real. Gere o QR Code e escaneie com seu celular — o sistema puxa e cadastra o número automaticamente.</p>
 
                 <!-- Toggle bots (apenas admin vê ativo) -->
                 <div class="bt-hero-toggle" id="bt-hero-toggle-wrap">
@@ -286,20 +286,10 @@
                             </span>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px;">
                         <button type="button" class="bt-action ok" id="bt-quick-scan-btn" style="padding: 10px 22px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px;">
                             <i class="fas fa-qrcode"></i> GERAR QR CODE PARA CONECTAR
                         </button>
-                        <button type="button" id="bt-toggle-manual" style="background:none; border:none; color:#64748b; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">
-                            <i class="fas fa-keyboard"></i> Adicionar número manualmente (opcional)
-                        </button>
-                    </div>
-
-                    <!-- Formulário manual colapsável (opcional caso necessário) -->
-                    <div id="bt-manual-box" style="display: none; margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="bt-num" class="bt-input" placeholder="Número (DDI+DDD+telefone) ex: 5511999999999" style="flex: 1; min-width: 200px;">
-                        <input type="text" id="bt-label" class="bt-input" placeholder="Etiqueta ex: Meu WhatsApp" style="flex: 0 0 180px;">
-                        <button type="button" class="bt-action ok" id="bt-add-btn"><i class="fas fa-plus"></i> CONECTAR MANUAL</button>
                     </div>
                 </div>
 
