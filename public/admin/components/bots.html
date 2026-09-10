@@ -233,20 +233,40 @@
                 </div>
             </div>
 
-            <!-- CONTEÚDO: ADICIONAR NÚMERO MANUAL + GRID DE SLOTS/NÚMEROS -->
+            <!-- CONTEÚDO: CONEXÃO VIA QR CODE + GRID DE SLOTS/NÚMEROS -->
             <div class="bt-content">
-                <!-- Formulário: Adicionar número manual -->
-                <div class="bt-card" style="border-color: var(--brand, #2563eb);">
-                    <div class="bt-card-head">
+                <!-- Conectar via Scanner QR (Sem precisar digitar número manual) -->
+                <div class="bt-card bt-connect-banner" style="border-color: #25d366; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);">
+                    <div class="bt-card-head" style="margin-bottom: 8px;">
                         <div>
-                            <span class="bt-num">Adicionar Número Manual</span>
-                            <span class="bt-label">DDI + DDD + telefone (ex: 5511999999999)</span>
+                            <span class="bt-num" style="display:flex; align-items:center; gap:8px;">
+                                <i class="fab fa-whatsapp" style="color:#25d366; font-size:1.4rem;"></i>
+                                Conectar WhatsApp via QR Code
+                            </span>
+                            <span class="bt-label" style="color:#15803d; text-transform:none; font-size:0.75rem; margin-top:2px;">
+                                Não precisa digitar o número manual. Basta gerar o QR Code e escanear com seu celular que o sistema puxa e cadastra seu número e perfil automaticamente!
+                            </span>
+                        </div>
+                        <div class="bt-badges">
+                            <span class="bt-badge conn-connected" style="background:#dcfce7; color:#15803d; border-color:#22c55e;">
+                                <i class="fas fa-bolt"></i> AUTO-CADASTRO
+                            </span>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 6px;">
+                        <button type="button" class="bt-action ok" id="bt-quick-scan-btn" style="padding: 10px 22px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-qrcode"></i> GERAR QR CODE PARA CONECTAR
+                        </button>
+                        <button type="button" id="bt-toggle-manual" style="background:none; border:none; color:#64748b; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">
+                            <i class="fas fa-keyboard"></i> Adicionar número manualmente (opcional)
+                        </button>
+                    </div>
+
+                    <!-- Formulário manual colapsável (opcional caso necessário) -->
+                    <div id="bt-manual-box" style="display: none; margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; gap: 8px; flex-wrap: wrap;">
                         <input type="text" id="bt-num" class="bt-input" placeholder="Número (DDI+DDD+telefone) ex: 5511999999999" style="flex: 1; min-width: 200px;">
                         <input type="text" id="bt-label" class="bt-input" placeholder="Etiqueta ex: Meu WhatsApp" style="flex: 0 0 180px;">
-                        <button type="button" class="bt-action ok" id="bt-add-btn"><i class="fas fa-plus"></i> CONECTAR</button>
+                        <button type="button" class="bt-action ok" id="bt-add-btn"><i class="fas fa-plus"></i> CONECTAR MANUAL</button>
                     </div>
                 </div>
 

@@ -85,6 +85,9 @@ export async function init() {
                 const limit = 40;
                 const pct = Math.min(100, Math.round((msgs / limit) * 100));
 
+                const displayPhone = n.realNumber || n.real_number || (n.number && n.number.startsWith('slot-') ? (n.label || 'Aguardando conexão') : n.number);
+                const isAuto = !!(n.realNumber || n.real_number);
+
                 return `
                 <div class="num-row-card">
                     <div class="num-row-left">
@@ -92,10 +95,11 @@ export async function init() {
                             <i class="fas ${isAtivo ? 'fa-mobile-screen' : isCooling ? 'fa-snowflake' : 'fa-ban'}"></i>
                         </div>
                         <div class="num-row-details">
-                            <strong class="num-row-phone">${esc(formatPhone(n.number))}</strong>
+                            <strong class="num-row-phone">${esc(formatPhone(displayPhone))}</strong>
                             <div class="num-row-meta">
                                 <span class="num-meta-label">${esc(n.label || 'Sem rótulo')}</span>
-                                ${n.realNumber && n.realNumber !== n.number ? `<span title="Número real vinculado">${esc(formatPhone(n.realNumber))}</span>` : ''}
+                                ${isAuto ? `<span class="num-meta-label" style="color:#2563eb;font-weight:700;" title="Número auto-identificado pelo WhatsApp"><i class="fas fa-circle-check"></i> Auto-identificado</span>` : ''}
+                                ${n.pushName ? `<span style="color:#10b981;font-weight:700;"><i class="fas fa-user"></i> ${esc(n.pushName)}</span>` : ''}
                                 <span>Cadastrado em ${n.created_at ? esc(n.created_at.slice(0, 10)) : 'Hoje'}</span>
                             </div>
                         </div>
@@ -145,7 +149,32 @@ export async function init() {
         }
     }
 
-    // ================= ADICIONAR CHIP =================
+    // ================= CONECTAR VIA SCANNER QR (1-CLIQUE AUTO) =================
+    window.numQuickScan = async function () {
+        try {
+            const res = await api('/whatsapp/auto-connect', { method: 'POST' });
+            if (res.status === 'queued') {
+                toast(res.message, 'info');
+            } else {
+                toast('QR Code gerado! Aponte a câmera do seu WhatsApp.', 'info');
+                await load();
+                if (res.number) {
+                    window.numOpenQr(res.number, res.label || 'WhatsApp');
+                }
+            }
+        } catch (e) {
+            toast(e.message || 'Erro ao gerar QR Code', 'err');
+        }
+    };
+
+    window.toggleNumManual = function () {
+        const form = document.getElementById('numManualForm');
+        if (!form) return;
+        const isHidden = form.style.display === 'none' || !form.style.display;
+        form.style.display = isHidden ? 'flex' : 'none';
+    };
+
+    // ================= ADICIONAR CHIP MANUAL =================
     window.addNumber = async function () {
         const numInput = document.getElementById('numNumber');
         const labelInput = document.getElementById('numLabel');
@@ -185,8 +214,12 @@ export async function init() {
 
         if (!modal) return;
 
-        if (phoneEl) phoneEl.textContent = formatPhone(number);
-        if (labelEl) labelEl.textContent = label || 'Chip de Disparo';
+        if (phoneEl) {
+            phoneEl.textContent = (number && number.startsWith('slot-')) ? 'Aparelho WhatsApp' : formatPhone(number);
+        }
+        if (labelEl) {
+            labelEl.textContent = (number && number.startsWith('slot-')) ? 'O número será puxado automaticamente ao escanear' : (label || 'Chip de Disparo');
+        }
 
         if (spinner) {
             spinner.style.display = 'flex';

@@ -9,6 +9,7 @@ let _activeLead = null;
 let _threads = [];
 let _activeThreadKey = null;
 let _onLiveMessage = null;
+let _onWaConnected = null;
 const threadKey = t => `${t.lead_phone}|${t.bot_number || ''}`;
 
 export async function init() {
@@ -1100,8 +1101,9 @@ export async function init() {
                 </div>` : '';
 
             const isSlot = n.slot_index != null;
-            const heading = isSlot ? (n.realNumber ? fmtNum(n.realNumber) : (n.label || `WhatsApp ${n.slot_index}`)) : fmtNum(n.number);
+            const heading = isSlot ? (n.realNumber ? fmtNum(n.realNumber) : (n.label || `WhatsApp ${n.slot_index}`)) : fmtNum(n.realNumber || n.number);
             const subLabel = isSlot ? (n.realNumber ? (n.label || `WhatsApp ${n.slot_index}`) : 'aguardando conexão') : (n.label || 'sem etiqueta');
+            const isAutoPuxado = !!n.realNumber;
 
             return `
             <div class="bt-card" data-number="${n.number}">
@@ -1109,7 +1111,8 @@ export async function init() {
                     <div>
                         <span class="bt-num">${esc(heading)}</span>
                         <span class="bt-label">${esc(subLabel)}</span>
-                        ${n.connection === 'connected' && n.realNumber && n.pushName ? `<span class="bt-label" style="display:block;color:var(--ok,#10b981);">${esc(n.pushName)}</span>` : ''}
+                        ${n.connection === 'connected' && n.pushName ? `<span class="bt-label" style="display:block;color:var(--ok,#10b981);font-weight:900;"><i class="fas fa-user-check"></i> ${esc(n.pushName)}</span>` : ''}
+                        ${isAutoPuxado ? `<span class="bt-label" style="display:inline-flex;align-items:center;gap:4px;color:#2563eb;margin-top:2px;font-size:0.62rem;" title="Número auto-identificado pelo WhatsApp"><i class="fas fa-circle-check"></i> AUTO-IDENTIFICADO</span>` : ''}
                     </div>
                     <div class="bt-badges">
                         <span class="bt-badge conn-${conn}"><i class="fas fa-circle"></i> ${CONN_LABEL[conn]}</span>
@@ -1152,11 +1155,21 @@ export async function init() {
             const res = await api(`/whatsapp/qr?number=${encodeURIComponent(number)}`);
             if (res.qr) {
                 wrap.classList.add('show');
-                wrap.innerHTML = `<img src="${res.qr}" alt="QR"><span><i class="fab fa-whatsapp"></i> Escaneie com o WhatsApp</span>`;
+                wrap.innerHTML = `
+                    <img src="${res.qr}" alt="QR Code WhatsApp">
+                    <span style="font-weight:800; color:var(--ink); font-size:0.75rem;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> Aponte a câmera do seu WhatsApp</span>
+                    <small style="color:#64748b; font-size:0.62rem; font-weight:700;">O número e nome serão identificados automaticamente</small>
+                `;
             } else {
                 wrap.classList.remove('show');
                 wrap.innerHTML = '';
-                if (res.status !== 'connecting') { stopQrPoll(number); refresh(); }
+                if (res.status !== 'connecting') {
+                    stopQrPoll(number);
+                    if (res.status === 'connected') {
+                        toast('WhatsApp conectado com sucesso! Número cadastrado.', 'ok');
+                    }
+                    refresh();
+                }
             }
         } catch (e) { stopQrPoll(number); }
     }
@@ -1239,6 +1252,49 @@ export async function init() {
     }
 
     // Handler for manual add number button in config tab
+    // 1-Clique: Conectar WhatsApp via QR Code (auto-puxa o número)
+    const quickScanBtn = document.getElementById('bt-quick-scan-btn');
+    if (quickScanBtn) {
+        quickScanBtn.onclick = async () => {
+            quickScanBtn.disabled = true;
+            const originalHtml = quickScanBtn.innerHTML;
+            quickScanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando QR Code...';
+            try {
+                const res = await api('/whatsapp/auto-connect', { method: 'POST' });
+                if (res.status === 'queued') {
+                    toast(res.message, 'info');
+                } else {
+                    toast('QR Code gerado! Aponte a câmera do seu WhatsApp.', 'info');
+                    await refresh();
+                    if (res.number) {
+                        startQrPoll(res.number);
+                        const card = document.querySelector(`.bt-card[data-number="${res.number}"]`);
+                        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            } catch (e) {
+                toast(e.message || 'Erro ao gerar QR Code', 'err');
+            } finally {
+                quickScanBtn.disabled = false;
+                quickScanBtn.innerHTML = originalHtml;
+            }
+        };
+    }
+
+    // Toggle para formulário manual (opcional)
+    const toggleManualBtn = document.getElementById('bt-toggle-manual');
+    const manualBox = document.getElementById('bt-manual-box');
+    if (toggleManualBtn && manualBox) {
+        toggleManualBtn.onclick = () => {
+            const isHidden = manualBox.style.display === 'none' || !manualBox.style.display;
+            manualBox.style.display = isHidden ? 'flex' : 'none';
+            toggleManualBtn.innerHTML = isHidden
+                ? '<i class="fas fa-chevron-up"></i> Ocultar entrada manual'
+                : '<i class="fas fa-keyboard"></i> Adicionar número manualmente (opcional)';
+        };
+    }
+
+    // Handler para adicionar número manual caso o usuário opte por digitar
     const btAddBtn = document.getElementById('bt-add-btn');
     if (btAddBtn) {
         btAddBtn.onclick = async () => {
@@ -1248,29 +1304,17 @@ export async function init() {
             const number = numberInput.value.trim();
             const label = labelInput ? (labelInput.value.trim() || `WhatsApp ${number.slice(-8)}`) : `WhatsApp ${number.slice(-8)}`;
             if (!number) {
-                if (toast) toast('Digite um número', 'err');
+                if (toast) toast('Digite um número ou use o botão verde para escanear QR', 'err');
                 return;
             }
             try {
-                // Try to connect via slot mechanism first (respects cfg_wa_slots limit, default 2)
-                const slotsLimit = 2;
-                let connected = false;
-                for (let i = 1; i <= slotsLimit; i++) {
-                    const slotRes = await api(`/whatsapp/slots/${i}/connect`, { method: 'POST' });
-                    if (slotRes.status !== 'queued') {
-                        toast(slotRes.message || `Slot ${i} processado`, slotRes.status === 'connecting' ? 'info' : 'err');
-                        connected = true;
-                        break;
-                    }
-                }
-                if (!connected) {
-                    // Fallback: try direct connect (number must already belong to operator)
-                    const res = await api('/whatsapp/connect', { method: 'POST', body: JSON.stringify({ number, label }) });
-                    if (res.status === 'queued') {
-                        toast(res.message, 'info');
-                    } else {
-                        toast('Conectando... aguarde o QR', 'info');
-                    }
+                const res = await api('/whatsapp/connect', { method: 'POST', body: JSON.stringify({ number, label }) });
+                if (res.status === 'queued') {
+                    toast(res.message, 'info');
+                } else {
+                    toast('Conectando... aguarde o QR', 'info');
+                    await refresh();
+                    startQrPoll(number);
                 }
             } catch (e) {
                 toast(e.message || 'Erro ao conectar', 'err');
@@ -1287,6 +1331,14 @@ export async function init() {
     };
     window.realtime?.on('lead:message', _onLiveMessage);
 
+    // WhatsApp acabou de conectar e auto-puxar o número: atualiza tela imediatamente
+    _onWaConnected = (data) => {
+        const phone = data?.realNumber ? fmtNum(data.realNumber) : '';
+        toast(`WhatsApp ${phone ? phone + ' ' : ''}conectado e cadastrado!`, 'ok');
+        refresh();
+    };
+    window.realtime?.on('whatsapp:connected', _onWaConnected);
+
     // Initial load
     await loadLeads();
     await refresh();
@@ -1297,6 +1349,7 @@ export async function destroy() {
     for (const [, id] of _pollers) clearInterval(id);
     _pollers.clear();
     if (_onLiveMessage) window.realtime?.off('lead:message', _onLiveMessage);
+    if (_onWaConnected) window.realtime?.off('whatsapp:connected', _onWaConnected);
     const modal = document.getElementById('waQuickModal');
     if (modal) modal.remove();
 }

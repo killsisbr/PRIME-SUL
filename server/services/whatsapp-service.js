@@ -47,6 +47,39 @@ fs.mkdirSync(sessionsDir, { recursive: true });
 const uploadsDir = path.join(__dirname, '..', '..', 'data', 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 
+// Extrai com precisão o número de telefone real do WhatsApp conectado após o scan do QR
+function extractRealNumber(sock) {
+    if (!sock) return null;
+    const candidates = [
+        sock.user?.id,
+        sock.authState?.creds?.me?.id,
+        sock.user?.phone,
+        sock.authState?.creds?.me?.phone,
+        sock.user?.jid,
+        sock.user?.lid,
+        sock.authState?.creds?.me?.lid
+    ];
+    for (const c of candidates) {
+        if (!c) continue;
+        const s = String(c);
+        if (s.includes('@s.whatsapp.net') || (!s.includes('@lid') && /^\d{10,15}/.test(s))) {
+            const num = s.split(':')[0].split('@')[0].replace(/\D/g, '');
+            if (num.length >= 10 && num.length <= 15) return num;
+        }
+    }
+    for (const c of candidates) {
+        if (!c) continue;
+        const num = String(c).split(':')[0].split('@')[0].replace(/\D/g, '');
+        if (num.length >= 10 && num.length <= 15) return num;
+    }
+    return null;
+}
+
+function extractPushName(sock) {
+    if (!sock) return null;
+    return sock.user?.name || sock.user?.notify || sock.authState?.creds?.me?.name || null;
+}
+
 // Bots ativos: { [number]: { sock, status, lastActivity, connectedAt, qr, label, startedAt, forceClosing } }
 const bots = new Map();
 // Estado de reconexão (backoff exponencial): { [number]: { attempts, timer } }
@@ -178,7 +211,16 @@ async function connect(number, label) {
     bots.set(number, entry);
     botEvents.log(number, 'connect_queued', 'Sessão iniciando — aguardando conexão', label);
 
-    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('creds.update', () => {
+        saveCreds();
+        if (entry.status === 'connected' && !entry.realNumber) {
+            entry.realNumber = extractRealNumber(sock);
+            entry.pushName = extractPushName(sock);
+            if (entry.realNumber) {
+                db.run('UPDATE bot_numbers SET real_number = ?, push_name = ? WHERE number = ?', [entry.realNumber, entry.pushName, number]).catch(() => {});
+            }
+        }
+    });
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
@@ -200,15 +242,24 @@ async function connect(number, label) {
             entry.connectedAt = Date.now();
             entry.startedAt = Date.now();
             entry.qr = null;
-            // Número real vinculado pelo scan — pode ser diferente do rótulo/slot cadastrado
-            entry.realNumber = sock.user?.id ? sock.user.id.split(':')[0].split('@')[0] : null;
-            entry.pushName = sock.user?.name || null;
+            // Número real e nome vinculados pelo scan — identificados automaticamente
+            entry.realNumber = extractRealNumber(sock);
+            entry.pushName = extractPushName(sock);
             if (entry.realNumber) {
-                db.run('UPDATE bot_numbers SET real_number = ?, push_name = ? WHERE number = ?', [entry.realNumber, entry.pushName, number]).catch(() => {});
+                await db.run('UPDATE bot_numbers SET real_number = ?, push_name = ? WHERE number = ?', [entry.realNumber, entry.pushName, number]).catch(e => console.error('[whatsapp] db real_number:', e.message));
+                console.log(`[whatsapp] ✅ WhatsApp conectado com sucesso: +${entry.realNumber} (${entry.pushName || 'Sem nome'}) [sessão: ${number}]`);
             }
+            try {
+                require('./websocket-service').broadcast('whatsapp:connected', {
+                    number,
+                    realNumber: entry.realNumber,
+                    pushName: entry.pushName,
+                    status: 'connected'
+                });
+            } catch (e) {}
             resetBackoff(number);
             await antiBan.ensureFresh();
-            botEvents.log(number, 'connected', label ? `${label} conectado` : 'Bot conectado', label);
+            botEvents.log(number, 'connected', entry.realNumber ? `Conectado: +${entry.realNumber}` : (label ? `${label} conectado` : 'Bot conectado'), label);
             console.log(`[whatsapp] Bot conectado: ${number} (${label || ''})`);
             for (const fn of connectedHandlers) {
                 try { await fn(number); } catch (e) { console.error('[whatsapp] onConnected handler error:', e); }

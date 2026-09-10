@@ -35,15 +35,23 @@
     <div class="num-card-add">
         <div class="num-card-header">
             <div class="num-card-title">
-                <i class="fas fa-plus-circle" style="color:var(--primary);"></i>
-                <span>CADASTRAR NOVO CHIP DE DISPARO</span>
+                <i class="fab fa-whatsapp" style="color:#25d366; font-size:1.3rem;"></i>
+                <span>CONECTAR WHATSAPP (SCANNER QR)</span>
             </div>
-            <span class="num-card-hint"><i class="fas fa-shield-halved"></i> Proteção anti-ban ativa</span>
+            <span class="num-card-hint"><i class="fas fa-bolt"></i> Auto-identificação de número</span>
         </div>
-        <form class="num-add-form" onsubmit="event.preventDefault(); addNumber();">
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:10px;">
+            <button type="button" class="btn-retro num-btn-submit" onclick="numQuickScan()" style="background:#25d366; color:#fff; border-color:#181716;">
+                <i class="fas fa-qrcode"></i> CONECTAR VIA QR CODE (SEM DIGITAR NÚMERO)
+            </button>
+            <button type="button" onclick="toggleNumManual()" style="background:none; border:none; color:#64748b; font-size:0.75rem; text-decoration:underline; cursor:pointer; font-weight:700;">
+                <i class="fas fa-keyboard"></i> Adicionar manualmente (opcional)
+            </button>
+        </div>
+        <form id="numManualForm" class="num-add-form" style="display:none;" onsubmit="event.preventDefault(); addNumber();">
             <div class="num-field">
                 <label for="numNumber"><i class="fas fa-phone"></i> Telefone com DDD (DDI 55)</label>
-                <input type="text" id="numNumber" class="ps-input" placeholder="Ex: 5541999991234" autocomplete="off" autofocus>
+                <input type="text" id="numNumber" class="ps-input" placeholder="Ex: 5541999991234" autocomplete="off">
             </div>
             <div class="num-field">
                 <label for="numLabel"><i class="fas fa-tag"></i> Identificação / Rótulo</label>

@@ -59,13 +59,80 @@ router.post('/connect', async (req, res, next) => {
     try {
         const { number, label } = req.body;
         if (!number) return res.status(400).json({ error: 'Número obrigatório' });
-        const registered = await antiBan.registerNumber(number, label, req.user.organization_id, req.user.role === 'admin' ? null : req.user.id);
-        if (req.user.role !== 'admin' && registered.seller_id !== req.user.id) return res.status(403).json({ error: 'Número não pertence ao operador' });
-        if (!whatsapp.enabled()) {
-            return res.json({ ok: true, number, status: 'queued', message: 'Número cadastrado. Ative BOT_ENABLED no .env e reinicie para conectar.' });
+        
+        let row = await db.get(
+            'SELECT * FROM bot_numbers WHERE organization_id = ? AND number = ?' + (req.user.role === 'admin' ? '' : ' AND seller_id = ?'),
+            req.user.role === 'admin' ? [req.user.organization_id, number] : [req.user.organization_id, number, req.user.id]
+        );
+        if (!row) {
+            row = await antiBan.registerNumber(number, label, req.user.organization_id, req.user.role === 'admin' ? null : req.user.id);
         }
-        await whatsapp.connect(number, label);
-        res.json({ ok: true, number, status: 'connecting' });
+        if (req.user.role !== 'admin' && row.seller_id && row.seller_id !== req.user.id) {
+            return res.status(403).json({ error: 'Número não pertence ao operador' });
+        }
+        if (!whatsapp.enabled()) {
+            return res.json({ ok: true, number: row.number, status: 'queued', message: 'Número cadastrado. Ative BOT_ENABLED no .env e reinicie para conectar.' });
+        }
+        await whatsapp.connect(row.number, row.label || label);
+        res.json({ ok: true, number: row.number, status: 'connecting' });
+    } catch (e) { next(e); }
+});
+
+// Conecta automaticamente o próximo slot livre ou offline sem precisar digitar número
+router.post('/auto-connect', async (req, res, next) => {
+    try {
+        const organizationId = req.user.organization_id;
+        const sellerId = req.user.role === 'admin' ? null : req.user.id;
+        const limit = await settings.getNumber('cfg_wa_slots', 2);
+
+        // Busca números existentes do operador
+        const existing = await db.all(
+            'SELECT * FROM bot_numbers WHERE organization_id = ?' + (req.user.role === 'admin' ? ' AND seller_id IS NULL' : ' AND seller_id = ?') + ' ORDER BY slot_index ASC, id ASC',
+            req.user.role === 'admin' ? [organizationId] : [organizationId, sellerId]
+        );
+
+        // 1. Procura slot vazio (1..limit)
+        let targetIndex = null;
+        for (let i = 1; i <= limit; i++) {
+            if (!existing.some(n => n.slot_index === i)) {
+                targetIndex = i;
+                break;
+            }
+        }
+
+        let targetNumber = null;
+        let targetLabel = null;
+
+        if (targetIndex !== null) {
+            const row = await antiBan.registerSlot(organizationId, sellerId, targetIndex, `WhatsApp ${targetIndex}`);
+            targetNumber = row.number;
+            targetLabel = row.label;
+        } else {
+            // Se todos os slots já existem, procura o primeiro que estiver offline/desconectado
+            const bots = whatsapp.status();
+            const offlineSlot = existing.find(n => n.slot_index != null && (!bots[n.number] || bots[n.number].status === 'offline' || bots[n.number].status === 'disconnected'));
+            if (offlineSlot) {
+                targetNumber = offlineSlot.number;
+                targetLabel = offlineSlot.label;
+            } else {
+                const anyOffline = existing.find(n => !bots[n.number] || bots[n.number].status === 'offline' || bots[n.number].status === 'disconnected');
+                if (anyOffline) {
+                    targetNumber = anyOffline.number;
+                    targetLabel = anyOffline.label;
+                } else {
+                    return res.status(400).json({
+                        error: `Todos os ${limit} WhatsApps disponíveis já estão conectados. Desconecte uma sessão abaixo para conectar outro aparelho.`
+                    });
+                }
+            }
+        }
+
+        if (!whatsapp.enabled()) {
+            return res.json({ ok: true, number: targetNumber, status: 'queued', message: 'Ative BOT_ENABLED no .env e reinicie para conectar.' });
+        }
+
+        await whatsapp.connect(targetNumber, targetLabel);
+        res.json({ ok: true, number: targetNumber, label: targetLabel, status: 'connecting' });
     } catch (e) { next(e); }
 });
 
