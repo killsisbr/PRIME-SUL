@@ -249,6 +249,15 @@ async function connect(number, label) {
                 await db.run('UPDATE bot_numbers SET real_number = ?, push_name = ? WHERE number = ?', [entry.realNumber, entry.pushName, number]).catch(e => console.error('[whatsapp] db real_number:', e.message));
                 console.log(`[whatsapp] ✅ WhatsApp conectado com sucesso: +${entry.realNumber} (${entry.pushName || 'Sem nome'}) [sessão: ${number}]`);
             }
+            // Se estava banido no banco e reconectou com sucesso, reativa automaticamente
+            try {
+                const botRow = await db.get("SELECT id, status FROM bot_numbers WHERE number = ?", [number]);
+                if (botRow && botRow.status === 'banido') {
+                    await db.run("UPDATE bot_numbers SET status = 'ativo', messages_sent = 0, cooled_until = NULL WHERE id = ?", [botRow.id]);
+                    botEvents.log(number, 'reactivated', 'Reativado automaticamente após reconexão bem-sucedida', label);
+                    console.log(`[whatsapp] 🔄 Número ${number} reativado automaticamente (estava banido)`);
+                }
+            } catch (e) { console.error('[whatsapp] erro ao reativar número reconectado:', e.message); }
             try {
                 require('./websocket-service').broadcast('whatsapp:connected', {
                     number,

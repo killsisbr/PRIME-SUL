@@ -1344,11 +1344,11 @@ export async function init() {
                 : `${n.messages_sent} / ${effLimit} msgs hoje${n.daily_limit_override ? ' (próprio)' : ''}`;
 
             const actions = [];
-            if (conn === 'offline') actions.push(`<button class="bt-action ok" data-act="conectar" data-number="${n.number}"><i class="fas fa-plug"></i> CONECTAR</button>`);
+            if (conn === 'offline' || conn === 'banned') actions.push(`<button class="bt-action ok" data-act="conectar" data-number="${n.number}"><i class="fas fa-plug"></i> ${conn === 'banned' ? 'RECONECTAR' : 'CONECTAR'}</button>`);
             if (conn === 'connected' || conn === 'connecting') actions.push(`<button class="bt-action warn" data-act="desconectar" data-number="${n.number}"><i class="fas fa-unlink"></i> DESCONECTAR</button>`);
             if (n.status !== 'ativo') actions.push(`<button class="bt-action ok" data-act="reativar" data-id="${n.id}" data-number="${n.number}"><i class="fas fa-rotate-left"></i> REATIVAR</button>`);
             if (n.status !== 'banido') actions.push(`<button class="bt-action danger" data-act="banir" data-id="${n.id}"><i class="fas fa-skull"></i> BANIR</button>`);
-            if (conn === 'offline') actions.push(`<button class="bt-action danger" data-act="remover" data-number="${n.number}"><i class="fas fa-trash"></i> REMOVER SESSÃO</button>`);
+            if (conn === 'offline' || conn === 'banned') actions.push(`<button class="bt-action danger" data-act="remover" data-number="${n.number}"><i class="fas fa-trash"></i> REMOVER SESSÃO</button>`);
 
             const limitEditor = isAdmin ? `
                 <div class="bt-limit-edit">

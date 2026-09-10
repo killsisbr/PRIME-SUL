@@ -78,8 +78,9 @@ export async function init() {
 
                 const isWaConnected = n.connection === 'connected';
                 const isWaConnecting = n.connection === 'connecting' || n.waitingQr;
-                const waCls = isWaConnected ? 'wa-connected' : isWaConnecting ? 'wa-connecting' : 'wa-offline';
-                const waLabel = isWaConnected ? 'WHATSAPP CONECTADO' : isWaConnecting ? 'AGUARDANDO QR' : 'DESCONECTADO';
+                const isWaBanned = n.connection === 'banned';
+                const waCls = isWaConnected ? 'wa-connected' : isWaConnecting ? 'wa-connecting' : isWaBanned ? 'wa-offline' : 'wa-offline';
+                const waLabel = isWaConnected ? 'WHATSAPP CONECTADO' : isWaConnecting ? 'AGUARDANDO QR' : isWaBanned ? 'BANIDO' : 'DESCONECTADO';
 
                 const msgs = Number(n.messages_sent || 0);
                 const limit = 40;
