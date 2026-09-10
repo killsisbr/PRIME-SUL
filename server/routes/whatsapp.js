@@ -188,12 +188,14 @@ router.post('/disconnect', async (req, res, next) => {
     try {
         const { number, removeSession } = req.body;
         if (!number) return res.status(400).json({ error: 'Número obrigatório' });
-        const owned = await db.get('SELECT id FROM bot_numbers WHERE organization_id=? AND number=?' + (req.user.role === 'admin' ? '' : ' AND seller_id=?'),
-            req.user.role === 'admin' ? [req.user.organization_id, number] : [req.user.organization_id, number, req.user.id]);
+        const cleanNum = String(number).replace(/\D/g, '');
+        const owned = await db.get('SELECT id, number FROM bot_numbers WHERE organization_id=? AND (number=? OR real_number=? OR real_number=?)' + (req.user.role === 'admin' ? '' : ' AND seller_id=?'),
+            req.user.role === 'admin' ? [req.user.organization_id, number, number, cleanNum] : [req.user.organization_id, number, number, cleanNum, req.user.id]);
         if (!owned) return res.status(403).json({ error: 'Número não pertence ao operador' });
+        const targetNumber = owned.number;
         const result = removeSession
-            ? await whatsapp.logout(number)
-            : await whatsapp.disconnect(number);
+            ? await whatsapp.logout(targetNumber)
+            : await whatsapp.disconnect(targetNumber);
         res.json(result);
     } catch (e) { next(e); }
 });

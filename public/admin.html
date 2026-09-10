@@ -382,7 +382,7 @@
                 try {
                     module = await import(`/admin/components/${componentName}.js?cb=${Date.now()}-${Math.floor(Math.random()*100000)}`);
                 } catch (e) {
-                    const jsRes = await fetch(`/admin/components/${componentName}.js?cb=${Date.now()}`);
+                    const jsRes = await fetch(`/admin/components/${componentName}.js?cb=${Date.now()}-${Math.floor(Math.random()*100000)}`, { cache: 'no-store' });
                     const jsText = await jsRes.text();
                     const blob = new Blob([jsText], { type: 'application/javascript' });
                     const url = URL.createObjectURL(blob);

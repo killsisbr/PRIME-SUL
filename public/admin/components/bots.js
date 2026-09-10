@@ -922,7 +922,7 @@ export async function init() {
         }).join('');
 
         listEl.querySelectorAll('[data-act]').forEach(btn => {
-            btn.onclick = (e) => {
+            btn.onclick = async (e) => {
                 e.stopPropagation();
                 const act = btn.dataset.act;
                 const idx = Number(btn.dataset.index);

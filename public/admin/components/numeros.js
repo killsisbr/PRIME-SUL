@@ -129,6 +129,11 @@ export async function init() {
                                 <button type="button" class="btn-retro num-btn-connect ${isWaConnecting ? 'is-connecting' : ''}" onclick="numOpenQr('${n.number}', '${esc(n.label || '')}')" title="Escanear QR Code para conectar WhatsApp">
                                     <i class="fas fa-qrcode"></i> ${isWaConnecting ? 'VER QR' : 'CONECTAR'}
                                 </button>
+                                ${(isAuto || isWaBanned) ? `
+                                    <button type="button" class="num-act-btn btn-disconnect" onclick="numDisconnectWa('${n.number}')" title="Desvincular sessão do WhatsApp deste chip">
+                                        <i class="fas fa-plug-circle-xmark"></i>
+                                    </button>
+                                ` : ''}
                             ` : `
                                 <button type="button" class="num-act-btn btn-disconnect" onclick="numDisconnectWa('${n.number}')" title="Desconectar WhatsApp deste chip">
                                     <i class="fas fa-plug-circle-xmark"></i>

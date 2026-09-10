@@ -544,8 +544,14 @@ async function disconnect(number) {
 async function logout(number) {
     clearScheduled(number);
     await disconnect(number);
-    await fs.promises.rm(path.join(sessionsDir, number), { recursive: true, force: true });
-    await db.run('UPDATE bot_numbers SET real_number = NULL, push_name = NULL WHERE number = ?', [number]).catch(() => {});
+    try {
+        await fs.promises.rm(path.join(sessionsDir, number), { recursive: true, force: true });
+    } catch (err) {
+        console.warn(`[whatsapp] Aviso ao remover arquivos de sessão de ${number}:`, err.message);
+    }
+    bots.delete(number);
+    await db.run("UPDATE bot_numbers SET real_number = NULL, push_name = NULL, status = 'ativo', messages_sent = 0, cooled_until = NULL WHERE number = ?", [number]).catch(() => {});
+    botEvents.log(number, 'disconnected', 'Sessão desvinculada e removida');
     return { ok: true };
 }
 

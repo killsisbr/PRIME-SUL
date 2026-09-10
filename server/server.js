@@ -49,8 +49,16 @@ if (process.env.NODE_ENV !== 'production') {
 // Imagens enviadas (status de marketing) — data/ fica fora do git, não junto do front estático
 app.use('/uploads', express.static(path.join(__dirname, '..', 'data', 'uploads')));
 
-// Front estático
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// Front estático com desativação de cache para desenvolvimento rápido
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js') || filePath.endsWith('.html') || filePath.endsWith('.css')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+    }
+}));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
