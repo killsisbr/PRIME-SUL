@@ -1187,6 +1187,46 @@ export async function init() {
         });
     }
 
+    // Handler for manual add number button in config tab
+    const btAddBtn = document.getElementById('bt-add-btn');
+    if (btAddBtn) {
+        btAddBtn.onclick = async () => {
+            const numberInput = document.getElementById('bt-num');
+            const labelInput = document.getElementById('bt-label');
+            if (!numberInput) return;
+            const number = numberInput.value.trim();
+            const label = labelInput ? (labelInput.value.trim() || `WhatsApp ${number.slice(-8)}`) : `WhatsApp ${number.slice(-8)}`;
+            if (!number) {
+                if (toast) toast('Digite um número', 'err');
+                return;
+            }
+            try {
+                // Try to connect via slot mechanism first (respects cfg_wa_slots limit, default 2)
+                const slotsLimit = 2;
+                let connected = false;
+                for (let i = 1; i <= slotsLimit; i++) {
+                    const slotRes = await api(`/whatsapp/slots/${i}/connect`, { method: 'POST' });
+                    if (slotRes.status !== 'queued') {
+                        toast(slotRes.message || `Slot ${i} processado`, slotRes.status === 'connecting' ? 'info' : 'err');
+                        connected = true;
+                        break;
+                    }
+                }
+                if (!connected) {
+                    // Fallback: try direct connect (number must already belong to operator)
+                    const res = await api('/whatsapp/connect', { method: 'POST', body: JSON.stringify({ number, label }) });
+                    if (res.status === 'queued') {
+                        toast(res.message, 'info');
+                    } else {
+                        toast('Conectando... aguarde o QR', 'info');
+                    }
+                }
+            } catch (e) {
+                toast(e.message || 'Erro ao conectar', 'err');
+            }
+        };
+    }
+
     // Initial load
     await loadLeads();
     await refresh();
