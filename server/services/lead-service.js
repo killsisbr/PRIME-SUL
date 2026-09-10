@@ -1,5 +1,13 @@
 const db = require('../database/db');
-const { normalizePhone } = require('../utils/phone');
+const { normalizePhone, phoneKey, phoneVariants } = require('../utils/phone');
+
+// Monta "IN (?, ?, ...)" com as variantes do telefone (com/sem 9) pra casar
+// leads duplicados independente de como o número foi digitado.
+function phoneInClause(input) {
+    const vs = phoneVariants(input);
+    if (!vs.length) return null;
+    return { sql: `(${vs.map(() => '?').join(',')})`, params: vs };
+}
 const scoreService = require('./score-service');
 const campaignService = require('./campaign-service');
 const stageConfig = require('./stage-config-service');
@@ -37,14 +45,14 @@ async function triggerStageAutomation(lead, status, sellerId) {
 }
 
 async function createLead({ seller_id, organization_id = 1, name, phone, phone2, phone3, cpf, tags, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
-    const normalized = normalizePhone(phone);
+    const normalized = phoneKey(phone); // forma canônica (celular BR sempre com o 9)
     if (!normalized) {
         const e = new Error('Telefone principal inválido');
         e.status = 400;
         throw e;
     }
-    const normPhone2 = phone2 ? (normalizePhone(phone2) || phone2.trim()) : null;
-    const normPhone3 = phone3 ? (normalizePhone(phone3) || phone3.trim()) : null;
+    const normPhone2 = phone2 ? (phoneKey(phone2) || phone2.trim()) : null;
+    const normPhone3 = phone3 ? (phoneKey(phone3) || phone3.trim()) : null;
 
     if (!ALLOWED_PRIORIDADE.includes(prioridade)) {
         const e = new Error('Prioridade inválida');
@@ -58,14 +66,21 @@ async function createLead({ seller_id, organization_id = 1, name, phone, phone2,
     const cleanCpfValue = cleanCpf(cpf);
     const cleanTagsValue = cleanTags(tags);
 
-    const optedOut = await db.get('SELECT id FROM opt_outs WHERE organization_id = ? AND phone = ?', [organization_id, normalized]);
+    const phoneIn = phoneInClause(normalized);
+    const optedOut = await db.get(
+        `SELECT id FROM opt_outs WHERE organization_id = ? AND phone IN ${phoneIn.sql}`,
+        [organization_id, ...phoneIn.params]
+    );
     if (optedOut) { const e = new Error('Contato bloqueado por opt-out'); e.status = 409; e.code = 'OPTED_OUT'; throw e; }
 
     const seller = await db.get('SELECT max_leads FROM sellers WHERE id=? AND organization_id=? AND active=1', [seller_id, organization_id]);
     if (!seller) { const e = new Error('Vendedor inválido'); e.status = 403; throw e; }
 
     async function findByDuplicate() {
-        const phoneHit = await db.get('SELECT * FROM leads WHERE organization_id = ? AND phone = ?', [organization_id, normalized]);
+        const phoneHit = await db.get(
+            `SELECT * FROM leads WHERE organization_id = ? AND phone IN ${phoneIn.sql}`,
+            [organization_id, ...phoneIn.params]
+        );
         if (phoneHit) return phoneHit;
         if (cleanCpfValue) {
             const cpfHit = await db.get('SELECT * FROM leads WHERE organization_id = ? AND cpf = ?', [organization_id, cleanCpfValue]);
@@ -203,14 +218,18 @@ async function updateLead(id, seller_id, fields) {
     for (const f of EDITABLE_FIELDS) {
         if (fields[f] === undefined) continue;
         if (f === 'phone') {
-            const normalized = normalizePhone(fields[f]);
+            const normalized = phoneKey(fields[f]);
             if (!normalized) {
                 const e = new Error('Telefone inválido');
                 e.status = 400;
                 throw e;
             }
             if (normalized !== lead.phone) {
-                const dup = await db.get('SELECT id FROM leads WHERE phone = ? AND id != ?', [normalized, id]);
+                const vin = phoneInClause(normalized);
+                const dup = await db.get(
+                    `SELECT id FROM leads WHERE phone IN ${vin.sql} AND id != ?`,
+                    [...vin.params, id]
+                );
                 if (dup) {
                     const e = new Error('Telefone já cadastrado em outro lead');
                     e.status = 409;
@@ -234,6 +253,10 @@ async function updateLead(id, seller_id, fields) {
             }
             updates.push('cpf = ?');
             params.push(c);
+        } else if (f === 'phone2' || f === 'phone3') {
+            const raw = fields[f];
+            updates.push(`${f} = ?`);
+            params.push(raw ? (phoneKey(raw) || String(raw).trim()) : null);
         } else if (f === 'tags') {
             updates.push('tags = ?');
             params.push(cleanTags(fields[f]));

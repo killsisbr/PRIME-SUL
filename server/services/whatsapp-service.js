@@ -4,7 +4,43 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLat
 const db = require('../database/db');
 const antiBan = require('./anti-ban-service');
 const botEvents = require('./bot-events-service');
-const { normalizePhone } = require('../utils/phone');
+const { normalizePhone, phoneVariants } = require('../utils/phone');
+
+// Cache de resolução de JID (qual variante do número — com/sem o 9 — está no
+// WhatsApp). Evita bater no onWhatsApp() a cada mensagem. TTL curto.
+const jidCache = new Map(); // phone -> { jid, at }
+const JID_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+// Descobre o JID real do contato testando as duas formas (com o 9 e sem o 9).
+// - retorna a string do JID quando o WhatsApp confirma a existência
+// - retorna null quando conseguiu checar e NENHUMA variante existe
+// - retorna `${phone}@s.whatsapp.net` (fallback) quando não deu pra checar
+async function resolveWhatsAppJid(sock, phone) {
+    const cached = jidCache.get(phone);
+    if (cached && Date.now() - cached.at < JID_CACHE_TTL_MS) return cached.jid;
+
+    const variants = phoneVariants(phone);
+    if (!variants.length) return null;
+
+    let checkedAny = false;
+    for (const v of variants) {
+        try {
+            const r = await sock.onWhatsApp(`${v}@s.whatsapp.net`);
+            checkedAny = true;
+            const hit = Array.isArray(r) ? r.find(x => x && x.exists) : null;
+            if (hit) {
+                const jid = hit.jid || `${v}@s.whatsapp.net`;
+                jidCache.set(phone, { jid, at: Date.now() });
+                return jid;
+            }
+        } catch (e) { /* tenta a próxima variante */ }
+    }
+    if (checkedAny) {
+        jidCache.set(phone, { jid: null, at: Date.now() });
+        return null; // checou e não achou -> número sem WhatsApp
+    }
+    return `${normalizePhone(phone)}@s.whatsapp.net`; // não deu pra checar -> deixa o WhatsApp decidir
+}
 
 const sessionsDir = process.env.BOT_SESSIONS_DIR || path.join(__dirname, '..', '..', 'data', 'sessions');
 fs.mkdirSync(sessionsDir, { recursive: true });
@@ -300,12 +336,23 @@ async function sendMessage(botNumber, toPhone, text, options = {}) {
         return { sent: false, reason: 'opt_out' };
     }
 
+    // Resolve qual forma do número (com o 9 ou sem o 9) está de fato no WhatsApp
+    let jid;
+    try {
+        jid = await resolveWhatsAppJid(bot.sock, normalizedPhone);
+    } catch (e) {
+        jid = `${normalizedPhone}@s.whatsapp.net`;
+    }
+    if (jid === null) {
+        return { sent: false, reason: 'no_whatsapp' };
+    }
+
     try {
         if (HUMAN_MODE) {
-            await bot.sock.sendPresenceUpdate('composing', `${normalizedPhone}@s.whatsapp.net`);
+            await bot.sock.sendPresenceUpdate('composing', jid);
             await sleep(humanDelay(text));
         }
-        await bot.sock.sendMessage(`${normalizedPhone}@s.whatsapp.net`, { text });
+        await bot.sock.sendMessage(jid, { text });
         bot.lastActivity = Date.now();
         recentContactSends.set(key, Date.now());
         if (HUMAN_MODE) await bot.sock.sendPresenceUpdate('available').catch(() => {});

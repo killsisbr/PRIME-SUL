@@ -315,6 +315,7 @@ async function sendManualToLead(lead, message, { sellerId = null } = {}) {
             not_connected: 'o número de WhatsApp não está conectado (escaneie o QR em "Meu WhatsApp")',
             opt_out: 'este contato está na lista de bloqueio (opt-out)',
             invalid_phone: 'o telefone do lead é inválido',
+            no_whatsapp: 'este número não tem WhatsApp (verifiquei com e sem o 9)',
             cooldown: 'aguarde alguns instantes antes de reenviar para este contato'
         };
         return { sent: false, reason: reasonMap[result.reason] || result.reason || 'falha no envio' };
