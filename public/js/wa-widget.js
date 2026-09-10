@@ -155,6 +155,7 @@
     }
 
     let activeLead = null;
+    let _activeWaThread = null;
 
     function setupEvents() {
         const popup = document.getElementById('waFloatPopup');
@@ -411,15 +412,18 @@
 
             try {
                 if (!window.api) throw new Error('Sessão expirada. Recarregue a página.');
-                const r = await window.api('/tools/send-lead', {
-                    method: 'POST',
-                    body: JSON.stringify({ lead_id: activeLead.id, message: msgText })
-                });
+                const payload = { lead_id: activeLead.id, message: msgText };
+                if (_activeWaThread) {
+                    if (_activeWaThread.lead_phone) payload.to_phone = _activeWaThread.lead_phone;
+                    if (_activeWaThread.bot_number) payload.bot_number = _activeWaThread.bot_number;
+                }
+                const r = await window.api('/tools/send-lead', { method: 'POST', body: JSON.stringify(payload) });
                 setMeta('<i class="fas fa-check-double" style="color:#34b7f1;"></i>');
                 if (window.toast) {
                     const dest = r && r.phone ? ` (${r.phone})` : '';
                     window.toast('Mensagem entregue no WhatsApp' + dest + '!');
                 }
+                if (activeLead) loadChatHistory(activeLead);
             } catch (e) {
                 bubble.classList.add('wa-msg-failed');
                 setMeta('<i class="fas fa-triangle-exclamation" style="color:#ef4444;"></i>');
@@ -650,54 +654,39 @@
             const api = window.api;
             if (!api) return;
 
-            const [history, sends] = await Promise.all([
-                api(`/leads/${lead.id}/history`).catch(() => []),
-                api(`/sends?lead_id=${lead.id}`).catch(() => [])
-            ]);
+            const data = await api(`/leads/${lead.id}/conversations`);
+            const threads = (data && data.threads) || [];
 
+            // Junta as mensagens de todos os números do lead numa linha do tempo só,
+            // marcando de qual telefone é quando há mais de um.
+            const multi = threads.filter(t => t.messages.length).length > 1;
             let messages = [];
-
-            messages.push({
-                type: 'in',
-                text: `Simulação iniciada para ${lead.name} (${lead.phone || 'Tel N/D'}). Cidade: ${lead.city || 'N/D'}.`,
-                time: new Date(lead.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            });
-
-            if (Array.isArray(sends)) {
-                sends.forEach(s => {
+            for (const t of threads) {
+                for (const m of t.messages) {
                     messages.push({
-                        type: 'out',
-                        text: s.wa_message || s.content || s.message || 'Mensagem enviada',
-                        time: new Date(s.sent_at || s.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                        type: m.direction === 'out' ? 'out' : 'in',
+                        text: (multi ? `[${t.phone_label}] ` : '') + (m.body || ''),
+                        at: m.created_at
                     });
-                });
+                }
             }
+            messages.sort((a, b) => String(a.at).localeCompare(String(b.at)));
 
-            if (Array.isArray(history)) {
-                history.forEach(h => {
-                    if (h.details && h.details.includes('[WhatsApp Web]')) {
-                        messages.push({
-                            type: 'out',
-                            text: h.details.replace('[WhatsApp Web]', '').trim(),
-                            time: new Date(h.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                        });
-                    } else if (h.action) {
-                        messages.push({
-                            type: 'in',
-                            text: `[Histórico] ${h.action}: ${h.details || ''}`,
-                            time: new Date(h.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                        });
-                    }
-                });
+            // guarda o thread pra onde a resposta vai: o do último recebido, senão Tel 1
+            const lastIn = [...threads].reverse().find(t => t.messages.some(m => m.direction === 'in'));
+            _activeWaThread = lastIn || threads[0] || null;
+
+            if (!messages.length) {
+                msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem conversa ainda. Envie a primeira mensagem para ${escapeHtml(lead.name)}.</div></div>`;
+            } else {
+                msgBox.innerHTML = messages.map(m => {
+                    const time = new Date(m.at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    return `<div class="wa-msg-bubble ${m.type}">
+                        <div>${escapeHtml(m.text)}</div>
+                        <div class="wa-msg-meta"><span>${time}</span> ${m.type === 'out' ? '<i class="fas fa-check-double" style="color:#34b7f1;"></i>' : ''}</div>
+                    </div>`;
+                }).join('');
             }
-
-            msgBox.innerHTML = messages.map(m => `
-                <div class="wa-msg-bubble ${m.type}">
-                    <div>${escapeHtml(m.text)}</div>
-                    <div class="wa-msg-meta"><span>${m.time}</span> ${m.type === 'out' ? '<i class="fas fa-check-double" style="color:#34b7f1;"></i>' : ''}</div>
-                </div>
-            `).join('');
-
             msgBox.scrollTop = msgBox.scrollHeight;
 
         } catch (e) {

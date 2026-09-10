@@ -6,6 +6,10 @@ const WA_PRIO_LABEL = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
 const _pollers = new Map();
 let _leads = [];
 let _activeLead = null;
+let _threads = [];
+let _activeThreadKey = null;
+let _onLiveMessage = null;
+const threadKey = t => `${t.lead_phone}|${t.bot_number || ''}`;
 
 export async function init() {
     const api = window.api;
@@ -61,6 +65,14 @@ export async function init() {
             const initials = (l.name || 'L').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
             const isActive = _activeLead && _activeLead.id === l.id;
             const statusStr = WA_STATUS_LABEL[l.status] || 'NOVO';
+            const wa = l.wa || {};
+            let waTag = '';
+            if (wa.unread) {
+                waTag = `<span class="wa-lead-tag wa-unread"><i class="fab fa-whatsapp"></i> ${wa.unread}</span>`;
+            } else if (wa.has_chat) {
+                waTag = `<span class="wa-lead-tag"><i class="fab fa-whatsapp"></i>${wa.threads > 1 ? ' ' + wa.threads : ''}</span>`;
+            }
+            const multiPhone = (wa.phones || 0) > 1 ? `<span class="wa-lead-tag wa-multi" title="${wa.phones} telefones">+${wa.phones - 1} nº</span>` : '';
             return `
                 <div class="wa-lead-item ${isActive ? 'active' : ''}" data-lead-id="${l.id}">
                     <div class="wa-lead-avatar">${esc(initials)}</div>
@@ -72,6 +84,7 @@ export async function init() {
                         <div class="wa-lead-meta">
                             <span>${esc(l.phone || 'Sem telefone')}</span>
                             <span>${esc(l.city || '')}</span>
+                            ${waTag}${multiPhone}
                         </div>
                     </div>
                 </div>`;
@@ -119,63 +132,83 @@ export async function init() {
         loadChatHistory(lead);
     }
 
+    // Barra de abas dos threads (Telefone 1 / Telefone 2 / ...), criada 1x
+    function ensureThreadBar() {
+        let bar = document.getElementById('waThreadBar');
+        if (!bar) {
+            const msgBox = document.getElementById('waChatMessages');
+            bar = document.createElement('div');
+            bar.id = 'waThreadBar';
+            bar.className = 'wa-thread-bar';
+            msgBox.parentNode.insertBefore(bar, msgBox);
+        }
+        return bar;
+    }
+
+    function renderThreadBar() {
+        const bar = ensureThreadBar();
+        if (_threads.length <= 1) { bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        bar.innerHTML = _threads.map(t => {
+            const k = threadKey(t);
+            const active = k === _activeThreadKey;
+            const dot = t.unread ? `<span class="wa-thread-dot">${t.unread}</span>` : '';
+            const num = t.bot_number ? ` <small style="opacity:.6">via ${t.bot_number.slice(-4)}</small>` : '';
+            return `<button type="button" class="wa-thread-tab${active ? ' active' : ''}" data-key="${k}">
+                <i class="fab fa-whatsapp"></i> ${esc(t.phone_label)}${num} ${dot}
+            </button>`;
+        }).join('');
+        bar.querySelectorAll('.wa-thread-tab').forEach(btn => {
+            btn.onclick = () => { _activeThreadKey = btn.dataset.key; renderActiveThread(); };
+        });
+    }
+
+    function renderActiveThread() {
+        const msgBox = document.getElementById('waChatMessages');
+        if (!msgBox) return;
+        const t = _threads.find(x => threadKey(x) === _activeThreadKey) || _threads[0];
+        if (!t) { msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem conversa ainda. Envie a primeira mensagem.</div></div>`; return; }
+        _activeThreadKey = threadKey(t);
+        renderThreadBar();
+
+        if (!t.messages.length) {
+            msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem mensagens neste número ainda. Envie a primeira.</div></div>`;
+        } else {
+            msgBox.innerHTML = t.messages.map(m => {
+                const time = new Date(m.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const tick = m.direction === 'out' ? '<i class="fas fa-check-double" style="color:#34b7f1;"></i>' : '';
+                return `<div class="wa-msg-bubble ${m.direction === 'out' ? 'out' : 'in'}">
+                    <div>${esc(m.body || '')}</div>
+                    <div class="wa-msg-meta"><span>${time}</span> ${tick}</div>
+                </div>`;
+            }).join('');
+        }
+        msgBox.scrollTop = msgBox.scrollHeight;
+
+        // marca como lido
+        if (t.unread && t.bot_number) {
+            api(`/leads/${_activeLead.id}/conversations/read`, {
+                method: 'POST',
+                body: JSON.stringify({ lead_phone: t.lead_phone, bot_number: t.bot_number })
+            }).then(() => { t.unread = 0; renderThreadBar(); }).catch(() => {});
+        }
+    }
+
     async function loadChatHistory(lead) {
         const msgBox = document.getElementById('waChatMessages');
         if (!msgBox) return;
-        msgBox.innerHTML = '<div class="wa-msg-bubble in"><div>Carregando histórico do lead...</div></div>';
-
+        msgBox.innerHTML = '<div class="wa-msg-bubble in"><div>Carregando conversa...</div></div>';
         try {
-            const [history, sends] = await Promise.all([
-                api(`/leads/${lead.id}/history`).catch(() => []),
-                api(`/sends?lead_id=${lead.id}`).catch(() => [])
-            ]);
-
-            let messages = [];
-            messages.push({
-                type: 'in',
-                text: `Conversa iniciada com ${lead.name} (${lead.phone || 'Tel N/D'}). Cidade: ${lead.city || 'N/D'}.`,
-                time: new Date(lead.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            });
-
-            if (Array.isArray(sends)) {
-                sends.forEach(s => {
-                    messages.push({
-                        type: 'out',
-                        text: s.wa_message || s.content || s.message || 'Mensagem enviada',
-                        time: new Date(s.sent_at || s.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                    });
-                });
+            const data = await api(`/leads/${lead.id}/conversations`);
+            _threads = (data && data.threads) || [];
+            // mantém o thread ativo se ainda existir, senão pega o de cima
+            if (!_threads.find(t => threadKey(t) === _activeThreadKey)) {
+                _activeThreadKey = _threads.length ? threadKey(_threads[0]) : null;
             }
-
-            if (Array.isArray(history)) {
-                history.forEach(h => {
-                    if (h.details && h.details.includes('[WhatsApp Web]')) {
-                        messages.push({
-                            type: 'out',
-                            text: h.details.replace('[WhatsApp Web]', '').trim(),
-                            time: new Date(h.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                        });
-                    } else if (h.action) {
-                        messages.push({
-                            type: 'in',
-                            text: `[Histórico] ${h.action}: ${h.details || ''}`,
-                            time: new Date(h.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                        });
-                    }
-                });
-            }
-
-            msgBox.innerHTML = messages.map(m => `
-                <div class="wa-msg-bubble ${m.type}">
-                    <div>${esc(m.text)}</div>
-                    <div class="wa-msg-meta"><span>${m.time}</span> ${m.type === 'out' ? '<i class="fas fa-check-double" style="color:#34b7f1;"></i>' : ''}</div>
-                </div>
-            `).join('');
-
-            msgBox.scrollTop = msgBox.scrollHeight;
-
+            renderActiveThread();
         } catch (e) {
-            msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Inicie uma nova mensagem com ${esc(lead.name)}.</div></div>`;
+            _threads = [];
+            msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Inicie uma nova conversa com ${esc(lead.name)}.</div></div>`;
         }
     }
 
@@ -204,13 +237,19 @@ export async function init() {
 
         const setMeta = html => { const m = document.getElementById(metaId); if (m) m.innerHTML = `<span>${timeStr}</span> ${html}`; };
 
+        // Responde no número do thread ativo (Telefone 1/2/3) pelo mesmo bot que atendeu
+        const active = _threads.find(t => threadKey(t) === _activeThreadKey);
+        const payload = { lead_id: _activeLead.id, message: msgText };
+        if (active) {
+            if (active.lead_phone) payload.to_phone = active.lead_phone;
+            if (active.bot_number) payload.bot_number = active.bot_number;
+        }
+
         try {
-            const r = await api('/tools/send-lead', {
-                method: 'POST',
-                body: JSON.stringify({ lead_id: _activeLead.id, message: msgText })
-            });
+            const r = await api('/tools/send-lead', { method: 'POST', body: JSON.stringify(payload) });
             setMeta('<i class="fas fa-check-double" style="color:#34b7f1;"></i>');
             if (toast) toast('Mensagem entregue no WhatsApp' + (r && r.phone ? ` (${r.phone})` : '') + '!', 'ok');
+            loadChatHistory(_activeLead); // recarrega o thread (persiste no F5)
         } catch (e) {
             bubble.style.borderColor = '#ef4444';
             setMeta('<i class="fas fa-triangle-exclamation" style="color:#ef4444;"></i>');
@@ -1239,6 +1278,15 @@ export async function init() {
         };
     }
 
+    // Mensagem nova chegando ao vivo: recarrega a conversa aberta e a lista
+    _onLiveMessage = (data) => {
+        if (_activeLead && data && Number(data.lead_id) === _activeLead.id) {
+            loadChatHistory(_activeLead);
+        }
+        loadLeads();
+    };
+    window.realtime?.on('lead:message', _onLiveMessage);
+
     // Initial load
     await loadLeads();
     await refresh();
@@ -1248,6 +1296,7 @@ export async function init() {
 export async function destroy() {
     for (const [, id] of _pollers) clearInterval(id);
     _pollers.clear();
+    if (_onLiveMessage) window.realtime?.off('lead:message', _onLiveMessage);
     const modal = document.getElementById('waQuickModal');
     if (modal) modal.remove();
 }

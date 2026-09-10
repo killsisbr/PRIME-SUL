@@ -1,5 +1,6 @@
 const express = require('express');
 const leadService = require('../services/lead-service');
+const messageService = require('../services/message-service');
 const { auth, adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
@@ -13,6 +14,21 @@ router.get('/', async (req, res, next) => {
             seller_id: req.user.id,
             status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max
         });
+        // Resumo de conversas (tag de WhatsApp / não lidas) por lead
+        try {
+            const summary = await messageService.summaryForLeads(leads.map(l => l.id));
+            for (const l of leads) {
+                const s = summary[l.id];
+                const phones = [l.phone, l.phone2, l.phone3].filter(Boolean).length;
+                l.wa = {
+                    has_chat: !!s && s.total > 0,
+                    unread: s ? s.unread : 0,
+                    threads: s ? s.threads : 0,
+                    phones,
+                    last_at: s ? s.last_at : null
+                };
+            }
+        } catch (e) { /* resumo é acessório */ }
         res.json(leads);
     } catch (e) { next(e); }
 });
@@ -72,6 +88,38 @@ router.get('/:id/history', async (req, res, next) => {
         const lead = await leadService.getLead(req.params.id, req.user.id);
         if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
         res.json(await leadService.getHistory(req.params.id, req.user.id));
+    } catch (e) { next(e); }
+});
+
+// Caixa de entrada do lead: conversas agrupadas por thread (número do cliente + bot)
+router.get('/:id/conversations', async (req, res, next) => {
+    try {
+        const lead = await leadService.getLead(req.params.id, req.user.id);
+        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
+        const data = await messageService.conversationsForLead(lead.id);
+        // Números do lead que ainda não têm thread — pra UI oferecer "iniciar conversa"
+        const { phoneKey } = require('../utils/phone');
+        const known = new Set(data.threads.map(t => t.lead_phone));
+        const extra = [
+            { phone: lead.phone, label: 'Telefone 1' },
+            { phone: lead.phone2, label: 'Telefone 2' },
+            { phone: lead.phone3, label: 'Telefone 3' }
+        ].filter(p => p.phone && !known.has(phoneKey(p.phone)))
+         .map(p => ({ lead_phone: phoneKey(p.phone), phone_label: p.label, messages: [], unread: 0, last_at: null, bot_number: null }));
+        res.json({ ...data, threads: [...data.threads, ...extra] });
+    } catch (e) { next(e); }
+});
+
+// Marca mensagens de entrada como lidas (thread específico ou lead inteiro)
+router.post('/:id/conversations/read', async (req, res, next) => {
+    try {
+        const lead = await leadService.getLead(req.params.id, req.user.id);
+        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
+        const changed = await messageService.markRead(lead.id, {
+            leadPhone: req.body.lead_phone || null,
+            botNumber: req.body.bot_number || null
+        });
+        res.json({ ok: true, marked: changed });
     } catch (e) { next(e); }
 });
 

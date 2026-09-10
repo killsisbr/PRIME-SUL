@@ -430,6 +430,64 @@
     gap: 8px;
     background-color: #efeae2;
 }
+/* Tag de WhatsApp na lista de leads */
+.wa-lead-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #25d366;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1.5;
+}
+.wa-lead-tag.wa-unread { background: #ef4444; animation: waPulse 1.6s ease-in-out infinite; }
+.wa-lead-tag.wa-multi { background: #64748b; }
+@keyframes waPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+/* Abas de thread (Telefone 1 / Telefone 2 / ...) */
+.wa-thread-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #f0f2f5;
+    border-bottom: 1px solid #d9dde1;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+.wa-thread-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1.5px solid #cbd5e1;
+    background: #fff;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+}
+.wa-thread-tab:hover { border-color: #25d366; }
+.wa-thread-tab.active { background: #25d366; border-color: #1ea952; color: #fff; }
+.wa-thread-tab .fa-whatsapp { font-size: 0.9rem; }
+.wa-thread-dot {
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+.wa-thread-tab.active .wa-thread-dot { background: #fff; color: #1ea952; }
 .wa-chat-empty {
     margin: auto;
     text-align: center;

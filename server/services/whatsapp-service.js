@@ -264,6 +264,33 @@ async function routeIncoming(botNumber, msg) {
     const entry = bots.get(botNumber);
     if (entry) entry.lastActivity = Date.now();
 
+    // Persiste a mensagem de entrada na caixa (best-effort — não bloqueia os handlers)
+    try {
+        const msgs = require('./message-service');
+        const botRow = await db.get('SELECT organization_id FROM bot_numbers WHERE number = ?', [botNumber]);
+        const orgId = botRow?.organization_id || 1;
+        const lead = await msgs.findLeadByPhone(orgId, phone);
+        const id = await msgs.record({
+            organizationId: orgId,
+            leadId: lead ? lead.id : null,
+            leadPhone: phone,
+            botNumber,
+            direction: 'in',
+            body: text,
+            waMessageId: msg.key?.id || null
+        });
+        if (id && lead) {
+            try {
+                require('./websocket-service').broadcast('lead:message', {
+                    lead_id: lead.id, direction: 'in',
+                    lead_phone: phone, bot_number: botNumber, body: text
+                });
+            } catch (e) { /* ws opcional */ }
+        }
+    } catch (e) {
+        console.error('[whatsapp] erro ao persistir mensagem de entrada:', e.message);
+    }
+
     for (const h of messageHandlers) {
         try { await h({ botNumber, phone, text, message: msg }); } catch (e) { console.error('[whatsapp] handler error:', e); }
     }
@@ -309,6 +336,7 @@ async function sendMessage(botNumber, toPhone, text, options = {}) {
         if (bot) bot.lastActivity = Date.now();
         recentContactSends.set(key, Date.now());
         botEvents.log(botNumber, 'send_ok', `Mock: Mensagem para ${normalizedPhone}`, bot ? bot.label : '');
+        await recordOutbound(botNumber, normalizedPhone, text, options);
         return { sent: true, mock: true };
     }
     const bot = bots.get(botNumber);
@@ -352,14 +380,34 @@ async function sendMessage(botNumber, toPhone, text, options = {}) {
             await bot.sock.sendPresenceUpdate('composing', jid);
             await sleep(humanDelay(text));
         }
-        await bot.sock.sendMessage(jid, { text });
+        const r = await bot.sock.sendMessage(jid, { text });
         bot.lastActivity = Date.now();
         recentContactSends.set(key, Date.now());
         if (HUMAN_MODE) await bot.sock.sendPresenceUpdate('available').catch(() => {});
+        await recordOutbound(botNumber, normalizedPhone, text, options, r?.key?.id || null);
         return { sent: true };
     } catch (e) {
         console.error(`[whatsapp] Erro ao enviar de ${botNumber} para ${normalizedPhone}:`, e.message);
         return { sent: false, reason: 'error' };
+    }
+}
+
+// Persiste a mensagem de saída na caixa de entrada (best-effort).
+async function recordOutbound(botNumber, phone, text, options = {}, waId = null) {
+    try {
+        const msgs = require('./message-service');
+        let leadId = options.leadId || null;
+        const orgId = Number(options.organizationId) || 1;
+        if (!leadId) {
+            const lead = await msgs.findLeadByPhone(orgId, phone);
+            leadId = lead ? lead.id : null;
+        }
+        await msgs.record({
+            organizationId: orgId, leadId, leadPhone: phone, botNumber,
+            direction: 'out', body: text, waMessageId: waId, status: 'sent'
+        });
+    } catch (e) {
+        console.error('[whatsapp] erro ao persistir mensagem de saída:', e.message);
     }
 }
 
@@ -575,16 +623,13 @@ function status() {
 async function simulateIncomingMessage(fromPhone, text, toBotNumber) {
     const norm = normalizePhone(fromPhone);
     console.log(`[whatsapp-mock] 📥 Mensagem recebida simulada de [${norm}] para bot [${toBotNumber}]: "${text}"`);
-    const results = [];
-    for (const handler of messageHandlers) {
-        try {
-            const res = await handler({ botNumber: toBotNumber, phone: norm, text });
-            results.push(res);
-        } catch (err) {
-            console.error('[whatsapp-mock] Erro no messageHandler:', err.message);
-        }
-    }
-    return results;
+    // Passa pelo mesmo caminho de uma mensagem real: persiste na caixa + roda os handlers
+    const fakeMsg = {
+        key: { remoteJid: `${norm}@s.whatsapp.net`, fromMe: false, id: 'sim_' + Date.now() },
+        message: { conversation: text }
+    };
+    await routeIncoming(toBotNumber, fakeMsg);
+    return [{ simulated: true }];
 }
 
 module.exports = { enabled, connect, disconnect, logout, sendMessage, archiveChat, unarchiveChat, postStatus, onMessage, onConnected, getQR, status, healthCheck, cleanupSessions, setRuntimeEnabled, isRuntimeEnabled, envEnabled, isMock, simulateIncomingMessage };

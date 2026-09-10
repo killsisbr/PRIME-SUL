@@ -255,13 +255,23 @@ async function sendToLead(lead, message, sellerId, numberIds = []) {
 // estágio — o vendedor está conversando com o cliente em tempo real. Continua
 // respeitando opt-out (dentro do whatsapp-service) e a rotação/limite diário
 // anti-ban entre os números.
-async function sendManualToLead(lead, message, { sellerId = null } = {}) {
+async function sendManualToLead(lead, message, { sellerId = null, toPhone = null, botNumber = null } = {}) {
     const text = String(message || '').trim();
     if (!text) return { sent: false, reason: 'mensagem vazia' };
 
-    const phoneList = [lead.phone, lead.phone2, lead.phone3]
-        .filter(p => p && String(p).trim().length >= 8);
-    if (!phoneList.length) return { sent: false, reason: 'lead sem telefone válido' };
+    const { phoneKey } = require('../utils/phone');
+    const allPhones = [lead.phone, lead.phone2, lead.phone3].filter(p => p && String(p).trim().length >= 8);
+    if (!allPhones.length) return { sent: false, reason: 'lead sem telefone válido' };
+
+    // Se o operador está respondendo num thread específico (Telefone 2, p.ex.),
+    // manda SÓ para aquele número — não faz cascata pros outros.
+    let phoneList = allPhones;
+    if (toPhone) {
+        const target = phoneKey(toPhone);
+        const hit = allPhones.find(p => phoneKey(p) === target);
+        if (!hit) return { sent: false, reason: 'o número informado não pertence a este lead' };
+        phoneList = [hit];
+    }
 
     const organizationId = lead.organization_id || 1;
 
@@ -273,9 +283,14 @@ async function sendManualToLead(lead, message, { sellerId = null } = {}) {
         num = await antiBan.reserveNumber(organizationId, sellerId);
     } else {
         const live = whatsapp.status() || {};
-        const connectedNumbers = Object.keys(live).filter(n => live[n] && live[n].status === 'connected');
+        let connectedNumbers = Object.keys(live).filter(n => live[n] && live[n].status === 'connected');
         if (!connectedNumbers.length) {
             return { sent: false, reason: 'nenhum número de WhatsApp conectado — escaneie o QR em "Meu WhatsApp" e aguarde o status "conectado"' };
+        }
+        // Respondendo num thread existente: usa o MESMO número nosso que atendeu,
+        // se ele ainda estiver conectado.
+        if (botNumber && connectedNumbers.includes(String(botNumber))) {
+            connectedNumbers = [String(botNumber)];
         }
         const placeholders = connectedNumbers.map(() => '?').join(',');
         const limit = await antiBan.currentLimit();
@@ -302,6 +317,7 @@ async function sendManualToLead(lead, message, { sellerId = null } = {}) {
         const res = await whatsapp.sendMessage(num.number, phone, text, {
             organizationId,
             sellerId,
+            leadId: lead.id,
             skipCooldown: true
         });
         if (res.sent) { result = res; usedPhone = phone; break; }

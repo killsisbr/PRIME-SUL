@@ -274,6 +274,26 @@ async function migrate() {
     )`);
     await run(`CREATE INDEX IF NOT EXISTS idx_followups_status ON followups(status, due_at)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_followups_lead ON followups(lead_id)`);
+
+    // Caixa de entrada: histórico completo de mensagens (entrada e saída), por
+    // "thread" = (número do cliente, número nosso que atendeu). Um lead pode ter
+    // vários threads (telefone 1, 2, 3) e ser atendido por bots diferentes.
+    await run(`CREATE TABLE IF NOT EXISTS messages (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        organization_id INTEGER NOT NULL DEFAULT 1,
+        lead_id         INTEGER REFERENCES leads(id),
+        lead_phone      TEXT NOT NULL,
+        bot_number      TEXT NOT NULL,
+        direction       TEXT NOT NULL CHECK (direction IN ('in','out')),
+        body            TEXT,
+        wa_message_id   TEXT,
+        status          TEXT,
+        read_at         TEXT,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_messages_lead ON messages(lead_id, created_at)`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(lead_phone, bot_number, created_at)`);
+    await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_waid ON messages(wa_message_id) WHERE wa_message_id IS NOT NULL`);
 }
 
 function run(sql, params = []) {

@@ -176,7 +176,7 @@ const chatRateLimits = new Map();
 
 router.post('/send-lead', async (req, res, next) => {
     try {
-        const { lead_id, message } = req.body;
+        const { lead_id, message, to_phone, bot_number } = req.body;
         const text = String(message || '').trim();
         if (!lead_id) return res.status(400).json({ error: 'lead_id obrigatório' });
         if (!text) return res.status(400).json({ error: 'Mensagem obrigatória' });
@@ -197,19 +197,17 @@ router.post('/send-lead', async (req, res, next) => {
         recent.push(now);
         chatRateLimits.set(req.user.id, recent);
 
-        const result = await campaignService.sendManualToLead(lead, text, { sellerId: req.user.id });
+        const result = await campaignService.sendManualToLead(lead, text, {
+            sellerId: req.user.id,
+            toPhone: to_phone || null,
+            botNumber: bot_number || null
+        });
         if (!result.sent) {
             return res.status(422).json({ error: `Não foi possível enviar: ${result.reason}`, reason: result.reason });
         }
 
-        // Registra a mensagem no histórico do lead (aparece na Ficha)
-        try {
-            const timestamp = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-            const entry = `[${timestamp}] [WhatsApp • ${result.number}] ${text}`;
-            const updatedObs = lead.obs ? `${entry}\n${lead.obs}` : entry;
-            await leadService.updateLead(lead_id, req.user.id, { obs: updatedObs });
-        } catch (e) { /* nota é acessório — não falha o envio */ }
-
+        // A mensagem já fica registrada na caixa de entrada (tabela messages)
+        // pelo whatsapp-service; não precisa duplicar em obs.
         res.status(201).json({ ok: true, ...result });
     } catch (e) { next(e); }
 });
