@@ -264,7 +264,36 @@ async function sendManualToLead(lead, message, { sellerId = null } = {}) {
     if (!phoneList.length) return { sent: false, reason: 'lead sem telefone válido' };
 
     const organizationId = lead.organization_id || 1;
-    const num = await antiBan.reserveNumber(organizationId, sellerId);
+
+    // Diferente da campanha (que confia no status 'ativo' do banco), aqui exigimos
+    // um número com socket REALMENTE conectado agora — senão o operador manda no
+    // chat e a mensagem morre num número offline sem ninguém perceber.
+    let num = null;
+    if (whatsapp.isMock()) {
+        num = await antiBan.reserveNumber(organizationId, sellerId);
+    } else {
+        const live = whatsapp.status() || {};
+        const connectedNumbers = Object.keys(live).filter(n => live[n] && live[n].status === 'connected');
+        if (!connectedNumbers.length) {
+            return { sent: false, reason: 'nenhum número de WhatsApp conectado — escaneie o QR em "Meu WhatsApp" e aguarde o status "conectado"' };
+        }
+        const placeholders = connectedNumbers.map(() => '?').join(',');
+        const limit = await antiBan.currentLimit();
+        num = await db.get(`
+            SELECT * FROM bot_numbers
+            WHERE organization_id = ? AND status = 'ativo'
+              AND (seller_id IS NULL OR seller_id = ?)
+              AND number IN (${placeholders})
+              AND messages_sent < COALESCE(daily_limit_override, ?)
+            ORDER BY messages_sent ASC, id ASC
+            LIMIT 1
+        `, [organizationId, sellerId, ...connectedNumbers, limit]);
+        if (!num) {
+            return { sent: false, reason: 'o número conectado atingiu o limite diário de mensagens' };
+        }
+        // Reserva a cota (mesmo efeito do reserveNumber, mas para este número específico)
+        await db.run('UPDATE bot_numbers SET messages_sent = messages_sent + 1, messages_reset_at = date(\'now\') WHERE id = ?', [num.id]);
+    }
     if (!num) return { sent: false, reason: 'nenhum número WhatsApp disponível (limite diário atingido ou nenhum ativo)' };
 
     let result = { sent: false, reason: 'not_connected' };

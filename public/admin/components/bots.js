@@ -141,7 +141,7 @@ export async function init() {
                 sends.forEach(s => {
                     messages.push({
                         type: 'out',
-                        text: s.content || s.message || 'Mensagem enviada',
+                        text: s.wa_message || s.content || s.message || 'Mensagem enviada',
                         time: new Date(s.sent_at || s.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                     });
                 });
@@ -193,20 +193,32 @@ export async function init() {
 
         const bubble = document.createElement('div');
         bubble.className = 'wa-msg-bubble out';
+        const metaId = 'bot-meta-' + Date.now();
         bubble.innerHTML = `
             <div>${esc(msgText)}</div>
-            <div class="wa-msg-meta"><span>${timeStr}</span> <i class="fas fa-check-double" style="color:#34b7f1;"></i></div>`;
+            <div class="wa-msg-meta" id="${metaId}"><span>${timeStr}</span> <i class="fas fa-clock" style="opacity:.6;"></i></div>`;
         msgBox.appendChild(bubble);
         msgBox.scrollTop = msgBox.scrollHeight;
         chatInput.value = '';
+        if (sendBtn) sendBtn.disabled = true;
+
+        const setMeta = html => { const m = document.getElementById(metaId); if (m) m.innerHTML = `<span>${timeStr}</span> ${html}`; };
 
         try {
-            await api(`/leads/${_activeLead.id}/notes`, {
+            const r = await api('/tools/send-lead', {
                 method: 'POST',
-                body: JSON.stringify({ note: `[WhatsApp Web] ${msgText}` })
+                body: JSON.stringify({ lead_id: _activeLead.id, message: msgText })
             });
-            if (toast) toast('Mensagem registrada no histórico!', 'ok');
-        } catch (e) {}
+            setMeta('<i class="fas fa-check-double" style="color:#34b7f1;"></i>');
+            if (toast) toast('Mensagem entregue no WhatsApp' + (r && r.phone ? ` (${r.phone})` : '') + '!', 'ok');
+        } catch (e) {
+            bubble.style.borderColor = '#ef4444';
+            setMeta('<i class="fas fa-triangle-exclamation" style="color:#ef4444;"></i>');
+            if (toast) toast(e.message || 'Falha ao enviar a mensagem', 'err');
+            if (!chatInput.value) chatInput.value = msgText;
+        } finally {
+            if (sendBtn) sendBtn.disabled = false;
+        }
     }
 
     if (sendBtn) sendBtn.onclick = sendMessage;
