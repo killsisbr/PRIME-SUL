@@ -14,9 +14,10 @@ router.get('/', async (req, res, next) => {
             seller_id: req.user.id,
             status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max
         });
-        // Resumo de conversas (tag de WhatsApp / não lidas) por lead
+        // Resumo de conversas (tag de WhatsApp / não lidas / bots participantes) por lead
         try {
-            const summary = await messageService.summaryForLeads(leads.map(l => l.id));
+            const orgId = req.user.organization_id || 1;
+            const summary = await messageService.summaryForLeads(leads.map(l => l.id), orgId);
             for (const l of leads) {
                 const s = summary[l.id];
                 const phones = [l.phone, l.phone2, l.phone3].filter(Boolean).length;
@@ -25,7 +26,10 @@ router.get('/', async (req, res, next) => {
                     unread: s ? s.unread : 0,
                     threads: s ? s.threads : 0,
                     phones,
-                    last_at: s ? s.last_at : null
+                    last_at: s ? s.last_at : null,
+                    bots: s ? (s.bots || []) : [],
+                    bot_numbers: s ? (s.bot_numbers || []) : [],
+                    last_bot: s ? s.last_bot : null
                 };
             }
         } catch (e) { /* resumo é acessório */ }
@@ -100,12 +104,32 @@ router.get('/:id/conversations', async (req, res, next) => {
         // Números do lead que ainda não têm thread — pra UI oferecer "iniciar conversa"
         const { phoneKey } = require('../utils/phone');
         const known = new Set(data.threads.map(t => t.lead_phone));
+        const defaultBot = (data.available_bots && data.available_bots.find(b => b.connected && b.status === 'ativo'))
+            || (data.available_bots && data.available_bots.find(b => b.status === 'ativo'))
+            || (data.available_bots && data.available_bots[0])
+            || null;
+
         const extra = [
             { phone: lead.phone, label: 'Telefone 1' },
             { phone: lead.phone2, label: 'Telefone 2' },
             { phone: lead.phone3, label: 'Telefone 3' }
         ].filter(p => p.phone && !known.has(phoneKey(p.phone)))
-         .map(p => ({ lead_phone: phoneKey(p.phone), phone_label: p.label, messages: [], unread: 0, last_at: null, bot_number: null }));
+         .map(p => ({
+             lead_phone: phoneKey(p.phone),
+             phone_label: p.label,
+             bot_number: defaultBot ? defaultBot.number : null,
+             bot_label: defaultBot ? defaultBot.label : null,
+             bot_short_name: defaultBot ? defaultBot.short_name : null,
+             bot_slot_index: defaultBot ? defaultBot.slot_index : null,
+             bot_real_number: defaultBot ? defaultBot.real_number : null,
+             bot_push_name: defaultBot ? defaultBot.push_name : null,
+             bot_status: defaultBot ? defaultBot.status : 'offline',
+             bot_connection: defaultBot ? defaultBot.connection : 'offline',
+             bot_connected: defaultBot ? defaultBot.connected : false,
+             messages: [],
+             unread: 0,
+             last_at: null
+         }));
         res.json({ ...data, threads: [...data.threads, ...extra] });
     } catch (e) { next(e); }
 });

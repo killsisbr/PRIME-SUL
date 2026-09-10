@@ -211,7 +211,18 @@
         window.api = api;
 
         async function logout() {
-            if (!confirm('Deseja realmente sair do painel?')) return;
+            const ok = await (window.confirmDialog ? window.confirmDialog({
+                title: 'SAIR DO PAINEL',
+                eyebrow: 'ENCERRAR SESSÃO',
+                message: 'Deseja realmente sair do painel?',
+                description: 'Você será desconectado e redirecionado para a tela de login.',
+                confirmText: 'Sair agora',
+                confirmIcon: 'fa-right-from-bracket',
+                cancelText: 'Continuar no painel',
+                type: 'warn',
+                icon: 'fa-right-from-bracket'
+            }) : Promise.resolve(confirm('Deseja realmente sair do painel?')));
+            if (!ok) return;
             await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
             localStorage.removeItem('prime_sul_user');
             window.location.href = '/login.html';

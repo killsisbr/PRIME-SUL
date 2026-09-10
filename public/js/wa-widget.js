@@ -728,6 +728,12 @@
                 const stageLabel = (l.status || 'novo').toUpperCase();
                 const phoneStr = l.phone || '';
 
+                const wa = l.wa || {};
+                let botChips = '';
+                if (wa.bots && wa.bots.length) {
+                    botChips = wa.bots.map(b => `<span class="wa-bot-chip zap-${b.slot_index || 'other'}" style="font-size:0.58rem; padding:1px 5px; border-radius:4px; font-weight:800; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;"><i class="fab fa-whatsapp"></i> ${escapeHtml(b.short_name || 'WA')}</span>`).join(' ');
+                }
+
                 return `
                 <div class="wa-chat-item ${isCurrent ? 'active' : ''}" data-id="${l.id}">
                     <div class="wa-chat-avatar">${escapeHtml(initials)}</div>
@@ -736,7 +742,10 @@
                             <strong class="wa-chat-name">${escapeHtml(l.name)}</strong>
                             <span class="wa-chat-badge">${escapeHtml(stageLabel)}</span>
                         </div>
-                        <small class="wa-chat-sub">${escapeHtml(phoneStr)}${l.city ? ' • ' + escapeHtml(l.city) : ''}</small>
+                        <small class="wa-chat-sub" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>${escapeHtml(phoneStr)}${l.city ? ' • ' + escapeHtml(l.city) : ''}</span>
+                            <span>${botChips}</span>
+                        </small>
                     </div>
                 </div>`;
             }).join('');

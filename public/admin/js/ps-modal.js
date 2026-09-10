@@ -84,6 +84,80 @@
         return api;
     }
 
+    // Modal de Confirmação visual moderno (substitui window.confirm nativo)
+    PSModal.confirm = function (opts) {
+        if (typeof opts === 'string') {
+            opts = { message: opts };
+        }
+        opts = opts || {};
+        return new Promise(resolve => {
+            let handled = false;
+            const type = opts.type || 'danger'; // 'danger' | 'warn' | 'info' | 'ok'
+            const iconMap = {
+                danger: 'fa-triangle-exclamation',
+                warn: 'fa-triangle-exclamation',
+                info: 'fa-circle-info',
+                ok: 'fa-circle-check',
+                ban: 'fa-skull',
+                trash: 'fa-trash-can'
+            };
+            const icon = opts.icon || iconMap[type] || 'fa-circle-question';
+            const confirmBtnClass = (type === 'danger' || type === 'ban' || type === 'trash') ? 'psm-btn-danger' : (type === 'ok' ? 'psm-btn-success' : '');
+
+            const m = PSModal({
+                title: opts.title || (type === 'danger' ? 'CONFIRMAR AÇÃO' : 'CONFIRMAÇÃO'),
+                eyebrow: opts.eyebrow || (type === 'danger' ? 'ATENÇÃO' : 'CONFIRME'),
+                subtitle: opts.subtitle || '',
+                width: opts.width || '480px',
+                onClose: () => {
+                    if (!handled) { handled = true; resolve(false); }
+                },
+                body: (bodyEl) => {
+                    bodyEl.className = 'psm-body psm-confirm-body';
+                    bodyEl.innerHTML = `
+                        <div class="psm-confirm-wrap">
+                            <div class="psm-confirm-icon ${type}">
+                                <i class="fas ${icon}"></i>
+                            </div>
+                            <div class="psm-confirm-text">
+                                <h4>${esc(opts.message || 'Deseja realmente continuar?')}</h4>
+                                ${opts.description ? `<p>${esc(opts.description)}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                },
+                footer: (footEl) => {
+                    footEl.className = 'psm-footer psm-confirm-footer';
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.className = 'psm-btn psm-btn-ghost';
+                    cancelBtn.textContent = opts.cancelText || 'Cancelar';
+                    cancelBtn.onclick = () => {
+                        if (!handled) { handled = true; resolve(false); }
+                        m.close();
+                    };
+
+                    const okBtn = document.createElement('button');
+                    okBtn.type = 'button';
+                    okBtn.className = `psm-btn ${confirmBtnClass}`;
+                    okBtn.innerHTML = (opts.confirmIcon ? `<i class="fas ${opts.confirmIcon}"></i> ` : '') + esc(opts.confirmText || (type === 'danger' ? 'Sim, confirmar' : 'Confirmar'));
+                    okBtn.onclick = () => {
+                        if (!handled) { handled = true; resolve(true); }
+                        m.close();
+                    };
+
+                    footEl.appendChild(cancelBtn);
+                    footEl.appendChild(okBtn);
+                    setTimeout(() => {
+                        if (opts.focusConfirm) okBtn.focus();
+                        else cancelBtn.focus();
+                    }, 50);
+                }
+            });
+            m.open();
+        });
+    };
+
     // ESC: fecha só o modal do topo e interrompe a propagação,
     // para o admin.html não fechar o painel inteiro junto.
     document.addEventListener('keydown', e => {
@@ -93,4 +167,6 @@
     }, true);
 
     window.PSModal = PSModal;
+    window.confirmModal = PSModal.confirm;
+    window.confirmDialog = PSModal.confirm;
 })();

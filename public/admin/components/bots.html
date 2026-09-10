@@ -26,6 +26,12 @@
                         <i class="fas fa-search"></i>
                         <input type="text" id="waLeadSearch" placeholder="Buscar lead..." autocomplete="off">
                     </div>
+                    <!-- Filtro rápido de Zaps da empresa -->
+                    <div class="wa-sidebar-bot-filters" id="waSidebarBotFilters">
+                        <button type="button" class="wa-bot-filter-pill active" data-bot="all">
+                            <i class="fas fa-layer-group"></i> Todos
+                        </button>
+                    </div>
                 </div>
                 <div class="wa-sidebar-leads" id="waLeadList">
                     <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Carregando conversas...</div>
@@ -54,6 +60,16 @@
                                     <span><i class="fas fa-sack-dollar"></i> Renda:</span> <strong id="waPtRenda">—</strong>
                                     <span><i class="fas fa-coins"></i> Limite:</span> <strong id="waPtLimite">—</strong>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- INDICADOR DO ZAP DA EMPRESA EM USO NESTA CONVERSA -->
+                        <div class="wa-chat-bot-indicator" id="waChatBotIndicator" style="display:none;" title="Número de WhatsApp da sua empresa usado nesta conversa">
+                            <div class="wa-cbi-pill" id="waCbiPill">
+                                <span class="wa-cbi-dot"></span>
+                                <i class="fab fa-whatsapp"></i>
+                                <span class="wa-cbi-name" id="waCbiName">WhatsApp 1</span>
+                                <span class="wa-cbi-num" id="waCbiNum"></span>
                             </div>
                         </div>
 
@@ -126,13 +142,30 @@
                 <input type="file" id="waFileInput" style="display:none;">
 
                 <!-- Footer / Envio Estilo WhatsApp Web -->
-                <div class="wa-chat-footer">
-                    <button type="button" class="wa-footer-action-btn" id="waEmojiBtn" title="Emojis"><i class="far fa-face-smile"></i></button>
-                    <button type="button" class="wa-footer-action-btn" id="waAttachBtn" title="Anexar documento ou imagem"><i class="fas fa-paperclip"></i></button>
-                    <input type="text" id="waChatInput" placeholder="Digite uma mensagem..." autocomplete="off">
-                    <button type="button" id="waChatSendBtn" title="Enviar Mensagem">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                <div class="wa-chat-footer-container">
+                    <!-- Barra de seleção do Zap de envio -->
+                    <div class="wa-send-bot-bar" id="waSendBotBar">
+                        <div class="wa-sbb-left">
+                            <span class="wa-sbb-title"><i class="fab fa-whatsapp"></i> Conversando via:</span>
+                            <div class="wa-sbb-select-wrap">
+                                <select id="waSendBotSelect" class="wa-sbb-select" title="Escolha qual WhatsApp da sua empresa vai disparar a mensagem">
+                                    <!-- Opções injetadas dinamicamente via JS -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="wa-sbb-right">
+                            <span class="wa-sbb-badge" id="waSendBotBadge"></span>
+                        </div>
+                    </div>
+
+                    <div class="wa-chat-footer">
+                        <button type="button" class="wa-footer-action-btn" id="waEmojiBtn" title="Emojis"><i class="far fa-face-smile"></i></button>
+                        <button type="button" class="wa-footer-action-btn" id="waAttachBtn" title="Anexar documento ou imagem"><i class="fas fa-paperclip"></i></button>
+                        <input type="text" id="waChatInput" placeholder="Digite uma mensagem..." autocomplete="off">
+                        <button type="button" id="waChatSendBtn" title="Enviar Mensagem">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </main>
 

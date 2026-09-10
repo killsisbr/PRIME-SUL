@@ -8,9 +8,26 @@ let _leads = [];
 let _activeLead = null;
 let _threads = [];
 let _activeThreadKey = null;
+let _availableBots = [];
+let _botFilter = 'all';
+let _selectedSendBotNumber = null;
 let _onLiveMessage = null;
 let _onWaConnected = null;
 const threadKey = t => `${t.lead_phone}|${t.bot_number || ''}`;
+
+function fmtNum(n) {
+    const d = String(n || '').replace(/\D/g, '');
+    if (d.length === 13 && d.startsWith('55')) {
+        return `+55 (${d.slice(2, 4)}) ${d.slice(4, 9)}-${d.slice(9)}`;
+    }
+    if (d.length === 12 && d.startsWith('55')) {
+        return `+55 (${d.slice(2, 4)}) ${d.slice(4, 8)}-${d.slice(8)}`;
+    }
+    if (d.length >= 10) {
+        return `(${d.slice(-11, -9)}) ${d.slice(-9, -4)}-${d.slice(-4)}`;
+    }
+    return n || '';
+}
 
 export async function init() {
     const api = window.api;
@@ -41,19 +58,104 @@ export async function init() {
     // ================= WHATSAPP PREVIEW: LEADS LIST =================
     const leadListEl = document.getElementById('waLeadList');
     const searchInput = document.getElementById('waLeadSearch');
+    const botFilterBar = document.getElementById('waSidebarBotFilters');
+
+    async function loadBots() {
+        try {
+            const data = await api('/whatsapp/status');
+            if (data && data.numbers) {
+                _availableBots = data.numbers;
+                renderBotFilters();
+            }
+        } catch (e) {}
+    }
 
     async function loadLeads() {
         if (!leadListEl) return;
         try {
+            await loadBots();
             const res = await api('/leads?limit=50').catch(() => []);
             _leads = Array.isArray(res) ? res : (res.leads || []);
-            renderLeadList(_leads);
+            renderBotFilters();
+            applyLeadFilters();
             if (_leads.length > 0 && !_activeLead) {
                 selectLead(_leads[0]);
             }
         } catch (e) {
             leadListEl.innerHTML = `<div class="ps-empty" style="padding:20px; color:var(--bad);">Erro ao carregar leads</div>`;
         }
+    }
+
+    function renderBotFilters() {
+        if (!botFilterBar) return;
+
+        // Mapeia bots a partir de _availableBots e também dos leads
+        const map = new Map();
+        for (const b of _availableBots) {
+            if (b && b.number) {
+                map.set(b.number, {
+                    number: b.number,
+                    label: b.label || (b.slot_index ? `WhatsApp ${b.slot_index}` : 'WhatsApp'),
+                    short_name: b.slot_index ? `WA ${b.slot_index}` : (b.label ? (b.label.length > 10 ? b.label.slice(0, 10) : b.label) : 'WA'),
+                    slot_index: b.slot_index,
+                    real_number: b.realNumber || b.real_number || null,
+                    status: b.status,
+                    connection: b.connection
+                });
+            }
+        }
+        for (const l of _leads) {
+            if (l.wa && l.wa.bots) {
+                for (const b of l.wa.bots) {
+                    if (b && b.number && !map.has(b.number)) {
+                        map.set(b.number, b);
+                    }
+                }
+            }
+        }
+
+        const botsList = [...map.values()].sort((a, b) => (a.slot_index || 99) - (b.slot_index || 99));
+
+        botFilterBar.innerHTML = `
+            <button type="button" class="wa-bot-filter-pill ${ _botFilter === 'all' ? 'active' : '' }" data-bot="all">
+                <i class="fas fa-layer-group"></i> Todos
+            </button>
+            ${botsList.map(b => {
+                const active = _botFilter === b.number;
+                const slotCls = b.slot_index ? `zap-${b.slot_index}` : 'zap-other';
+                const label = b.short_name || b.label || `WA ${b.slot_index || ''}`;
+                const title = `${b.label || 'WhatsApp'} ${b.real_number ? '(' + fmtNum(b.real_number) + ')' : ''}`;
+                return `<button type="button" class="wa-bot-filter-pill ${slotCls} ${active ? 'active' : ''}" data-bot="${esc(b.number)}" title="${esc(title)}">
+                    <i class="fab fa-whatsapp"></i> ${esc(label)}
+                </button>`;
+            }).join('')}
+        `;
+
+        botFilterBar.querySelectorAll('.wa-bot-filter-pill').forEach(btn => {
+            btn.onclick = () => {
+                _botFilter = btn.dataset.bot;
+                botFilterBar.querySelectorAll('.wa-bot-filter-pill').forEach(b => b.classList.toggle('active', b === btn));
+                applyLeadFilters();
+            };
+        });
+    }
+
+    function applyLeadFilters() {
+        const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        const filtered = _leads.filter(l => {
+            const matchText = !q || (
+                (l.name || '').toLowerCase().includes(q) ||
+                (l.phone || '').includes(q) ||
+                (l.city || '').toLowerCase().includes(q)
+            );
+            if (!matchText) return false;
+
+            if (_botFilter === 'all') return true;
+            const wa = l.wa || {};
+            const botNumbers = wa.bot_numbers || [];
+            return botNumbers.includes(_botFilter);
+        });
+        renderLeadList(filtered);
     }
 
     function renderLeadList(list) {
@@ -67,13 +169,28 @@ export async function init() {
             const isActive = _activeLead && _activeLead.id === l.id;
             const statusStr = WA_STATUS_LABEL[l.status] || 'NOVO';
             const wa = l.wa || {};
-            let waTag = '';
+
+            // Tags / Chips visíveis de qual WhatsApp da empresa conversou com ele
+            let botChips = '';
+            if (wa.bots && wa.bots.length > 0) {
+                botChips = wa.bots.map(b => {
+                    const slotCls = b.slot_index ? `zap-${b.slot_index}` : 'zap-other';
+                    const numDisplay = b.real_number ? fmtNum(b.real_number) : (b.number || '');
+                    const title = `Conversando via ${b.label || 'WhatsApp'} • ${numDisplay} (${b.status || 'ativo'})`;
+                    return `<span class="wa-bot-chip ${slotCls}" title="${esc(title)}"><i class="fab fa-whatsapp"></i> ${esc(b.short_name || 'WA')}</span>`;
+                }).join('');
+            } else {
+                botChips = `<span class="wa-bot-chip zap-none" title="Nenhuma mensagem iniciada ainda"><i class="far fa-comment"></i> Sem msg</span>`;
+            }
+
+            let unreadTag = '';
             if (wa.unread) {
-                waTag = `<span class="wa-lead-tag wa-unread"><i class="fab fa-whatsapp"></i> ${wa.unread}</span>`;
-            } else if (wa.has_chat) {
-                waTag = `<span class="wa-lead-tag"><i class="fab fa-whatsapp"></i>${wa.threads > 1 ? ' ' + wa.threads : ''}</span>`;
+                unreadTag = `<span class="wa-lead-tag wa-unread" title="${wa.unread} mensagens não lidas"><i class="fab fa-whatsapp"></i> ${wa.unread}</span>`;
+            } else if (wa.has_chat && (!wa.bots || !wa.bots.length)) {
+                unreadTag = `<span class="wa-lead-tag"><i class="fab fa-whatsapp"></i></span>`;
             }
             const multiPhone = (wa.phones || 0) > 1 ? `<span class="wa-lead-tag wa-multi" title="${wa.phones} telefones">+${wa.phones - 1} nº</span>` : '';
+
             return `
                 <div class="wa-lead-item ${isActive ? 'active' : ''}" data-lead-id="${l.id}">
                     <div class="wa-lead-avatar">${esc(initials)}</div>
@@ -83,9 +200,13 @@ export async function init() {
                             <small style="font-size:.62rem; color:var(--primary); font-weight:900;">${esc(statusStr)}</small>
                         </div>
                         <div class="wa-lead-meta">
-                            <span>${esc(l.phone || 'Sem telefone')}</span>
-                            <span>${esc(l.city || '')}</span>
-                            ${waTag}${multiPhone}
+                            <span class="wa-meta-phone">${esc(l.phone || 'Sem telefone')}</span>
+                            <span class="wa-meta-city">${esc(l.city || '')}</span>
+                            <div class="wa-lead-chips-wrap">
+                                ${botChips}
+                                ${unreadTag}
+                                ${multiPhone}
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -101,14 +222,8 @@ export async function init() {
     }
 
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase().trim();
-            const filtered = _leads.filter(l =>
-                (l.name || '').toLowerCase().includes(q) ||
-                (l.phone || '').includes(q) ||
-                (l.city || '').toLowerCase().includes(q)
-            );
-            renderLeadList(filtered);
+        searchInput.addEventListener('input', () => {
+            applyLeadFilters();
         });
     }
 
@@ -126,11 +241,127 @@ export async function init() {
         document.getElementById('waChatName').textContent = lead.name || 'Cliente';
         document.getElementById('waChatPhone').textContent = `${lead.phone || 'Sem telefone'} • ${lead.city || 'Sem cidade'}`;
 
+        // Reset da seleção manual de bot para este lead
+        _selectedSendBotNumber = null;
+
         // Tools updates
         fillLeadInfoCard(lead);
         updateStepperUI(lead.status || 'novo');
 
         loadChatHistory(lead);
+    }
+
+    // Indicador em destaque no topo do Chat sobre qual Zap da empresa está em uso
+    function updateHeaderBotIndicator(activeThread) {
+        const ind = document.getElementById('waChatBotIndicator');
+        const nameEl = document.getElementById('waCbiName');
+        const numEl = document.getElementById('waCbiNum');
+        const pill = document.getElementById('waCbiPill');
+        if (!ind || !nameEl || !numEl || !pill) return;
+
+        if (!_activeLead) {
+            ind.style.display = 'none';
+            return;
+        }
+
+        const botNum = _selectedSendBotNumber || (activeThread ? activeThread.bot_number : null);
+        const bot = _availableBots.find(b => b.number === botNum) || (activeThread ? {
+            label: activeThread.bot_label,
+            slot_index: activeThread.bot_slot_index,
+            real_number: activeThread.bot_real_number,
+            status: activeThread.bot_status,
+            connection: activeThread.bot_connection,
+            connected: activeThread.bot_connected
+        } : null);
+
+        if (!bot && !_availableBots.length) {
+            ind.style.display = 'none';
+            return;
+        }
+
+        const label = bot?.label || (bot?.slot_index ? `WhatsApp ${bot.slot_index}` : 'WhatsApp da Empresa');
+        const realNum = bot?.realNumber || bot?.real_number || (bot?.number && !bot.number.startsWith('slot-') ? bot.number : null);
+        const isConnected = bot?.connected || bot?.connection === 'connected';
+        const isBanned = bot?.status === 'banido' || bot?.connection === 'banido';
+
+        nameEl.textContent = label;
+        numEl.textContent = realNum ? fmtNum(realNum) : (isConnected ? 'Conectado' : (isBanned ? 'Banido' : 'Offline'));
+
+        pill.className = 'wa-cbi-pill ' + (bot?.slot_index ? `zap-${bot.slot_index}` : 'zap-other') +
+                         (isConnected ? ' conn-ok' : (isBanned ? ' conn-ban' : ' conn-off'));
+        ind.style.display = 'flex';
+    }
+
+    // Seletor no footer do chat para escolher por qual WhatsApp enviar
+    function updateSendBotSelector(activeThread) {
+        const select = document.getElementById('waSendBotSelect');
+        const badge = document.getElementById('waSendBotBadge');
+        if (!select) return;
+
+        if (!_availableBots.length) {
+            select.innerHTML = '<option value="">Nenhum WhatsApp cadastrado</option>';
+            if (badge) badge.innerHTML = '<span class="wa-sbb-badge-pill wa-sbb-err"><i class="fas fa-circle-xmark"></i> Nenhum bot</span>';
+            return;
+        }
+
+        const threadBotNum = activeThread ? activeThread.bot_number : null;
+        let chosenNum = _selectedSendBotNumber || threadBotNum;
+
+        const chosenBot = _availableBots.find(b => b.number === chosenNum);
+        const firstConnected = _availableBots.find(b => (b.connection === 'connected' || b.connected) && b.status === 'ativo');
+
+        let warnMsg = '';
+        if (chosenBot && chosenBot.connection !== 'connected' && !chosenBot.connected) {
+            if (firstConnected) {
+                warnMsg = `${chosenBot.label || 'WhatsApp'} está offline. Usando ${firstConnected.label}.`;
+                chosenNum = firstConnected.number;
+            } else {
+                warnMsg = `${chosenBot.label || 'WhatsApp'} está offline!`;
+            }
+        } else if (!chosenBot && firstConnected) {
+            chosenNum = firstConnected.number;
+        } else if (!chosenBot && _availableBots[0]) {
+            chosenNum = _availableBots[0].number;
+        }
+
+        _selectedSendBotNumber = chosenNum;
+
+        select.innerHTML = _availableBots.map(b => {
+            const isConn = b.connection === 'connected' || b.connected;
+            const numDisp = b.realNumber || b.real_number ? fmtNum(b.realNumber || b.real_number) : b.number;
+            const pushDisp = b.pushName || b.push_name ? ` (${b.pushName || b.push_name})` : '';
+            const statusDisp = isConn ? '🟢 Conectado' : (b.status === 'banido' ? '🔴 Banido' : '⚪ Offline');
+            const selected = b.number === chosenNum ? 'selected' : '';
+            return `<option value="${esc(b.number)}" ${selected}>
+                ${esc(b.label || `WhatsApp ${b.slot_index || ''}`)} • ${esc(numDisp)}${esc(pushDisp)} [${statusDisp}]
+            </option>`;
+        }).join('');
+
+        select.onchange = () => {
+            _selectedSendBotNumber = select.value;
+            const cur = _availableBots.find(b => b.number === select.value);
+            if (badge) {
+                if (cur && (cur.connection === 'connected' || cur.connected)) {
+                    badge.innerHTML = '<span class="wa-sbb-badge-pill wa-sbb-ok"><i class="fas fa-check-circle"></i> Conectado</span>';
+                } else {
+                    badge.innerHTML = `<span class="wa-sbb-badge-pill wa-sbb-warn"><i class="fas fa-triangle-exclamation"></i> ${cur ? cur.label : 'Número'} offline</span>`;
+                }
+            }
+            updateHeaderBotIndicator(activeThread);
+        };
+
+        if (badge) {
+            const cur = _availableBots.find(b => b.number === chosenNum);
+            if (warnMsg) {
+                badge.innerHTML = `<span class="wa-sbb-badge-pill wa-sbb-warn" title="${esc(warnMsg)}"><i class="fas fa-triangle-exclamation"></i> ${esc(warnMsg)}</span>`;
+            } else if (cur && (cur.connection === 'connected' || cur.connected)) {
+                badge.innerHTML = '<span class="wa-sbb-badge-pill wa-sbb-ok"><i class="fas fa-check-circle"></i> Conectado</span>';
+            } else {
+                badge.innerHTML = `<span class="wa-sbb-badge-pill wa-sbb-warn"><i class="fas fa-circle-exclamation"></i> Offline</span>`;
+            }
+        }
+
+        updateHeaderBotIndicator(activeThread);
     }
 
     // Barra de abas dos threads (Telefone 1 / Telefone 2 / ...), criada 1x
@@ -148,15 +379,16 @@ export async function init() {
 
     function renderThreadBar() {
         const bar = ensureThreadBar();
-        if (_threads.length <= 1) { bar.style.display = 'none'; return; }
+        if (!_threads.length) { bar.style.display = 'none'; return; }
         bar.style.display = 'flex';
         bar.innerHTML = _threads.map(t => {
             const k = threadKey(t);
             const active = k === _activeThreadKey;
             const dot = t.unread ? `<span class="wa-thread-dot">${t.unread}</span>` : '';
-            const num = t.bot_number ? ` <small style="opacity:.6">via ${t.bot_number.slice(-4)}</small>` : '';
+            const botName = t.bot_label || (t.bot_slot_index ? `WhatsApp ${t.bot_slot_index}` : (t.bot_number ? `via ${t.bot_number.slice(-4)}` : ''));
+            const zapBadge = botName ? `<span class="wa-thread-zap-badge zap-${t.bot_slot_index || 'other'}"><i class="fab fa-whatsapp"></i> ${esc(botName)}</span>` : '';
             return `<button type="button" class="wa-thread-tab${active ? ' active' : ''}" data-key="${k}">
-                <i class="fab fa-whatsapp"></i> ${esc(t.phone_label)}${num} ${dot}
+                <span class="wa-thread-title">${esc(t.phone_label)}</span> ${zapBadge} ${dot}
             </button>`;
         }).join('');
         bar.querySelectorAll('.wa-thread-tab').forEach(btn => {
@@ -168,19 +400,30 @@ export async function init() {
         const msgBox = document.getElementById('waChatMessages');
         if (!msgBox) return;
         const t = _threads.find(x => threadKey(x) === _activeThreadKey) || _threads[0];
-        if (!t) { msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem conversa ainda. Envie a primeira mensagem.</div></div>`; return; }
-        _activeThreadKey = threadKey(t);
+        _activeThreadKey = t ? threadKey(t) : null;
         renderThreadBar();
+        updateSendBotSelector(t);
+        updateHeaderBotIndicator(t);
+
+        if (!t) {
+            msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem conversa ainda. Envie a primeira mensagem.</div></div>`;
+            return;
+        }
 
         if (!t.messages.length) {
-            msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem mensagens neste número ainda. Envie a primeira.</div></div>`;
+            const botLabel = t.bot_label || 'WhatsApp';
+            msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem mensagens via <strong>${esc(botLabel)}</strong> ainda. Envie a primeira abaixo.</div></div>`;
         } else {
             msgBox.innerHTML = t.messages.map(m => {
                 const time = new Date(m.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 const tick = m.direction === 'out' ? '<i class="fas fa-check-double" style="color:#34b7f1;"></i>' : '';
+                const botTag = m.bot_label ? `<span class="wa-msg-bot-tag zap-${m.bot_slot_index || 'other'}" title="Canal: ${esc(m.bot_label)}">${esc(m.bot_short_name || m.bot_label)}</span>` : '';
                 return `<div class="wa-msg-bubble ${m.direction === 'out' ? 'out' : 'in'}">
                     <div>${esc(m.body || '')}</div>
-                    <div class="wa-msg-meta"><span>${time}</span> ${tick}</div>
+                    <div class="wa-msg-meta">
+                        ${botTag}
+                        <span>${time}</span> ${tick}
+                    </div>
                 </div>`;
             }).join('');
         }
@@ -202,6 +445,10 @@ export async function init() {
         try {
             const data = await api(`/leads/${lead.id}/conversations`);
             _threads = (data && data.threads) || [];
+            if (data && data.available_bots) {
+                _availableBots = data.available_bots;
+                renderBotFilters();
+            }
             // mantém o thread ativo se ainda existir, senão pega o de cima
             if (!_threads.find(t => threadKey(t) === _activeThreadKey)) {
                 _activeThreadKey = _threads.length ? threadKey(_threads[0]) : null;
@@ -210,6 +457,8 @@ export async function init() {
         } catch (e) {
             _threads = [];
             msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Inicie uma nova conversa com ${esc(lead.name)}.</div></div>`;
+            updateHeaderBotIndicator(null);
+            updateSendBotSelector(null);
         }
     }
 
@@ -238,13 +487,12 @@ export async function init() {
 
         const setMeta = html => { const m = document.getElementById(metaId); if (m) m.innerHTML = `<span>${timeStr}</span> ${html}`; };
 
-        // Responde no número do thread ativo (Telefone 1/2/3) pelo mesmo bot que atendeu
+        // Responde no número do thread ativo pelo bot selecionado no seletor ou pelo mesmo bot que atendeu
         const active = _threads.find(t => threadKey(t) === _activeThreadKey);
+        const sendBot = _selectedSendBotNumber || (active ? active.bot_number : null);
         const payload = { lead_id: _activeLead.id, message: msgText };
-        if (active) {
-            if (active.lead_phone) payload.to_phone = active.lead_phone;
-            if (active.bot_number) payload.bot_number = active.bot_number;
-        }
+        if (active && active.lead_phone) payload.to_phone = active.lead_phone;
+        if (sendBot) payload.bot_number = sendBot;
 
         try {
             const r = await api('/tools/send-lead', { method: 'POST', body: JSON.stringify(payload) });
@@ -701,7 +949,17 @@ export async function init() {
                         inputTitle.focus();
                     }
                 } else if (act === 'delete') {
-                    if (confirm(`Excluir o template "${chips[idx].title}"?`)) {
+                    const ok = await (window.confirmDialog ? window.confirmDialog({
+                        title: 'EXCLUIR TEMPLATE',
+                        eyebrow: 'RESPOSTA RÁPIDA',
+                        message: `Excluir o template "${chips[idx].title}"?`,
+                        description: 'Ele será removido da barra de atalhos rápidos.',
+                        confirmText: 'Excluir',
+                        cancelText: 'Cancelar',
+                        type: 'danger',
+                        icon: 'fa-trash-can'
+                    }) : Promise.resolve(confirm(`Excluir o template "${chips[idx].title}"?`)));
+                    if (ok) {
                         chips.splice(idx, 1);
                         saveQuickChips(chips);
                         resetQuickForm();
@@ -1209,11 +1467,33 @@ export async function init() {
                     await api('/whatsapp/disconnect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number }) });
                     toast('Desconectado', 'info');
                 } else if (act === 'banir') {
-                    if (!confirm('Banir este número? Ele sai de circulação permanentemente.')) { btn.disabled = false; return; }
+                    const ok = await (window.confirmDialog ? window.confirmDialog({
+                        title: 'BANIR NÚMERO',
+                        eyebrow: 'SEGURANÇA ANTI-BAN',
+                        message: 'Banir este número de WhatsApp?',
+                        description: 'Ele sai de circulação permanentemente e não participará mais de envios nem atendimentos.',
+                        confirmText: 'Sim, banir número',
+                        confirmIcon: 'fa-skull',
+                        cancelText: 'Cancelar',
+                        type: 'danger',
+                        icon: 'fa-skull'
+                    }) : Promise.resolve(confirm('Banir este número? Ele sai de circulação permanentemente.')));
+                    if (!ok) { btn.disabled = false; return; }
                     await api(`/campaigns/numbers/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'banido' }) });
                     toast('Número banido', 'err');
                 } else if (act === 'remover') {
-                    if (!confirm('Remover sessão deste número? O WhatsApp será deslogado.')) { btn.disabled = false; return; }
+                    const ok = await (window.confirmDialog ? window.confirmDialog({
+                        title: 'REMOVER SESSÃO DO WHATSAPP',
+                        eyebrow: 'DESCONECTAR',
+                        message: 'Remover sessão deste número?',
+                        description: 'O WhatsApp será deslogado do sistema. Será necessário escanear o QR Code de novo para reconectar.',
+                        confirmText: 'Sim, remover sessão',
+                        confirmIcon: 'fa-trash',
+                        cancelText: 'Cancelar',
+                        type: 'danger',
+                        icon: 'fa-trash-can'
+                    }) : Promise.resolve(confirm('Remover sessão deste número? O WhatsApp será deslogado.')));
+                    if (!ok) { btn.disabled = false; return; }
                     await api('/whatsapp/disconnect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number, removeSession: true }) });
                     toast('Sessão removida', 'info');
                 } else if (act === 'salvar-limite') {

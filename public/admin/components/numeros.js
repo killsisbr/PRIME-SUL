@@ -291,7 +291,18 @@ export async function init() {
 
     // ================= DESCONECTAR WHATSAPP =================
     window.numDisconnectWa = async function (number) {
-        if (!confirm(`Deseja desconectar a sessão do WhatsApp do número ${formatPhone(number)}?`)) return;
+        const ok = await (window.confirmDialog ? window.confirmDialog({
+            title: 'DESCONECTAR WHATSAPP',
+            eyebrow: 'SESSÃO WHATSAPP',
+            message: `Desconectar a sessão do WhatsApp do número ${formatPhone(number)}?`,
+            description: 'A sessão será deslogada e o QR Code precisará ser lido novamente para reconectar.',
+            confirmText: 'Sim, desconectar',
+            confirmIcon: 'fa-unlink',
+            cancelText: 'Cancelar',
+            type: 'warn',
+            icon: 'fa-triangle-exclamation'
+        }) : Promise.resolve(confirm(`Deseja desconectar a sessão do WhatsApp do número ${formatPhone(number)}?`)));
+        if (!ok) return;
         try {
             await api('/whatsapp/disconnect', { method: 'POST', body: JSON.stringify({ number, removeSession: true }) });
             toast('WhatsApp desconectado com sucesso!');
@@ -311,7 +322,18 @@ export async function init() {
     };
 
     window.numBan = async function (id) {
-        if (!confirm('Deseja marcar este número como banido? Ele será retirado da rotação de disparos imediatamente.')) return;
+        const ok = await (window.confirmDialog ? window.confirmDialog({
+            title: 'BANIR NÚMERO',
+            eyebrow: 'ROTAÇÃO ANTI-BAN',
+            message: 'Marcar este número como banido?',
+            description: 'Ele será retirado da rotação de disparos imediatamente e não será mais utilizado.',
+            confirmText: 'Sim, banir número',
+            confirmIcon: 'fa-skull',
+            cancelText: 'Cancelar',
+            type: 'danger',
+            icon: 'fa-skull'
+        }) : Promise.resolve(confirm('Deseja marcar este número como banido? Ele será retirado da rotação de disparos imediatamente.')));
+        if (!ok) return;
         try {
             const r = await api(`/campaigns/numbers/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'banido' }) });
             toast(`Chip ${r.number} retirado da rotação`, 'info');
@@ -320,7 +342,18 @@ export async function init() {
     };
 
     window.numDelete = async function (id) {
-        if (!confirm('Deseja realmente excluir este chip do sistema?')) return;
+        const ok = await (window.confirmDialog ? window.confirmDialog({
+            title: 'EXCLUIR NÚMERO',
+            eyebrow: 'CADASTRO DE CHIP',
+            message: 'Deseja realmente excluir este chip do sistema?',
+            description: 'O número será permanentemente removido da base de dados.',
+            confirmText: 'Sim, excluir',
+            confirmIcon: 'fa-trash',
+            cancelText: 'Cancelar',
+            type: 'danger',
+            icon: 'fa-trash-can'
+        }) : Promise.resolve(confirm('Deseja realmente excluir este chip do sistema?')));
+        if (!ok) return;
         try {
             await api(`/campaigns/numbers/${id}`, { method: 'DELETE' });
             toast('Chip excluído com sucesso!');
