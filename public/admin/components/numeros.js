@@ -135,8 +135,8 @@ export async function init() {
                                     </button>
                                 ` : ''}
                             ` : `
-                                <button type="button" class="num-act-btn btn-disconnect" onclick="numDisconnectWa('${n.number}')" title="Desconectar WhatsApp deste chip">
-                                    <i class="fas fa-plug-circle-xmark"></i>
+                                <button type="button" class="num-act-btn btn-disconnect" onclick="numDelete(${n.id})" title="Remover chip">
+                                    <i class="fas fa-trash-can"></i>
                                 </button>
                             `}
 
