@@ -263,6 +263,15 @@
         });
     }
 
+    // ---------- Rodapé / registro profissional ----------
+    function sanitizeCorenFooter() {
+        document.querySelectorAll('footer, [class*="footer"], [id*="footer"], [class*="rodape"], [id*="rodape"]').forEach(el => {
+            if (/coren/i.test(el.textContent || '')) {
+                el.textContent = 'Registro ativo no Coren SC';
+            }
+        });
+    }
+
     // ---------- WhatsApp ----------
     function bindWhatsapp() {
         const wa = $('vitrineWhatsapp');
@@ -282,6 +291,7 @@
         bindHeroTitle();
         bindGlobal();
         bindWhatsapp();
+        sanitizeCorenFooter();
         document.getElementById('leadForm').addEventListener('submit', submit);
         loadProducts();
     }

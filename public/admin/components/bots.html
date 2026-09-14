@@ -239,22 +239,35 @@
     <!-- PAINEL: SCANNER DE QR (Config + QR Code) -->
     <div class="bt-tab-panel" id="bt-panel-config">
         <div class="bt-shell">
-            <!-- HERO / STATUS CARD -->
+            <!-- CABEÇALHO DO SCANNER -->
             <div class="bt-hero">
-                <div class="bt-hero-icon"><i class="fab fa-whatsapp"></i></div>
-                <h1 class="bt-hero-headline">MEU WHATSAPP</h1>
-                <p class="bt-hero-desc">Conecte seu número e acompanhe o status em tempo real. Gere o QR Code e escaneie com seu celular — o sistema puxa e cadastra o número automaticamente.</p>
-
-                <!-- Toggle bots (apenas admin vê ativo) -->
-                <div class="bt-hero-toggle" id="bt-hero-toggle-wrap">
-                    <div>
-                        <strong>Bots do Sistema</strong>
-                        <span id="bt-toggle-desc">Ative para permitir conexões WhatsApp.</span>
+                <div class="bt-hero-top">
+                    <div class="bt-hero-title-wrap">
+                        <div class="bt-hero-icon"><i class="fab fa-whatsapp"></i></div>
+                        <div class="bt-hero-copy">
+                            <span class="bt-hero-kicker"><i class="fas fa-qrcode"></i> Scanner de QR Code</span>
+                            <h1 class="bt-hero-headline">MEU WHATSAPP</h1>
+                            <p class="bt-hero-desc">Conecte, escolha se o número fica só para atendimento ou disponível para campanhas, e acompanhe tudo em tempo real.</p>
+                        </div>
                     </div>
-                    <label class="bt-switch">
-                        <input type="checkbox" id="bt-toggle" disabled>
-                        <span></span>
-                    </label>
+
+                    <!-- Toggle bots (apenas admin vê ativo) -->
+                    <div class="bt-hero-toggle" id="bt-hero-toggle-wrap">
+                        <div>
+                            <strong>Bots do Sistema</strong>
+                            <span id="bt-toggle-desc">Ative para permitir conexões WhatsApp.</span>
+                        </div>
+                        <label class="bt-switch">
+                            <input type="checkbox" id="bt-toggle" disabled>
+                            <span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bt-hero-steps">
+                    <div><b>1</b><span>Gere o QR</span></div>
+                    <div><b>2</b><span>Escaneie no celular</span></div>
+                    <div><b>3</b><span>Defina atendimento ou campanha</span></div>
                 </div>
 
                 <!-- Métricas rápidas -->
@@ -268,31 +281,6 @@
 
             <!-- CONTEÚDO: CONEXÃO VIA QR CODE + GRID DE SLOTS/NÚMEROS -->
             <div class="bt-content">
-                <!-- Conectar via Scanner QR (Sem precisar digitar número manual) -->
-                <div class="bt-card bt-connect-banner" style="border-color: #25d366; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);">
-                    <div class="bt-card-head" style="margin-bottom: 8px;">
-                        <div>
-                            <span class="bt-num" style="display:flex; align-items:center; gap:8px;">
-                                <i class="fab fa-whatsapp" style="color:#25d366; font-size:1.4rem;"></i>
-                                Conectar WhatsApp via QR Code
-                            </span>
-                            <span class="bt-label" style="color:#15803d; text-transform:none; font-size:0.75rem; margin-top:2px;">
-                                Não precisa digitar o número manual. Basta gerar o QR Code e escanear com seu celular que o sistema puxa e cadastra seu número e perfil automaticamente!
-                            </span>
-                        </div>
-                        <div class="bt-badges">
-                            <span class="bt-badge conn-connected" style="background:#dcfce7; color:#15803d; border-color:#22c55e;">
-                                <i class="fas fa-bolt"></i> AUTO-CADASTRO
-                            </span>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px;">
-                        <button type="button" class="bt-action ok" id="bt-quick-scan-btn" style="padding: 10px 22px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-qrcode"></i> GERAR QR CODE PARA CONECTAR
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Grid de slots / números existentes -->
                 <div class="bt-grid" id="bt-grid">
                     <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>

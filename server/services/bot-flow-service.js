@@ -19,7 +19,7 @@ function match(text, list) {
 
 async function addOptOut(send, phone, reason) {
     await db.run('INSERT OR IGNORE INTO opt_outs (organization_id,phone,reason) VALUES (?,?,?)', [send.organization_id || 1, phone, reason]);
-    await db.run("UPDATE leads SET status='nao', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+    await db.run("UPDATE leads SET status='nao', triage_status='declined', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
     await db.run(
         'INSERT INTO lead_history (lead_id, seller_id, from_status, to_status) VALUES (?, ?, ?, "nao")',
         [send.lead_id, send.seller_id, send.status]
@@ -48,7 +48,7 @@ async function handleIncoming({ botNumber, phone, text }) {
         if (!changed.changes) return { handled: true, action: 'already_processed' };
 
         // Devolução do contato para o vendedor de origem: status 'sim' (Qualificado / Liberado)
-        await db.run("UPDATE leads SET status='sim', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
+        await db.run("UPDATE leads SET status='sim', triage_status='qualified', triage_bot_number_id=COALESCE(triage_bot_number_id, ?), updated_at=datetime('now') WHERE id=?", [send.number_id, send.lead_id]);
         await db.run(
             'INSERT INTO lead_history (lead_id, seller_id, from_status, to_status) VALUES (?, ?, "enviados", "sim")',
             [send.lead_id, send.seller_id]

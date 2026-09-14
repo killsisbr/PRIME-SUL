@@ -4,6 +4,8 @@ const db = require('../database/db');
 const { auth, adminOnly } = require('../middleware/auth');
 const { normalizePhone } = require('../utils/phone');
 const whatsapp = require('../services/whatsapp-service');
+const antiBan = require('../services/anti-ban-service');
+const campaignService = require('../services/campaign-service');
 const QRCode = require('qrcode');
 const router = express.Router();
 
@@ -78,11 +80,36 @@ router.get('/me', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+router.get('/me/bot-setup', async (req, res, next) => {
+    try {
+        const setup = await campaignService.getSellerBotSetup(req.user.organization_id || 1, req.user.id);
+        res.json({
+            ready: setup.ready,
+            missing: setup.missing,
+            campaign_bot: setup.campaignBot ? {
+                id: setup.campaignBot.id,
+                label: setup.campaignBot.label,
+                number: setup.campaignBot.number,
+                status: setup.campaignBot.status
+            } : null,
+            attendance_bot: setup.attendanceBot ? {
+                id: setup.attendanceBot.id,
+                label: setup.attendanceBot.label,
+                number: setup.attendanceBot.number,
+                active: !!setup.attendanceBot.active
+            } : null
+        });
+    } catch (e) { next(e); }
+});
+
 router.get('/:sellerId/numbers', async (req, res, next) => {
     try {
         const sellerId = Number(req.params.sellerId);
         if (req.user.role !== 'admin' && sellerId !== req.user.id) return res.status(403).json({ error: 'Acesso negado' });
-        const rows = await db.all(`SELECT sn.* FROM seller_numbers sn JOIN sellers s ON s.id=sn.seller_id
+        const rows = await db.all(`SELECT sn.*, bn.id AS bot_number_id, bn.usage_type, bn.campaign_enabled, bn.status AS bot_status
+            FROM seller_numbers sn
+            JOIN sellers s ON s.id=sn.seller_id
+            LEFT JOIN bot_numbers bn ON bn.organization_id = sn.organization_id AND bn.number = sn.number
             WHERE sn.seller_id=? AND sn.organization_id=? ORDER BY sn.id`, [sellerId, req.user.organization_id]);
         res.json(rows);
     } catch (e) { next(e); }
@@ -113,6 +140,17 @@ router.patch('/:sellerId/numbers/:id', async (req, res, next) => {
             [active, req.params.id, sellerId, req.user.organization_id]);
         if (!result.changes) return res.status(404).json({ error: 'Número não encontrado' });
         res.json(await db.get('SELECT * FROM seller_numbers WHERE id=?', [req.params.id]));
+    } catch (e) { next(e); }
+});
+
+router.post('/:sellerId/numbers/:id/campaign-usage', adminOnly, async (req, res, next) => {
+    try {
+        const sellerId = Number(req.params.sellerId);
+        const sn = await db.get('SELECT * FROM seller_numbers WHERE id=? AND seller_id=? AND organization_id=?', [req.params.id, sellerId, req.user.organization_id]);
+        if (!sn) return res.status(404).json({ error: 'Número não encontrado' });
+        const enabled = !!req.body.campaign_enabled;
+        const n = await antiBan.importSellerNumber(sn.id, req.user.organization_id, enabled);
+        res.json(n);
     } catch (e) { next(e); }
 });
 

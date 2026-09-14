@@ -1181,3 +1181,139 @@
     .dp-tmpl-modal-grid { grid-template-columns: 1fr; }
     .dp-sched-row2 { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================
+   DISPARO COMERCIAL — REDESIGN CLEAN / SEM CARA DE DASHBOARD PESADO
+   ========================================================================== */
+#dynamicModalOverlay:has(.dp-saas-root) #dynamicModalBody,
+#dynamicModalOverlay.is-disparo #dynamicModalBody,
+#dynamicModalOverlay.modal-fullscreen-99 #dynamicModalBody,
+#dynamicModalBody:has(.dp-saas-root) {
+    overflow: hidden !important;
+    padding: 12px 18px !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef6ff 100%) !important;
+}
+
+.dp-saas-root {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 12px;
+    color: var(--ink, #181716);
+}
+
+.dp-saas-header,
+.dp-saas-timeline-box,
+.dp-saas-single-card {
+    background: #ffffff !important;
+    color: var(--ink, #181716) !important;
+    border: 2.5px solid var(--ink, #181716) !important;
+    border-radius: 18px !important;
+    box-shadow: 4px 4px 0 var(--ink, #181716) !important;
+}
+
+.dp-saas-header {
+    display: grid !important;
+    grid-template-columns: minmax(280px, 1fr) auto;
+    align-items: center !important;
+    gap: 14px !important;
+    padding: 14px 16px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 62%, #ecfeff 100%) !important;
+}
+
+.dp-meta-info-combined {
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(240px, 1fr) minmax(180px, 320px);
+    align-items: center !important;
+    gap: 14px !important;
+}
+
+.dp-meta-info { gap: 10px !important; min-width: 0; }
+.dp-meta-info i {
+    display: grid; place-items: center; width: 40px; height: 40px;
+    border: 2px solid var(--ink, #181716); border-radius: 12px;
+    background: #0ea5e9; color: #fff !important;
+    box-shadow: 2px 2px 0 var(--ink, #181716); flex: 0 0 40px;
+}
+.dp-meta-info strong { color: var(--ink, #181716) !important; font: 900 .82rem var(--font-body) !important; letter-spacing: .2px !important; }
+.dp-meta-info span { color: #64748b !important; font: 800 .62rem var(--font-body) !important; }
+
+.dp-meta-progress-wrap { max-width: none !important; min-width: 0 !important; gap: 8px !important; }
+.dp-meta-progress-bar { height: 12px !important; border: 2px solid var(--ink, #181716) !important; background: #e2e8f0 !important; box-shadow: inset 0 1px 0 rgba(0,0,0,.08); }
+.dp-meta-progress-fill { background: linear-gradient(90deg, #0ea5e9, #22c55e) !important; box-shadow: none !important; }
+.dp-meta-pct { border: 2px solid var(--ink, #181716) !important; background: #0ea5e9 !important; color: #ffffff !important; box-shadow: 2px 2px 0 var(--ink, #181716); }
+
+.dp-saas-top-actions { justify-content: flex-end; gap: 8px !important; }
+.dp-saas-status-badge { border: 1.5px solid #16a34a !important; background: #dcfce7 !important; color: #15803d !important; font-size: .58rem !important; padding: 5px 11px !important; }
+.dp-saas-btn { border: 2px solid var(--ink, #181716) !important; border-radius: 10px !important; box-shadow: 3px 3px 0 var(--ink, #181716) !important; padding: 9px 14px !important; font-size: .68rem !important; }
+.dp-saas-btn.sec { background: #f1f5f9 !important; color: #0f172a !important; }
+.dp-saas-btn.prim { background: #0ea5e9 !important; color: #ffffff !important; }
+.dp-saas-btn:hover { transform: translate(-1px, -1px) !important; }
+
+.dp-saas-timeline-box { padding: 14px !important; display: grid !important; grid-template-rows: auto minmax(0, auto); gap: 12px !important; }
+.dp-timeline-top { align-items: center !important; gap: 12px !important; }
+.dp-timeline-title { color: var(--ink, #181716) !important; font-size: 1.18rem !important; }
+.dp-view-mode-toggle { border: 2px solid var(--ink, #181716) !important; border-radius: 12px !important; background: #f8fafc !important; padding: 3px !important; box-shadow: 2px 2px 0 var(--ink, #181716); }
+.dp-vmode-btn, .dp-day-btn, .dp-ag-period-btn, .dp-ag-nav-btn { border: 1.5px solid #cbd5e1 !important; background: #ffffff !important; color: #475569 !important; box-shadow: none !important; }
+.dp-vmode-btn.active, .dp-day-btn.active, .dp-ag-period-btn.active, .dp-ag-nav-btn.today { background: #0ea5e9 !important; color: #ffffff !important; border-color: var(--ink, #181716) !important; box-shadow: 2px 2px 0 var(--ink, #181716) !important; }
+.dp-vmode-badge { background: #ff7417 !important; color: #fff !important; }
+.dp-days-selector { gap: 5px !important; }
+.dp-day-btn { min-width: 48px; padding: 7px 10px !important; border-radius: 10px !important; }
+
+.dp-24h-bar-container, .dp-agenda-view-container { background: #f8fafc !important; border: 2px solid #cbd5e1 !important; border-radius: 16px !important; padding: 12px !important; }
+.dp-24h-labels { color: #475569 !important; font-size: .62rem !important; }
+.dp-24h-track { height: 62px !important; border: 2px solid var(--ink, #181716) !important; background: #ffffff !important; box-shadow: inset 0 0 0 1px #e2e8f0 !important; }
+.dp-track-grid-lines span { border-right-color: #dbeafe !important; }
+.dp-24h-footer { color: #64748b !important; }
+.dp-24h-footer span { color: #0284c7 !important; }
+.dp-now-pin { background: #ef4444 !important; box-shadow: none !important; }
+
+.dp-saas-single-card { min-height: 0 !important; overflow: hidden !important; display: grid !important; grid-template-rows: auto minmax(0, 1fr) !important; }
+.dp-cat-header { background: #ffffff !important; color: var(--ink, #181716) !important; border-bottom: 2px solid var(--ink, #181716) !important; padding: 11px 14px !important; }
+.dp-cat-header .dp-saas-status-badge { margin-left: auto; }
+.dp-cat-body { background: #f8fafc !important; padding: 12px !important; overflow-y: auto !important; justify-content: flex-start !important; min-height: 0; }
+.dp-cat-empty { color: #64748b !important; min-height: 160px; justify-content: center; }
+.dp-cat-empty i { color: #94a3b8 !important; }
+.dp-cat-empty span { color: #64748b !important; }
+.dp-cat-camp-item { background: #ffffff !important; border: 2px solid var(--ink, #181716) !important; border-radius: 14px !important; box-shadow: 3px 3px 0 var(--ink, #181716) !important; }
+.dp-camp-item-head strong { color: var(--ink, #181716) !important; }
+
+@media (max-height: 760px) and (min-width: 800px) {
+    #dynamicModalOverlay:has(.dp-saas-root) #dynamicModalBody,
+    #dynamicModalOverlay.is-disparo #dynamicModalBody,
+    #dynamicModalOverlay.modal-fullscreen-99 #dynamicModalBody,
+    #dynamicModalBody:has(.dp-saas-root) { padding: 8px 14px !important; }
+    .dp-saas-root { gap: 8px; grid-template-rows: auto auto minmax(0, 1fr); }
+    .dp-saas-header { padding: 10px 12px !important; }
+    .dp-meta-info i { width: 34px; height: 34px; flex-basis: 34px; }
+    .dp-meta-info strong { font-size: .72rem !important; }
+    .dp-meta-info span { font-size: .56rem !important; }
+    .dp-saas-btn { padding: 7px 11px !important; }
+    .dp-saas-timeline-box { padding: 10px !important; gap: 8px !important; }
+    .dp-timeline-title { font-size: 1rem !important; }
+    .dp-24h-track { height: 48px !important; }
+    .dp-24h-labels { font-size: .54rem !important; }
+    .dp-24h-footer small { display: none; }
+    .dp-cat-header { padding: 9px 12px !important; }
+    .dp-cat-body { padding: 10px !important; }
+}
+
+@media (max-width: 900px) {
+    #dynamicModalOverlay:has(.dp-saas-root) #dynamicModalBody,
+    #dynamicModalOverlay.is-disparo #dynamicModalBody,
+    #dynamicModalOverlay.modal-fullscreen-99 #dynamicModalBody,
+    #dynamicModalBody:has(.dp-saas-root) { overflow-y: auto !important; padding: 10px !important; }
+    .dp-saas-root { display: flex; flex-direction: column; min-height: auto; }
+    .dp-saas-header { grid-template-columns: 1fr; }
+    .dp-meta-info-combined { grid-template-columns: 1fr; }
+    .dp-saas-top-actions { justify-content: flex-start; }
+    .dp-timeline-top > div:last-child { margin-left: 0 !important; width: 100%; }
+    .dp-view-mode-toggle, .dp-days-selector { width: 100%; overflow-x: auto; }
+    .dp-days-selector { padding-bottom: 3px; }
+    .dp-day-btn { flex: 1 0 54px; }
+    .dp-24h-bar-container { overflow-x: auto; }
+    .dp-24h-labels, .dp-24h-track, .dp-24h-footer { min-width: 760px; }
+    .dp-saas-single-card { min-height: 260px !important; }
+}

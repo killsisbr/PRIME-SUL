@@ -33,13 +33,18 @@ async function ensureFresh() {
     return rows.length;
 }
 
-async function registerNumber(number, label, organizationId = 1, sellerId = null) {
+async function registerNumber(number, label, organizationId = 1, sellerId = null, opts = {}) {
     number = normalizePhone(number);
     if (!number) { const e = new Error('Número inválido'); e.status = 400; throw e; }
     const sellerNumber = await db.get('SELECT id FROM seller_numbers WHERE number=?', [number]);
-    if (sellerNumber) { const e = new Error('Número já pertence a um vendedor'); e.status = 409; throw e; }
+    if (sellerNumber && !opts.allowSellerNumber) { const e = new Error('Número já pertence a um vendedor'); e.status = 409; throw e; }
+    const usageType = opts.usage_type || (sellerId ? 'seller_attendance' : 'institutional');
+    const campaignEnabled = opts.campaign_enabled == null ? (sellerId ? 0 : 1) : (opts.campaign_enabled ? 1 : 0);
     await ensureFresh();
-    await db.run('INSERT OR IGNORE INTO bot_numbers (organization_id, seller_id, number, label) VALUES (?, ?, ?, ?)', [organizationId, sellerId, number, label || 'triagem']);
+    await db.run(
+        'INSERT OR IGNORE INTO bot_numbers (organization_id, seller_id, number, label, usage_type, campaign_enabled) VALUES (?, ?, ?, ?, ?, ?)',
+        [organizationId, sellerId, number, label || 'triagem', usageType, campaignEnabled]
+    );
     const row = await db.get('SELECT * FROM bot_numbers WHERE organization_id = ? AND number = ?', [organizationId, number]);
     if (row && row.seller_id !== sellerId && sellerId !== null) { const e = new Error('Número pertence a outro operador'); e.status = 403; throw e; }
     return row;
@@ -51,9 +56,11 @@ async function registerNumber(number, label, organizationId = 1, sellerId = null
 async function registerSlot(organizationId, sellerId, slotIndex, label) {
     const number = `slot-${organizationId}-${sellerId || 'org'}-${slotIndex}`;
     await ensureFresh();
+    const usageType = sellerId ? 'seller_attendance' : 'institutional';
+    const campaignEnabled = sellerId ? 0 : 1;
     await db.run(
-        'INSERT OR IGNORE INTO bot_numbers (organization_id, seller_id, number, label, slot_index) VALUES (?, ?, ?, ?, ?)',
-        [organizationId, sellerId, number, label || `WhatsApp ${slotIndex}`, slotIndex]
+        'INSERT OR IGNORE INTO bot_numbers (organization_id, seller_id, number, label, slot_index, usage_type, campaign_enabled) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [organizationId, sellerId, number, label || `WhatsApp ${slotIndex}`, slotIndex, usageType, campaignEnabled]
     );
     return db.get('SELECT * FROM bot_numbers WHERE organization_id = ? AND number = ?', [organizationId, number]);
 }
@@ -67,14 +74,16 @@ async function pickBestNumber(organizationId = 1, sellerId = null) {
     await ensureFresh();
     const limit = await currentLimit();
     const disposable = await isDisposableMode();
-    const orderClause = disposable
-        ? '(CASE WHEN seller_id IS NULL THEN 0 ELSE 1 END), messages_sent ASC, id ASC'
-        : (sellerId ? '(CASE WHEN seller_id = ? THEN 0 ELSE 1 END), messages_sent ASC, id ASC' : 'messages_sent ASC, id ASC');
-    const orderParams = (!disposable && sellerId) ? [sellerId] : [];
+    const orderClause = sellerId
+        ? '(CASE WHEN seller_id = ? THEN 0 WHEN seller_id IS NULL THEN 1 ELSE 2 END), messages_sent ASC, id ASC'
+        : 'messages_sent ASC, id ASC';
+    const orderParams = sellerId ? [sellerId] : [];
 
     return db.get(`
         SELECT * FROM bot_numbers
         WHERE organization_id = ? AND status = 'ativo'
+          AND campaign_enabled = 1
+          AND usage_type IN ('institutional','disposable','borrowed_disposable')
           AND (seller_id IS NULL OR seller_id = ?)
           AND messages_sent < COALESCE(daily_limit_override, ?)
         ORDER BY ${orderClause}
@@ -88,10 +97,10 @@ async function reserveNumber(organizationId = 1, sellerId = null) {
     await ensureFresh();
     const limit = await currentLimit();
     const disposable = await isDisposableMode();
-    const orderClause = disposable
-        ? '(CASE WHEN seller_id IS NULL THEN 0 ELSE 1 END), messages_sent ASC, id ASC'
-        : (sellerId ? '(CASE WHEN seller_id = ? THEN 0 ELSE 1 END), messages_sent ASC, id ASC' : 'messages_sent ASC, id ASC');
-    const orderParams = (!disposable && sellerId) ? [sellerId] : [];
+    const orderClause = sellerId
+        ? '(CASE WHEN seller_id = ? THEN 0 WHEN seller_id IS NULL THEN 1 ELSE 2 END), messages_sent ASC, id ASC'
+        : 'messages_sent ASC, id ASC';
+    const orderParams = sellerId ? [sellerId] : [];
 
     const n = await db.get(`
         UPDATE bot_numbers
@@ -99,6 +108,8 @@ async function reserveNumber(organizationId = 1, sellerId = null) {
         WHERE id = (
             SELECT id FROM bot_numbers
             WHERE organization_id = ? AND status = 'ativo'
+              AND campaign_enabled = 1
+              AND usage_type IN ('institutional','disposable','borrowed_disposable')
               AND (seller_id IS NULL OR seller_id = ?)
               AND messages_sent < COALESCE(daily_limit_override, ?)
             ORDER BY ${orderClause}
@@ -132,6 +143,28 @@ async function setDailyLimitOverride(number_id, organizationId, value) {
     const n = await db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [number_id, organizationId]);
     if (n) botEvents.log(n.number, 'limit_override', limit ? `Limite diário próprio ajustado para ${limit}` : 'Limite diário próprio removido — voltou a usar o global', n.label);
     return n;
+}
+
+async function setCampaignUsage(number_id, organizationId, enabled, usageType = null) {
+    const allowed = ['institutional', 'disposable', 'seller_attendance', 'borrowed_disposable'];
+    if (usageType && !allowed.includes(usageType)) { const e = new Error('Tipo de uso inválido'); e.status = 400; throw e; }
+    const n = await db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [number_id, organizationId]);
+    if (!n) return null;
+    const nextUsage = usageType || (enabled ? 'borrowed_disposable' : 'seller_attendance');
+    await db.run('UPDATE bot_numbers SET campaign_enabled = ?, usage_type = ? WHERE id = ? AND organization_id = ?', [enabled ? 1 : 0, nextUsage, number_id, organizationId]);
+    botEvents.log(n.number, enabled ? 'campaign_enabled' : 'campaign_disabled', enabled ? 'Liberado para campanhas/triagem' : 'Protegido: somente atendimento do vendedor', n.label);
+    return db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [number_id, organizationId]);
+}
+
+async function importSellerNumber(sellerNumberId, organizationId, enabled = true) {
+    const sn = await db.get('SELECT * FROM seller_numbers WHERE id = ? AND organization_id = ?', [sellerNumberId, organizationId]);
+    if (!sn) return null;
+    const n = await registerNumber(sn.number, sn.label || 'número do vendedor', organizationId, sn.seller_id, {
+        allowSellerNumber: true,
+        usage_type: enabled ? 'borrowed_disposable' : 'seller_attendance',
+        campaign_enabled: enabled ? 1 : 0
+    });
+    return setCampaignUsage(n.id, organizationId, enabled, enabled ? 'borrowed_disposable' : 'seller_attendance');
 }
 
 // Devolve a reserva quando o envio não se concretiza de fato (bot offline,
@@ -188,6 +221,8 @@ module.exports = {
     markBanned,
     setStatus,
     setDailyLimitOverride,
+    setCampaignUsage,
+    importSellerNumber,
     shouldSend,
     ensureFresh,
     currentLimit,

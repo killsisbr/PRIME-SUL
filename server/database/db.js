@@ -39,7 +39,10 @@ const LEAD_MIGRATIONS = {
     cpf: 'TEXT',
     tags: 'TEXT',
     phone2: 'TEXT',
-    phone3: 'TEXT'
+    phone3: 'TEXT',
+    lead_code: 'TEXT',
+    triage_status: "TEXT NOT NULL DEFAULT 'pending'", // pending|sent|qualified|declined|blocked
+    triage_bot_number_id: 'INTEGER'
 };
 
 const NUMBER_MIGRATIONS = {
@@ -49,7 +52,9 @@ const NUMBER_MIGRATIONS = {
     slot_index: 'INTEGER',   // posição do slot fixo (1..cfg_wa_slots) — null para números cadastrados manualmente
     real_number: 'TEXT',     // WhatsApp de fato vinculado após o scan do QR (pode diferir do "number" interno do slot)
     push_name: 'TEXT',
-    daily_limit_override: 'INTEGER' // limite diário próprio deste número — nulo = usa cfg_daily_limit global
+    daily_limit_override: 'INTEGER', // limite diário próprio deste número — nulo = usa cfg_daily_limit global
+    usage_type: "TEXT NOT NULL DEFAULT 'disposable'", // institutional|disposable|seller_attendance|borrowed_disposable
+    campaign_enabled: 'INTEGER NOT NULL DEFAULT 1' // 1 = pode ser usado em campanhas/triagem; 0 = só atendimento
 };
 
 const CAMPAIGN_MIGRATIONS = {
@@ -93,7 +98,10 @@ async function migrate() {
             console.log(`[db] migração: coluna leads.${name} adicionada`);
         }
     }
+    await run("UPDATE leads SET lead_code = 'V' || seller_id || '-' || printf('%06d', id) WHERE lead_code IS NULL OR lead_code = ''");
+    await run("UPDATE leads SET triage_status = CASE WHEN status = 'sim' THEN 'qualified' WHEN status = 'nao' THEN 'declined' WHEN status = 'enviados' THEN 'sent' ELSE COALESCE(triage_status, 'pending') END WHERE triage_status IS NULL OR triage_status = 'pending'");
     await run('CREATE INDEX IF NOT EXISTS idx_leads_cpf ON leads(cpf)');
+    await run('CREATE INDEX IF NOT EXISTS idx_leads_code ON leads(lead_code)');
 
     const numCols = await all(`PRAGMA table_info(bot_numbers)`);
     const numExisting = new Set(numCols.map(c => c.name));
@@ -103,7 +111,15 @@ async function migrate() {
             console.log(`[db] migração: coluna bot_numbers.${name} adicionada`);
         }
     }
+    await run(`UPDATE bot_numbers
+        SET usage_type = CASE
+                WHEN seller_id IS NULL THEN COALESCE(NULLIF(usage_type, ''), 'institutional')
+                ELSE 'seller_attendance'
+            END,
+            campaign_enabled = CASE WHEN seller_id IS NULL THEN COALESCE(campaign_enabled, 1) ELSE 0 END
+        WHERE usage_type IS NULL OR usage_type = 'disposable'`);
     await run('CREATE INDEX IF NOT EXISTS idx_bot_numbers_owner ON bot_numbers(organization_id, seller_id, status)');
+    await run('CREATE INDEX IF NOT EXISTS idx_bot_numbers_campaign ON bot_numbers(organization_id, campaign_enabled, status)');
 
     const campCols = await all(`PRAGMA table_info(campaigns)`);
     const campExisting = new Set(campCols.map(c => c.name));

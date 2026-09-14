@@ -44,6 +44,9 @@ CREATE TABLE IF NOT EXISTS leads (
     prioridade    TEXT NOT NULL DEFAULT 'media'
                   CHECK (prioridade IN ('alta','media','baixa')),
     score         INTEGER,                          -- 0-100 calculado automaticamente
+    lead_code     TEXT,                             -- código operacional do lead (ex.: V2-000123)
+    triage_status TEXT NOT NULL DEFAULT 'pending',  -- pending|sent|qualified|declined|blocked
+    triage_bot_number_id INTEGER REFERENCES bot_numbers(id),
     status        TEXT NOT NULL DEFAULT 'novos'
                   CHECK (status IN ('novos','enviados','sim','nao','bloqueado','duplicado')),
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
@@ -71,6 +74,8 @@ CREATE TABLE IF NOT EXISTS bot_numbers (
     messages_sent INTEGER NOT NULL DEFAULT 0,
     messages_reset_at TEXT,
     cooled_until TEXT,                           -- reativação automática (ISO UTC) quando resfriado
+    usage_type   TEXT NOT NULL DEFAULT 'disposable', -- institutional|disposable|seller_attendance|borrowed_disposable
+    campaign_enabled INTEGER NOT NULL DEFAULT 1, -- 1 = pode usar em campanhas/triagem; 0 = só atendimento
     created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

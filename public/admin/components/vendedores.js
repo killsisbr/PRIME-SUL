@@ -39,12 +39,16 @@ export async function init() {
     let currentSellerId = null;
 
     function numberRowHtml(n) {
+        const borrowed = Number(n.campaign_enabled) === 1 && n.usage_type === 'borrowed_disposable';
+        const usageBadge = borrowed
+            ? '<span class="ps-pill" style="background:#fff7ed;border-color:#fb923c;color:#c2410c;">BOT CAMPANHA</span>'
+            : '<span class="ps-pill" style="background:#eff6ff;border-color:#93c5fd;color:#1d4ed8;">BOT ATENDIMENTO</span>';
         return `
         <div class="snm-row">
             <span class="snm-dot ${n.active ? 'on' : 'off'}"></span>
             <div class="snm-main">
                 <strong>${esc(n.number)}</strong>
-                <span>${esc(n.label || 'operacional')}</span>
+                <span>${esc(n.label || 'operacional')} ${usageBadge}</span>
             </div>
             <div class="snm-actions">
                 ${n.active
@@ -102,8 +106,32 @@ export async function init() {
         const connectBtn = e.target.closest('[data-connect]');
         const deactivateBtn = e.target.closest('[data-deactivate]');
         const activateBtn = e.target.closest('[data-activate]');
+        const borrowBtn = e.target.closest('[data-borrow-campaign]');
+        const protectBtn = e.target.closest('[data-protect-campaign]');
         try {
             if (connectBtn) return connectNumber(Number(connectBtn.dataset.connect));
+            if (borrowBtn) {
+                const ok = await (window.confirmDialog ? window.confirmDialog({
+                    title: 'USAR NÚMERO DO VENDEDOR EM CAMPANHA?',
+                    eyebrow: 'ATENÇÃO ANTI-BAN',
+                    message: 'Esse WhatsApp passará a participar dos disparos/triagem.',
+                    description: 'Isso aumenta o risco de bloqueio do número do vendedor. Use apenas se ele autorizou.',
+                    confirmText: 'Sim, usar em campanha',
+                    confirmIcon: 'fa-bullhorn',
+                    cancelText: 'Cancelar',
+                    type: 'warn',
+                    icon: 'fa-triangle-exclamation'
+                }) : Promise.resolve(confirm('Usar este número do vendedor em campanhas? Isso aumenta o risco de bloqueio.')));
+                if (!ok) return;
+                await api(`/sellers/${currentSellerId}/numbers/${Number(borrowBtn.dataset.borrowCampaign)}/campaign-usage`, { method: 'POST', body: JSON.stringify({ campaign_enabled: true }) });
+                toast('Número liberado para campanhas', 'info');
+                return loadSellerNumbers();
+            }
+            if (protectBtn) {
+                await api(`/sellers/${currentSellerId}/numbers/${Number(protectBtn.dataset.protectCampaign)}/campaign-usage`, { method: 'POST', body: JSON.stringify({ campaign_enabled: false }) });
+                toast('Número protegido: só atendimento', 'ok');
+                return loadSellerNumbers();
+            }
             if (deactivateBtn) {
                 await api(`/sellers/${currentSellerId}/numbers/${Number(deactivateBtn.dataset.deactivate)}`, { method: 'PATCH', body: JSON.stringify({ active: false }) });
                 toast('Número desativado');

@@ -75,18 +75,60 @@ async function countTargets(sellerId, filters = {}) {
     return row ? row.c : 0;
 }
 
+async function getSellerBotSetup(organizationId = 1, sellerId = null) {
+    const campaignBot = sellerId ? await db.get(`
+        SELECT * FROM bot_numbers
+        WHERE organization_id = ? AND seller_id = ? AND status = 'ativo'
+          AND campaign_enabled = 1
+          AND usage_type IN ('borrowed_disposable','disposable','institutional')
+        ORDER BY messages_sent ASC, id ASC
+        LIMIT 1
+    `, [organizationId, sellerId]) : null;
+    const attendanceBot = sellerId ? await db.get(`
+        SELECT * FROM seller_numbers
+        WHERE organization_id = ? AND seller_id = ? AND active = 1
+        ORDER BY id ASC
+        LIMIT 1
+    `, [organizationId, sellerId]) : null;
+    return {
+        campaignBot,
+        attendanceBot,
+        ready: !!campaignBot && !!attendanceBot,
+        missing: [!campaignBot ? 'bot de campanha' : null, !attendanceBot ? 'bot de atendimento' : null].filter(Boolean)
+    };
+}
+
+async function requireSellerBotSetup(organizationId = 1, sellerId = null) {
+    const setup = await getSellerBotSetup(organizationId, sellerId);
+    if (!setup.ready) {
+        const e = new Error(`Configuração obrigatória incompleta: cadastre/conecte ${setup.missing.join(' e ')} antes de disparar.`);
+        e.status = 409;
+        e.code = 'SELLER_BOT_SETUP_REQUIRED';
+        e.setup = setup;
+        throw e;
+    }
+    return setup;
+}
+
 async function pickNumbers(number_ids, organizationId = 1, sellerId = null) {
     const ids = (number_ids || []).map(Number).filter(Boolean);
+    const campaignFilter = "AND campaign_enabled = 1 AND usage_type IN ('institutional','disposable','borrowed_disposable')";
     if (ids.length) {
         return db.all(
-            `SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND id IN (${ids.map(() => '?').join(',')}) AND status = 'ativo'`,
-            [organizationId, sellerId, ...ids]
+            `SELECT * FROM bot_numbers
+             WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?)
+               AND id IN (${ids.map(() => '?').join(',')}) AND status = 'ativo' ${campaignFilter}
+             ORDER BY CASE WHEN seller_id = ? THEN 0 WHEN seller_id IS NULL THEN 1 ELSE 2 END, messages_sent ASC, id ASC`,
+            [organizationId, sellerId, ...ids, sellerId]
         );
     }
-    const row = await db.get("SELECT value FROM settings WHERE key = 'cfg_disposable_bots_mode'");
-    const disposable = row ? row.value !== 'false' : true;
-    const orderClause = disposable ? "ORDER BY (seller_id IS NULL) DESC, id ASC" : "ORDER BY (seller_id IS NOT NULL) DESC, id ASC";
-    return db.all(`SELECT * FROM bot_numbers WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND status = 'ativo' ${orderClause} LIMIT 1`, [organizationId, sellerId]);
+    return db.all(
+        `SELECT * FROM bot_numbers
+         WHERE organization_id = ? AND (seller_id IS NULL OR seller_id = ?) AND status = 'ativo' ${campaignFilter}
+         ORDER BY CASE WHEN seller_id = ? THEN 0 WHEN seller_id IS NULL THEN 1 ELSE 2 END, messages_sent ASC, id ASC
+         LIMIT 1`,
+        [organizationId, sellerId, sellerId]
+    );
 }
 
 // Lista (não só conta) os leads que batem com os filtros — usado pra deixar o vendedor
@@ -101,6 +143,7 @@ async function listTargets(sellerId, filters = {}) {
 }
 
 async function createCampaign({ seller_id, organization_id = 1, name, message, number_ids, filters = {}, scheduled_at = null, lead_ids = null, template_id = null }) {
+    await requireSellerBotSetup(organization_id, seller_id);
     const numbers = await pickNumbers(number_ids, organization_id, seller_id);
     if (!numbers.length) throw new Error('Nenhum número ativo disponível');
 
@@ -215,6 +258,7 @@ async function processScheduled() {
 async function createDirectCampaign({ seller_id, organization_id = 1, name, message, number_ids, lead_ids }) {
     const ids = (lead_ids || []).map(Number).filter(Boolean);
     if (!ids.length) throw new Error('Nenhum lead selecionado');
+    await requireSellerBotSetup(organization_id, seller_id);
     const numbers = await pickNumbers(number_ids, organization_id, seller_id);
     if (!numbers.length) throw new Error('Nenhum número ativo disponível');
 
@@ -258,6 +302,10 @@ async function sendToLead(lead, message, sellerId, numberIds = []) {
 async function sendManualToLead(lead, message, { sellerId = null, toPhone = null, botNumber = null } = {}) {
     const text = String(message || '').trim();
     if (!text) return { sent: false, reason: 'mensagem vazia' };
+    const forceTriage = (await settings.get()).cfg_force_campaign_triage !== 'false';
+    if (forceTriage && ['novos', 'enviados'].includes(lead.status)) {
+        return { sent: false, reason: 'lead ainda não passou pela triagem de campanha; aguarde resposta/qualificação antes de atender pelo número do vendedor' };
+    }
 
     const { phoneKey } = require('../utils/phone');
     const allPhones = [lead.phone, lead.phone2, lead.phone3].filter(p => p && String(p).trim().length >= 8);
@@ -495,7 +543,7 @@ async function processCampaign(campaign, job) {
                 
                 // Mover o lead de 'novos' para 'enviados' no funil
                 if (lead.status === 'novos') {
-                    await db.run("UPDATE leads SET status = 'enviados', updated_at = datetime('now') WHERE id = ?", [lead.id]);
+                    await db.run("UPDATE leads SET status = 'enviados', triage_status = CASE WHEN triage_status = 'pending' THEN 'sent' ELSE triage_status END, triage_bot_number_id = COALESCE(triage_bot_number_id, ?), updated_at = datetime('now') WHERE id = ?", [botNumber.id, lead.id]);
                     const ws = require('./websocket-service');
                     ws.broadcast(campaign.organization_id || 1, { type: 'LEAD_UPDATE', lead_id: lead.id, status: 'enviados' });
                 }
@@ -671,6 +719,8 @@ module.exports = {
     deleteCampaign,
     sendToLead,
     sendManualToLead,
+    getSellerBotSetup,
+    requireSellerBotSetup,
     countTargets,
     listTargets,
     startCampaign,

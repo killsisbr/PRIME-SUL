@@ -10,6 +10,7 @@ function phoneInClause(input) {
 }
 const scoreService = require('./score-service');
 const campaignService = require('./campaign-service');
+const settings = require('./settings-service');
 const stageConfig = require('./stage-config-service');
 
 const ALLOWED_ORIGEM = ['SITE', 'SIMULACAO', 'INDICACAO'];
@@ -42,6 +43,25 @@ async function triggerStageAutomation(lead, status, sellerId) {
             console.log(result.sent ? `[auto-send] Lead #${lead.id} → campanha ${result.campaign_id}` : `[auto-send] Lead #${lead.id} → ${result.reason}`);
         }
     } catch (e) { console.warn(`[auto-send] Lead #${lead.id} — erro:`, e.message); }
+}
+
+async function autoTriageNewLead(lead, sellerId) {
+    const forceTriage = (await settings.get()).cfg_force_campaign_triage !== 'false';
+    if (!forceTriage || !lead || lead.status !== 'novos') return { sent: false, skipped: true };
+    try {
+        const result = await campaignService.sendToLead(lead, null, sellerId, []);
+        if (result.sent) {
+            const used = await db.get('SELECT number_id FROM sends WHERE campaign_id = ? AND lead_id = ? ORDER BY id DESC LIMIT 1', [result.campaign_id, lead.id]);
+            await db.run(
+                "UPDATE leads SET triage_status='sent', triage_bot_number_id=COALESCE(?, triage_bot_number_id), updated_at=datetime('now') WHERE id=?",
+                [used ? used.number_id : null, lead.id]
+            );
+        }
+        return result;
+    } catch (e) {
+        console.warn(`[triagem] Lead #${lead.id} — aguardando bot de campanha:`, e.message);
+        return { sent: false, reason: e.message };
+    }
 }
 
 async function createLead({ seller_id, organization_id = 1, name, phone, phone2, phone3, cpf, tags, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
@@ -114,15 +134,19 @@ async function createLead({ seller_id, organization_id = 1, name, phone, phone2,
         [organization_id, seller_id, name.trim(), normalized, normPhone2, normPhone3, cleanCpfValue, cleanTagsValue, city || null, origem, limite_est || null,
          renda || null, valor_desejado || null, obs || null, prioridade, score]
     );
-    const lead = await db.get('SELECT * FROM leads WHERE id = ?', [result.lastID]);
+    const leadCode = `V${seller_id}-${String(result.lastID).padStart(6, '0')}`;
+    await db.run('UPDATE leads SET lead_code = ? WHERE id = ?', [leadCode, result.lastID]);
+    let lead = await db.get('SELECT * FROM leads WHERE id = ?', [result.lastID]);
     await db.run(
         'INSERT INTO lead_history (lead_id, seller_id, from_status, to_status) VALUES (?, ?, NULL, ?)',
         [result.lastID, seller_id, lead.status]
     );
+    const triageResult = await autoTriageNewLead(lead, seller_id);
+    lead = await db.get('SELECT * FROM leads WHERE id = ?', [result.lastID]);
     await triggerStageAutomation(lead, lead.status, seller_id);
     const ws = require('./websocket-service');
     ws.broadcast('lead:created', lead);
-    return { lead, duplicated: false, already_mine: false };
+    return { lead, duplicated: false, already_mine: false, triage: triageResult };
 }
 
 async function listLeads({ seller_id, status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max }) {

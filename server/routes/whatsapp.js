@@ -157,6 +157,21 @@ router.post('/slots/:index/connect', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Libera/protege um número para campanhas. Útil quando o admin quer usar um
+// WhatsApp de vendedor como descartável, com confirmação explícita no painel.
+router.patch('/numbers/:id/campaign-usage', async (req, res, next) => {
+    try {
+        const id = Number(req.params.id);
+        const row = await db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [id, req.user.organization_id]);
+        if (!row) return res.status(404).json({ error: 'Número não encontrado' });
+        if (req.user.role !== 'admin' && row.seller_id !== req.user.id) return res.status(403).json({ error: 'Acesso negado' });
+        const enabled = !!req.body.campaign_enabled;
+        const usageType = req.body.usage_type || (enabled ? 'borrowed_disposable' : 'seller_attendance');
+        const n = await antiBan.setCampaignUsage(id, req.user.organization_id, enabled, usageType);
+        res.json(n);
+    } catch (e) { next(e); }
+});
+
 // Ajusta o limite diário de UM número específico (admin apenas) — null/vazio
 // remove o override e volta a usar o limite global (cfg_daily_limit).
 router.patch('/numbers/:id/limit', adminOnly, async (req, res, next) => {

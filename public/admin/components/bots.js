@@ -1,4 +1,4 @@
-const CONN_LABEL = { connected: 'CONECTADO', connecting: 'CONECTANDO', offline: 'OFFLINE', banned: 'BANIDO' };
+const CONN_LABEL = { connected: 'CONECTADO', connecting: 'CONECTANDO', offline: 'OFFLINE', disconnected: 'DESCONECTADO', logged_out: 'DESCONECTADO', banned: 'BANIDO' };
 const BAN_LABEL = { ativo: 'ATIVO', resfriado: 'RESFRIADO', banido: 'BANIDO' };
 const WA_STATUS_LABEL = { novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO' };
 const WA_PRIO_LABEL = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
@@ -1335,7 +1335,13 @@ export async function init() {
         }
 
         grid.innerHTML = slotCards + data.numbers.map(n => {
-            const conn = n.connection;
+            const rawConn = n.connection || 'offline';
+            const conn = (rawConn === 'logged_out' || rawConn === 'disconnected') ? 'disconnected' : rawConn;
+            const isOnline = conn === 'connected';
+            const isConnecting = conn === 'connecting' || !!n.waitingQr;
+            const isBanned = conn === 'banned' || n.status === 'banido';
+            const connLabel = CONN_LABEL[conn] || CONN_LABEL[rawConn] || 'DESCONECTADO';
+
             const effLimit = n.daily_limit_override || data.daily_limit;
             const pct = effLimit ? Math.min(100, Math.round((n.messages_sent / effLimit) * 100)) : 0;
             const barCls = n.status === 'banido' ? 'danger' : (n.status === 'resfriado' ? 'warn' : '');
@@ -1344,11 +1350,33 @@ export async function init() {
                 : `${n.messages_sent} / ${effLimit} msgs hoje${n.daily_limit_override ? ' (próprio)' : ''}`;
 
             const actions = [];
-            if (conn === 'offline' || conn === 'banned') actions.push(`<button class="bt-action ok" data-act="conectar" data-number="${n.number}"><i class="fas fa-plug"></i> ${conn === 'banned' ? 'RECONECTAR' : 'CONECTAR'}</button>`);
-            if (conn === 'connected' || conn === 'connecting') actions.push(`<button class="bt-action warn" data-act="desconectar" data-number="${n.number}"><i class="fas fa-unlink"></i> DESCONECTAR</button>`);
-            if (n.status !== 'ativo') actions.push(`<button class="bt-action ok" data-act="reativar" data-id="${n.id}" data-number="${n.number}"><i class="fas fa-rotate-left"></i> REATIVAR</button>`);
-            if (n.status !== 'banido') actions.push(`<button class="bt-action danger" data-act="banir" data-id="${n.id}"><i class="fas fa-skull"></i> BANIR</button>`);
-            if (conn === 'offline' || conn === 'banned') actions.push(`<button class="bt-action danger" data-act="remover" data-number="${n.number}"><i class="fas fa-trash"></i> REMOVER SESSÃO</button>`);
+            if (isOnline) {
+                actions.push(`<button type="button" class="bt-action warn" data-act="desconectar" data-number="${n.number}" title="Desconectar este WhatsApp"><i class="fas fa-unlink"></i> DESCONECTAR</button>`);
+            } else {
+                actions.push(`<button type="button" class="bt-action ok" data-act="conectar" data-number="${n.number}" title="Conectar ou reconectar este WhatsApp"><i class="fas fa-plug"></i> ${isBanned ? 'RECONECTAR' : (isConnecting ? 'VER QR' : 'CONECTAR')}</button>`);
+            }
+
+            if (n.status !== 'ativo') {
+                actions.push(`<button type="button" class="bt-action ok" data-act="reativar" data-id="${n.id}" data-number="${n.number}" title="Reativar chip"><i class="fas fa-rotate-left"></i> REATIVAR</button>`);
+            }
+            if (n.status !== 'banido') {
+                actions.push(`<button type="button" class="bt-action danger" data-act="banir" data-id="${n.id}" title="Marcar como banido"><i class="fas fa-skull"></i> BANIR</button>`);
+            }
+
+            // Resetar sessão (limpa autenticação e libera para escanear novo QR)
+            actions.push(`<button type="button" class="bt-action warn" data-act="remover" data-number="${n.number}" title="Resetar sessão e liberar slot para novo QR Code"><i class="fas fa-rotate"></i> RESETAR</button>`);
+            
+            const canManageCampaignUsage = n.seller_id && !isAdmin && Number(n.seller_id) === Number(myId);
+            if (canManageCampaignUsage) {
+                if (Number(n.campaign_enabled) === 1) {
+                    actions.push(`<button type="button" class="bt-action warn" data-act="proteger-campanha" data-id="${n.id}" title="Não usar este WhatsApp em campanhas"><i class="fas fa-shield-halved"></i> SÓ ATENDIMENTO</button>`);
+                } else {
+                    actions.push(`<button type="button" class="bt-action ok" data-act="liberar-campanha" data-id="${n.id}" title="Disponibilizar este WhatsApp para a primeira mensagem/campanhas"><i class="fas fa-bullhorn"></i> DISPONIBILIZAR</button>`);
+                }
+            }
+
+            // Excluir chip/número do sistema
+            actions.push(`<button type="button" class="bt-action danger" data-act="deletar" data-id="${n.id}" data-number="${n.number}" title="Excluir este número do sistema"><i class="fas fa-trash-can"></i> DELETAR</button>`);
 
             const limitEditor = isAdmin ? `
                 <div class="bt-limit-edit">
@@ -1362,6 +1390,11 @@ export async function init() {
             const heading = isSlot ? (n.realNumber ? fmtNum(n.realNumber) : (n.label || `WhatsApp ${n.slot_index}`)) : fmtNum(n.realNumber || n.number);
             const subLabel = isSlot ? (n.realNumber ? (n.label || `WhatsApp ${n.slot_index}`) : 'aguardando conexão') : (n.label || 'sem etiqueta');
             const isAutoPuxado = !!n.realNumber;
+            const usageBadge = n.seller_id
+                ? (Number(n.campaign_enabled) === 1
+                    ? '<span class="bt-badge" style="background:#fff7ed;color:#c2410c;border-color:#fb923c;"><i class="fas fa-bullhorn"></i> CAMPANHAS</span>'
+                    : '<span class="bt-badge" style="background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;"><i class="fas fa-shield-halved"></i> SÓ ATENDIMENTO</span>')
+                : '<span class="bt-badge" style="background:#ecfdf5;color:#047857;border-color:#86efac;"><i class="fas fa-building"></i> INSTITUCIONAL</span>';
 
             return `
             <div class="bt-card" data-number="${n.number}">
@@ -1373,8 +1406,9 @@ export async function init() {
                         ${isAutoPuxado ? `<span class="bt-label" style="display:inline-flex;align-items:center;gap:4px;color:#2563eb;margin-top:2px;font-size:0.62rem;" title="Número auto-identificado pelo WhatsApp"><i class="fas fa-circle-check"></i> AUTO-IDENTIFICADO</span>` : ''}
                     </div>
                     <div class="bt-badges">
-                        <span class="bt-badge conn-${conn}"><i class="fas fa-circle"></i> ${CONN_LABEL[conn]}</span>
-                        <span class="bt-badge ban-${n.status}">${BAN_LABEL[n.status]}</span>
+                        ${usageBadge}
+                        <span class="bt-badge conn-${conn}"><i class="fas fa-circle"></i> ${connLabel}</span>
+                        <span class="bt-badge ban-${n.status}">${BAN_LABEL[n.status] || n.status}</span>
                     </div>
                 </div>
                 <div class="bt-progress"><div class="bt-progress-bar ${barCls}" style="width:${pct}%;"></div></div>
@@ -1462,10 +1496,29 @@ export async function init() {
                     }
                     const res = await api('/whatsapp/connect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number }) });
                     if (res.status === 'queued') toast(res.message, 'info');
-                    else toast('Conectando... aguarde o QR', 'info');
+                    else toast('Conectando... aguarde o QR Code', 'info');
+                    startQrPoll(btn.dataset.number);
                 } else if (act === 'desconectar') {
                     await api('/whatsapp/disconnect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number }) });
                     toast('Desconectado', 'info');
+                } else if (act === 'liberar-campanha') {
+                    const ok = await (window.confirmDialog ? window.confirmDialog({
+                        title: isAdmin ? 'USAR WHATSAPP DO VENDEDOR EM CAMPANHA?' : 'DISPONIBILIZAR MEU WHATSAPP PARA CAMPANHAS?',
+                        eyebrow: 'ATENÇÃO ANTI-BAN',
+                        message: 'Esse número passará a participar da primeira mensagem/disparos.',
+                        description: isAdmin ? 'Use apenas com autorização do vendedor, pois aumenta o risco de bloqueio.' : 'O admin verá este número como disponível para campanhas. Isso aumenta o risco de bloqueio.',
+                        confirmText: isAdmin ? 'Sim, usar em campanha' : 'Sim, disponibilizar',
+                        confirmIcon: 'fa-bullhorn',
+                        cancelText: 'Cancelar',
+                        type: 'warn',
+                        icon: 'fa-triangle-exclamation'
+                    }) : Promise.resolve(confirm('Disponibilizar este WhatsApp para campanhas?')));
+                    if (!ok) { btn.disabled = false; return; }
+                    await api(`/whatsapp/numbers/${btn.dataset.id}/campaign-usage`, { method: 'PATCH', body: JSON.stringify({ campaign_enabled: true }) });
+                    toast('Número liberado para campanhas', 'info');
+                } else if (act === 'proteger-campanha') {
+                    await api(`/whatsapp/numbers/${btn.dataset.id}/campaign-usage`, { method: 'PATCH', body: JSON.stringify({ campaign_enabled: false }) });
+                    toast('Número protegido: só atendimento', 'ok');
                 } else if (act === 'banir') {
                     const ok = await (window.confirmDialog ? window.confirmDialog({
                         title: 'BANIR NÚMERO',
@@ -1483,19 +1536,37 @@ export async function init() {
                     toast('Número banido', 'err');
                 } else if (act === 'remover') {
                     const ok = await (window.confirmDialog ? window.confirmDialog({
-                        title: 'REMOVER SESSÃO DO WHATSAPP',
+                        title: 'RESETAR SESSÃO DO WHATSAPP',
                         eyebrow: 'DESCONECTAR',
-                        message: 'Remover sessão deste número?',
-                        description: 'O WhatsApp será deslogado do sistema. Será necessário escanear o QR Code de novo para reconectar.',
-                        confirmText: 'Sim, remover sessão',
-                        confirmIcon: 'fa-trash',
+                        message: 'Resetar sessão deste WhatsApp?',
+                        description: 'A sessão salva será removida do sistema e o slot ficará livre para escanear um novo QR Code.',
+                        confirmText: 'Sim, resetar sessão',
+                        confirmIcon: 'fa-rotate',
+                        cancelText: 'Cancelar',
+                        type: 'warn',
+                        icon: 'fa-rotate'
+                    }) : Promise.resolve(confirm('Resetar sessão deste número? A sessão salva será limpa.')));
+                    if (!ok) { btn.disabled = false; return; }
+                    await api('/whatsapp/disconnect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number, removeSession: true }) });
+                    toast('Sessão resetada com sucesso', 'ok');
+                } else if (act === 'deletar') {
+                    const ok = await (window.confirmDialog ? window.confirmDialog({
+                        title: 'EXCLUIR NÚMERO',
+                        eyebrow: 'ANTI-BAN',
+                        message: 'Excluir definitivamente este número?',
+                        description: 'O cadastro e a sessão do WhatsApp serão removidos do sistema.',
+                        confirmText: 'Sim, excluir',
+                        confirmIcon: 'fa-trash-can',
                         cancelText: 'Cancelar',
                         type: 'danger',
                         icon: 'fa-trash-can'
-                    }) : Promise.resolve(confirm('Remover sessão deste número? O WhatsApp será deslogado.')));
+                    }) : Promise.resolve(confirm('Excluir este número definitivamente?')));
                     if (!ok) { btn.disabled = false; return; }
-                    await api('/whatsapp/disconnect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number, removeSession: true }) });
-                    toast('Sessão removida', 'info');
+                    try {
+                        await api('/whatsapp/disconnect', { method: 'POST', body: JSON.stringify({ number: btn.dataset.number, removeSession: true }) });
+                    } catch (e) {}
+                    await api(`/campaigns/numbers/${btn.dataset.id}`, { method: 'DELETE' });
+                    toast('Número excluído com sucesso', 'ok');
                 } else if (act === 'salvar-limite') {
                     const input = document.querySelector(`[data-limit-id="${btn.dataset.id}"]`);
                     const value = input ? (input.value.trim() ? Number(input.value) : null) : null;
