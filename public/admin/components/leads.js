@@ -34,6 +34,34 @@ export async function init() {
 
     function scoreCls(s) { return s == null ? 's-low' : (s >= 70 ? 's-high' : s >= 50 ? 's-mid' : 's-low'); }
 
+    function leadPhoneKey(input) {
+        let p = String(input || '').replace(/\D/g, '');
+        if (!p) return '';
+        if (p.startsWith('00')) p = p.slice(2);
+        if (p.length >= 11 && p.length <= 13 && p.startsWith('0')) p = p.slice(1);
+        if (p.length === 10 || p.length === 11) p = '55' + p;
+        if (!p.startsWith('55')) return p;
+        const rest = p.slice(2);
+        if (rest.length !== 10 && rest.length !== 11) return p;
+        const ddd = rest.slice(0, 2);
+        const sub = rest.slice(2);
+        const core = sub.length === 9 && sub[0] === '9' ? sub.slice(1) : sub;
+        return /^[6-9]/.test(core) ? `55${ddd}9${core}` : p;
+    }
+
+    function dedupeLeadsByPhone(list) {
+        const byPhone = new Map();
+        const rank = l => ((l.status === 'bloqueado' || l.status === 'duplicado') ? 0 : 10) + (l.status === 'novos' || l.status === 'novo' ? 2 : 1);
+        for (const l of list) {
+            const key = leadPhoneKey(l.phone) || String(l.id);
+            const prev = byPhone.get(key);
+            if (!prev || rank(l) > rank(prev) || (rank(l) === rank(prev) && String(l.updated_at || l.created_at || '') > String(prev.updated_at || prev.created_at || ''))) {
+                byPhone.set(key, l);
+            }
+        }
+        return [...byPhone.values()];
+    }
+
     function applyFilters() {
         const search = (document.getElementById('kbx-search')?.value || '').trim().toLowerCase();
         const status = document.getElementById('kbx-status')?.value || '';
@@ -42,7 +70,7 @@ export async function init() {
         const tag = (document.getElementById('kbx-tag')?.value || '').trim().toLowerCase();
         const scoreMin = document.getElementById('kbx-score')?.value ? Number(document.getElementById('kbx-score').value) : null;
 
-        return LEADS.filter(l => {
+        const filtered = LEADS.filter(l => {
             if (status && l.status !== status) return false;
             if (origem && l.origem !== origem) return false;
             if (prio && l.prioridade !== prio) return false;
@@ -50,7 +78,8 @@ export async function init() {
             if (scoreMin !== null && (l.score ?? 0) < scoreMin) return false;
             if (search && !(l.name + ' ' + l.phone + ' ' + (l.city || '') + ' ' + (l.cpf || '')).toLowerCase().includes(search)) return false;
             return true;
-        }).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        });
+        return dedupeLeadsByPhone(filtered).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
     }
 
     const AV_COLORS = ['av-blue', 'av-orange', 'av-green', 'av-dark', 'av-yellow'];

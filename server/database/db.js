@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
+const { phoneKey } = require('../utils/phone');
 
 const dataDir = path.join(__dirname, '..', '..', 'data');
 fs.mkdirSync(dataDir, { recursive: true });
@@ -310,6 +311,85 @@ async function migrate() {
     await run(`CREATE INDEX IF NOT EXISTS idx_messages_lead ON messages(lead_id, created_at)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(lead_phone, bot_number, created_at)`);
     await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_waid ON messages(wa_message_id) WHERE wa_message_id IS NOT NULL`);
+
+    await mergeDuplicateLeadsByPhone();
+}
+
+function leadMergeRank(l) {
+    const statusScore = { sim: 60, enviados: 50, novos: 40, nao: 20, bloqueado: 5, duplicado: 0 }[l.status] ?? 30;
+    const dataScore = (l.cpf ? 3 : 0) + (l.city ? 1 : 0) + (l.obs ? 1 : 0) + (l.tags ? 1 : 0);
+    return statusScore + dataScore;
+}
+
+function mergeTags(a, b) {
+    return [...new Set(String(a || '').split(',').concat(String(b || '').split(',')).map(s => s.trim()).filter(Boolean))].join(',');
+}
+
+async function mergeDuplicateLeadsByPhone() {
+    const leads = await all('SELECT * FROM leads ORDER BY organization_id, seller_id, id');
+    const groups = new Map();
+    for (const l of leads) {
+        const key = phoneKey(l.phone);
+        if (!key) continue;
+        const groupKey = `${l.organization_id || 1}|${l.seller_id}|${key}`;
+        if (!groups.has(groupKey)) groups.set(groupKey, []);
+        groups.get(groupKey).push(l);
+    }
+
+    let merged = 0;
+    for (const group of groups.values()) {
+        if (group.length < 2) continue;
+        group.sort((a, b) => {
+            const r = leadMergeRank(b) - leadMergeRank(a);
+            if (r) return r;
+            return Number(a.id) - Number(b.id);
+        });
+        const keeper = group[0];
+        const duplicates = group.slice(1);
+
+        for (const dup of duplicates) {
+            await run('BEGIN IMMEDIATE');
+            try {
+                const next = {
+                    cpf: keeper.cpf || dup.cpf || null,
+                    tags: mergeTags(keeper.tags, dup.tags) || null,
+                    city: keeper.city || dup.city || null,
+                    origem: keeper.origem || dup.origem || 'SITE',
+                    limite_est: keeper.limite_est || dup.limite_est || null,
+                    renda: keeper.renda || dup.renda || null,
+                    valor_desejado: keeper.valor_desejado || dup.valor_desejado || null,
+                    obs: [keeper.obs, dup.obs && `Mesclado do lead #${dup.id}: ${dup.obs}`].filter(Boolean).join('\n') || null,
+                    prioridade: keeper.prioridade === 'alta' || dup.prioridade === 'alta' ? 'alta' : (keeper.prioridade || dup.prioridade || 'media'),
+                    score: Math.max(Number(keeper.score || 0), Number(dup.score || 0)) || keeper.score || dup.score || null,
+                    triage_status: keeper.triage_status !== 'pending' ? keeper.triage_status : (dup.triage_status || keeper.triage_status || 'pending'),
+                    triage_bot_number_id: keeper.triage_bot_number_id || dup.triage_bot_number_id || null
+                };
+                await run(`UPDATE leads SET cpf=?, tags=?, city=?, origem=?, limite_est=?, renda=?, valor_desejado=?, obs=?, prioridade=?, score=?, triage_status=?, triage_bot_number_id=?, updated_at=datetime('now') WHERE id=?`,
+                    [next.cpf, next.tags, next.city, next.origem, next.limite_est, next.renda, next.valor_desejado, next.obs, next.prioridade, next.score, next.triage_status, next.triage_bot_number_id, keeper.id]);
+
+                await run('UPDATE messages SET lead_id=?, lead_phone=? WHERE lead_id=?', [keeper.id, phoneKey(keeper.phone) || keeper.phone, dup.id]);
+                await run('UPDATE sends SET lead_id=? WHERE lead_id=?', [keeper.id, dup.id]);
+                await run('UPDATE lead_history SET lead_id=? WHERE lead_id=?', [keeper.id, dup.id]);
+                await run('UPDATE handoffs SET lead_id=? WHERE lead_id=?', [keeper.id, dup.id]);
+
+                const fups = await all('SELECT * FROM followups WHERE lead_id=?', [dup.id]);
+                for (const f of fups) {
+                    const exists = await get('SELECT id FROM followups WHERE lead_id=? AND bucket=?', [keeper.id, f.bucket]);
+                    if (exists) await run('DELETE FROM followups WHERE id=?', [f.id]);
+                    else await run('UPDATE followups SET lead_id=? WHERE id=?', [keeper.id, f.id]);
+                }
+
+                await run('DELETE FROM leads WHERE id=?', [dup.id]);
+                await run('COMMIT');
+                merged++;
+                console.log(`[db] lead duplicado mesclado: #${dup.id} → #${keeper.id} (${keeper.phone})`);
+            } catch (e) {
+                await run('ROLLBACK').catch(() => {});
+                throw e;
+            }
+        }
+    }
+    if (merged) console.log(`[db] leads mesclados por telefone com/sem 9: ${merged}`);
 }
 
 function run(sql, params = []) {

@@ -28,6 +28,34 @@ const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;'
 
 function scoreCls(s) { return s == null ? 's-low' : (s >= 70 ? 's-high' : s >= 50 ? 's-mid' : 's-low'); }
 
+function leadPhoneKey(input) {
+    let p = String(input || '').replace(/\D/g, '');
+    if (!p) return '';
+    if (p.startsWith('00')) p = p.slice(2);
+    if (p.length >= 11 && p.length <= 13 && p.startsWith('0')) p = p.slice(1);
+    if (p.length === 10 || p.length === 11) p = '55' + p;
+    if (!p.startsWith('55')) return p;
+    const rest = p.slice(2);
+    if (rest.length !== 10 && rest.length !== 11) return p;
+    const ddd = rest.slice(0, 2);
+    const sub = rest.slice(2);
+    const core = sub.length === 9 && sub[0] === '9' ? sub.slice(1) : sub;
+    return /^[6-9]/.test(core) ? `55${ddd}9${core}` : p;
+}
+
+function dedupeLeadsByPhone(list) {
+    const byPhone = new Map();
+    const rank = l => ((l.status === 'bloqueado' || l.status === 'duplicado') ? 0 : 10) + (l.status === 'novos' || l.status === 'novo' ? 2 : 1);
+    for (const l of list || []) {
+        const key = leadPhoneKey(l.phone) || String(l.id);
+        const prev = byPhone.get(key);
+        if (!prev || rank(l) > rank(prev) || (rank(l) === rank(prev) && String(l.updated_at || l.created_at || '') > String(prev.updated_at || prev.created_at || ''))) {
+            byPhone.set(key, l);
+        }
+    }
+    return [...byPhone.values()];
+}
+
 function relTime(utc) {
     if (!utc) return '';
     const d = new Date(utc.replace(' ', 'T') + 'Z');
@@ -171,11 +199,12 @@ export async function init() {
             if (search) params.search = search;
             if (prio) params.prioridade = prio;
 
-            const [leads, handoffsList, handoffConfig] = await Promise.all([
+            const [rawLeads, handoffsList, handoffConfig] = await Promise.all([
                 api('/leads?' + new URLSearchParams(params)),
                 api('/handoffs').catch(() => []),
                 api('/handoffs/config').catch(() => ({ auto_handoff: true }))
             ]);
+            const leads = dedupeLeadsByPhone(rawLeads || []);
 
             const countEl = document.getElementById('fl-crm-total-count');
             if (countEl) countEl.textContent = `${leads.length} lead${leads.length !== 1 ? 's' : ''} no CRM`;
