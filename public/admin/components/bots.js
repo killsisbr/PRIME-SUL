@@ -323,42 +323,42 @@ export async function init() {
         const badge = document.getElementById('waSendBotBadge');
         if (!select) return;
 
-        if (!_availableBots.length) {
-            select.innerHTML = '<option value="">Nenhum WhatsApp cadastrado</option>';
-            if (badge) badge.innerHTML = '<span class="wa-sbb-badge-pill wa-sbb-err"><i class="fas fa-circle-xmark"></i> Nenhum bot</span>';
+        const readyBots = _availableBots.filter(b =>
+            (b.connection === 'connected' || b.connected) &&
+            b.status === 'ativo'
+        );
+
+        if (!readyBots.length) {
+            select.innerHTML = '<option value="">Nenhum WhatsApp conectado e ativo</option>';
+            select.disabled = true;
+            if (badge) badge.innerHTML = '<span class="wa-sbb-badge-pill wa-sbb-err"><i class="fas fa-circle-xmark"></i> Nenhum número pronto</span>';
+            _selectedSendBotNumber = null;
             return;
         }
+        select.disabled = false;
 
         const threadBotNum = activeThread ? activeThread.bot_number : null;
         let chosenNum = _selectedSendBotNumber || threadBotNum;
 
-        const chosenBot = _availableBots.find(b => b.number === chosenNum);
-        const firstConnected = _availableBots.find(b => (b.connection === 'connected' || b.connected) && b.status === 'ativo');
+        const chosenBot = readyBots.find(b => b.number === chosenNum);
+        const firstReady = readyBots[0];
 
         let warnMsg = '';
-        if (chosenBot && chosenBot.connection !== 'connected' && !chosenBot.connected) {
-            if (firstConnected) {
-                warnMsg = `${chosenBot.label || 'WhatsApp'} está offline. Usando ${firstConnected.label}.`;
-                chosenNum = firstConnected.number;
-            } else {
-                warnMsg = `${chosenBot.label || 'WhatsApp'} está offline!`;
-            }
-        } else if (!chosenBot && firstConnected) {
-            chosenNum = firstConnected.number;
-        } else if (!chosenBot && _availableBots[0]) {
-            chosenNum = _availableBots[0].number;
+        if (!chosenBot && chosenNum) {
+            warnMsg = 'Número anterior indisponível. Usando um WhatsApp conectado.';
+            chosenNum = firstReady.number;
+        } else if (!chosenBot) {
+            chosenNum = firstReady.number;
         }
 
         _selectedSendBotNumber = chosenNum;
 
-        select.innerHTML = _availableBots.map(b => {
-            const isConn = b.connection === 'connected' || b.connected;
+        select.innerHTML = readyBots.map(b => {
             const numDisp = b.realNumber || b.real_number ? fmtNum(b.realNumber || b.real_number) : b.number;
             const pushDisp = b.pushName || b.push_name ? ` (${b.pushName || b.push_name})` : '';
-            const statusDisp = isConn ? '🟢 Conectado' : (b.status === 'banido' ? '🔴 Banido' : '⚪ Offline');
             const selected = b.number === chosenNum ? 'selected' : '';
             return `<option value="${esc(b.number)}" ${selected}>
-                ${esc(b.label || `WhatsApp ${b.slot_index || ''}`)} • ${esc(numDisp)}${esc(pushDisp)} [${statusDisp}]
+                ${esc(b.label || `WhatsApp ${b.slot_index || ''}`)} • ${esc(numDisp)}${esc(pushDisp)}
             </option>`;
         }).join('');
 
