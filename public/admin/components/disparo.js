@@ -714,6 +714,7 @@ export async function init() {
         deselectedLeadIds.clear();
 
         if (campaignToEdit) {
+            modal.dataset.campaignStatus = campaignToEdit.status || '';
             if (idInput) idInput.value = campaignToEdit.id;
             if (titleEl) titleEl.textContent = `EDITAR DISPARO: "${campaignToEdit.name.toUpperCase()}"`;
             
@@ -737,6 +738,7 @@ export async function init() {
             if (delBtn) delBtn.style.display = 'inline-flex';
             setDispatchMode('schedule');
         } else {
+            modal.dataset.campaignStatus = '';
             if (idInput) idInput.value = '';
             if (titleEl) titleEl.textContent = 'DISPARAR MENSAGENS NO WHATSAPP';
             if (timeInput) timeInput.value = initialTimeStr;
@@ -1117,6 +1119,10 @@ export async function init() {
 
         try {
             if (campaignId) {
+                const modal = document.getElementById('dpScheduleModal');
+                if (modal?.dataset.campaignStatus === 'running') {
+                    return toast('Pause o disparo antes de editar a mensagem.', 'err');
+                }
                 await api(`/campaigns/${campaignId}`, {
                     method: 'PUT',
                     body: JSON.stringify({

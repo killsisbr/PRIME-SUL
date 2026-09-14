@@ -325,7 +325,19 @@ async function updateLead(id, seller_id, fields) {
     return fresh;
 }
 
+function normalizeStatusAlias(status) {
+    return ({
+        novo: 'novos',
+        contato: 'enviados',
+        confirmado: 'sim',
+        concluido: 'sim',
+        recusado: 'nao',
+        sem_interesse: 'nao'
+    })[status] || status;
+}
+
 async function updateStatus(id, seller_id, status) {
+    status = normalizeStatusAlias(String(status || '').toLowerCase());
     const allowed = ['novos', 'enviados', 'sim', 'nao', 'bloqueado', 'duplicado'];
     if (!allowed.includes(status)) {
         const e = new Error('Status inválido');

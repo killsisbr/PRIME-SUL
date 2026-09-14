@@ -1,6 +1,6 @@
 const CONN_LABEL = { connected: 'CONECTADO', connecting: 'CONECTANDO', offline: 'OFFLINE', disconnected: 'DESCONECTADO', logged_out: 'DESCONECTADO', banned: 'BANIDO' };
 const BAN_LABEL = { ativo: 'ATIVO', resfriado: 'RESFRIADO', banido: 'BANIDO' };
-const WA_STATUS_LABEL = { novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO' };
+const WA_STATUS_LABEL = { novos: 'NOVO', enviados: 'EM CONTATO', sim: 'CONFIRMADO', nao: 'SEM INTERESSE', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO', novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO' };
 const WA_PRIO_LABEL = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
 
 const _pollers = new Map();
@@ -1143,9 +1143,14 @@ export async function init() {
         }
     }
 
+    function canonicalStage(stage) {
+        return ({ novo: 'novos', contato: 'enviados', confirmado: 'sim', concluido: 'sim' })[stage] || stage;
+    }
+
     function updateStepperUI(currentStage) {
+        const cur = canonicalStage(currentStage);
         document.querySelectorAll('#wapt-stepper .wa-tool-step-btn').forEach(b => {
-            b.classList.toggle('active', b.dataset.stage === currentStage);
+            b.classList.toggle('active', canonicalStage(b.dataset.stage) === cur);
         });
     }
 
@@ -1153,7 +1158,7 @@ export async function init() {
     document.querySelectorAll('#wapt-stepper .wa-tool-step-btn').forEach(btn => {
         btn.onclick = async () => {
             if (!_activeLead) return;
-            const stage = btn.dataset.stage;
+            const stage = canonicalStage(btn.dataset.stage);
             try {
                 await api(`/leads/${_activeLead.id}/status`, {
                     method: 'PATCH',
