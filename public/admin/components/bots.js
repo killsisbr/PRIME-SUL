@@ -385,8 +385,10 @@ export async function init() {
             const k = threadKey(t);
             const active = k === _activeThreadKey;
             const dot = t.unread ? `<span class="wa-thread-dot">${t.unread}</span>` : '';
-            const botName = t.bot_label || (t.bot_slot_index ? `WhatsApp ${t.bot_slot_index}` : (t.bot_number ? `via ${t.bot_number.slice(-4)}` : ''));
-            const zapBadge = botName ? `<span class="wa-thread-zap-badge zap-${t.bot_slot_index || 'other'}"><i class="fab fa-whatsapp"></i> ${esc(botName)}</span>` : '';
+            const distinctBots = new Set(_threads.map(x => x.bot_number).filter(Boolean));
+            const showBotBadge = distinctBots.size > 1;
+            const botName = t.bot_label || (t.bot_slot_index ? `WA ${t.bot_slot_index}` : (t.bot_number ? `via ${t.bot_number.slice(-4)}` : ''));
+            const zapBadge = showBotBadge && botName ? `<span class="wa-thread-zap-badge zap-${t.bot_slot_index || 'other'}"><i class="fab fa-whatsapp"></i> ${esc(botName)}</span>` : '';
             return `<button type="button" class="wa-thread-tab${active ? ' active' : ''}" data-key="${k}">
                 <span class="wa-thread-title">${esc(t.phone_label)}</span> ${zapBadge} ${dot}
             </button>`;
@@ -414,10 +416,12 @@ export async function init() {
             const botLabel = t.bot_label || 'WhatsApp';
             msgBox.innerHTML = `<div class="wa-msg-bubble in"><div>Sem mensagens via <strong>${esc(botLabel)}</strong> ainda. Envie a primeira abaixo.</div></div>`;
         } else {
+            const msgBots = new Set(t.messages.map(m => m.bot_number || m.bot_label).filter(Boolean));
+            const showMsgBotTags = msgBots.size > 1;
             msgBox.innerHTML = t.messages.map(m => {
                 const time = new Date(m.created_at || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 const tick = m.direction === 'out' ? '<i class="fas fa-check-double" style="color:#34b7f1;"></i>' : '';
-                const botTag = m.bot_label ? `<span class="wa-msg-bot-tag zap-${m.bot_slot_index || 'other'}" title="Canal: ${esc(m.bot_label)}">${esc(m.bot_short_name || m.bot_label)}</span>` : '';
+                const botTag = showMsgBotTags && m.bot_label ? `<span class="wa-msg-bot-tag zap-${m.bot_slot_index || 'other'}" title="Canal: ${esc(m.bot_label)}">${esc(m.bot_short_name || m.bot_label)}</span>` : '';
                 return `<div class="wa-msg-bubble ${m.direction === 'out' ? 'out' : 'in'}">
                     <div>${esc(m.body || '')}</div>
                     <div class="wa-msg-meta">

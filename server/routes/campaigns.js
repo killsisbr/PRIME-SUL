@@ -53,6 +53,19 @@ router.delete('/numbers/:id', async (req, res, next) => {
         const row = await db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?' + (req.user.role === 'admin' ? '' : ' AND seller_id = ?'),
             req.user.role === 'admin' ? [id, req.user.organization_id] : [id, req.user.organization_id, req.user.id]);
         if (!row) return res.status(404).json({ error: 'Número não encontrado' });
+        const refs = await db.get('SELECT COUNT(*) AS total FROM sends WHERE number_id = ?', [id]);
+        await db.run('UPDATE leads SET triage_bot_number_id = NULL WHERE triage_bot_number_id = ?', [id]);
+        await db.run('UPDATE campaigns SET number_id = NULL WHERE number_id = ?', [id]);
+        await db.run('UPDATE marketing_posts SET number_id = NULL WHERE number_id = ?', [id]);
+        await db.run('UPDATE followups SET number_id = NULL WHERE number_id = ?', [id]);
+
+        if (refs && refs.total > 0) {
+            // Mantém histórico de envios íntegro: sends.number_id é obrigatório.
+            // Então o número é arquivado em vez de deletado fisicamente.
+            await db.run("UPDATE bot_numbers SET status = 'banido', campaign_enabled = 0, cooled_until = NULL, label = COALESCE(label, 'WhatsApp') || ' (arquivado)' WHERE id = ?", [id]);
+            return res.json({ ok: true, archived: true, message: 'Número arquivado; histórico de envios preservado' });
+        }
+
         await db.run('DELETE FROM bot_numbers WHERE id = ?', [id]);
         res.json({ ok: true, message: 'Número removido com sucesso' });
     } catch (e) { next(e); }
