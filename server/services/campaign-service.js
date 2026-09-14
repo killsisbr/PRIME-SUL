@@ -432,8 +432,40 @@ async function startCampaign(id, sellerId, role, organizationId) {
     });
     running.add(id);
     await db.run("UPDATE campaigns SET status = 'running', error = NULL WHERE id = ?", [id]);
+
+    // Ao iniciar o disparo, o lead sai imediatamente de NOVOS para ENVIADOS.
+    // O envio real continua sendo processado pelo loop; falhas ficam registradas em sends.
+    await markCampaignLeadsAsQueued(campaign);
+
     runCampaignLoop(job, campaign); // não bloqueia
     return { started: true, job_id: job.id };
+}
+
+async function markCampaignLeadsAsQueued(campaign) {
+    const changed = await db.run(`
+        UPDATE leads
+        SET status = 'enviados',
+            triage_status = CASE WHEN triage_status = 'pending' THEN 'sent' ELSE triage_status END,
+            updated_at = datetime('now')
+        WHERE status = 'novos'
+          AND id IN (SELECT lead_id FROM sends WHERE campaign_id = ? AND status = 'pending')
+    `, [campaign.id]);
+
+    if (changed.changes) {
+        await db.run(`
+            INSERT INTO lead_history (lead_id, seller_id, from_status, to_status)
+            SELECT lead_id, ?, 'novos', 'enviados'
+            FROM sends
+            WHERE campaign_id = ? AND status = 'pending'
+        `, [campaign.seller_id, campaign.id]).catch(() => {});
+        try {
+            require('./websocket-service').broadcast(campaign.organization_id || 1, {
+                type: 'LEADS_BULK_UPDATE',
+                status: 'enviados',
+                campaign_id: campaign.id
+            });
+        } catch (e) { /* ws opcional */ }
+    }
 }
 
 // Marca o job como em execução e dispara o loop; o job é concluído ao final do loop.
