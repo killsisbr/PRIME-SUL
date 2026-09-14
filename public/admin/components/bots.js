@@ -379,7 +379,7 @@ export async function init() {
 
     function renderThreadBar() {
         const bar = ensureThreadBar();
-        if (!_threads.length) { bar.style.display = 'none'; return; }
+        if (!_threads.length || _threads.length === 1) { bar.style.display = 'none'; return; }
         bar.style.display = 'flex';
         bar.innerHTML = _threads.map(t => {
             const k = threadKey(t);
