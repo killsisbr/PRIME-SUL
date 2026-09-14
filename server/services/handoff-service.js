@@ -2,6 +2,7 @@ const db = require('../database/db');
 const whatsapp = require('./whatsapp-service');
 const ws = require('./websocket-service');
 const botEvents = require('./bot-events-service');
+const { phoneVariants, phoneKey } = require('../utils/phone');
 
 const DEFAULT_MESSAGE = 'Olá {nome}! Sou {vendedor} da Prime Sul. Recebemos seu interesse na simulação de crédito e já estou com sua proposta pronta. Podemos falar agora?';
 let busy = false;
@@ -186,9 +187,12 @@ async function processDue() {
 }
 
 async function markReplied(botNumber, phone) {
+    const variants = phoneVariants(phone);
+    const ph = variants.length ? variants : [phoneKey(phone) || String(phone || '').replace(/\D/g, '')];
+    const marks = ph.map(() => '?').join(',');
     const row = await db.get(`SELECT h.id FROM handoffs h
         JOIN seller_numbers sn ON sn.id=h.seller_number_id JOIN leads l ON l.id=h.lead_id
-        WHERE sn.number=? AND l.phone=? AND h.status='sent' ORDER BY h.id DESC LIMIT 1`, [botNumber, phone]);
+        WHERE sn.number=? AND l.phone IN (${marks}) AND h.status='sent' ORDER BY h.id DESC LIMIT 1`, [botNumber, ...ph]);
     if (!row) return false;
     await db.run(`UPDATE handoffs SET status='replied', replied_at=datetime('now'), updated_at=datetime('now') WHERE id=?`, [row.id]);
     await whatsapp.unarchiveChat(botNumber, phone).catch(() => {});

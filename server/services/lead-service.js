@@ -98,8 +98,8 @@ async function createLead({ seller_id, organization_id = 1, name, phone, phone2,
 
     async function findByDuplicate() {
         const phoneHit = await db.get(
-            `SELECT * FROM leads WHERE organization_id = ? AND phone IN ${phoneIn.sql}`,
-            [organization_id, ...phoneIn.params]
+            `SELECT * FROM leads WHERE organization_id = ? AND (phone IN ${phoneIn.sql} OR phone2 IN ${phoneIn.sql} OR phone3 IN ${phoneIn.sql})`,
+            [organization_id, ...phoneIn.params, ...phoneIn.params, ...phoneIn.params]
         );
         if (phoneHit) return phoneHit;
         if (cleanCpfValue) {
@@ -251,8 +251,8 @@ async function updateLead(id, seller_id, fields) {
             if (normalized !== lead.phone) {
                 const vin = phoneInClause(normalized);
                 const dup = await db.get(
-                    `SELECT id FROM leads WHERE phone IN ${vin.sql} AND id != ?`,
-                    [...vin.params, id]
+                    `SELECT id FROM leads WHERE organization_id = ? AND (phone IN ${vin.sql} OR phone2 IN ${vin.sql} OR phone3 IN ${vin.sql}) AND id != ?`,
+                    [lead.organization_id || 1, ...vin.params, ...vin.params, ...vin.params, id]
                 );
                 if (dup) {
                     const e = new Error('Telefone já cadastrado em outro lead');
@@ -279,8 +279,21 @@ async function updateLead(id, seller_id, fields) {
             params.push(c);
         } else if (f === 'phone2' || f === 'phone3') {
             const raw = fields[f];
+            const normalized = raw ? (phoneKey(raw) || String(raw).trim()) : null;
+            if (normalized) {
+                const vin = phoneInClause(normalized);
+                const dup = await db.get(
+                    `SELECT id FROM leads WHERE organization_id = ? AND (phone IN ${vin.sql} OR phone2 IN ${vin.sql} OR phone3 IN ${vin.sql}) AND id != ?`,
+                    [lead.organization_id || 1, ...vin.params, ...vin.params, ...vin.params, id]
+                );
+                if (dup) {
+                    const e = new Error('Telefone já cadastrado em outro lead');
+                    e.status = 409;
+                    throw e;
+                }
+            }
             updates.push(`${f} = ?`);
-            params.push(raw ? (phoneKey(raw) || String(raw).trim()) : null);
+            params.push(normalized);
         } else if (f === 'tags') {
             updates.push('tags = ?');
             params.push(cleanTags(fields[f]));

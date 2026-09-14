@@ -3,6 +3,7 @@ const whatsapp = require('./whatsapp-service');
 const handoffs = require('./handoff-service');
 const ws = require('./websocket-service');
 const botEvents = require('./bot-events-service');
+const { phoneVariants, phoneKey } = require('../utils/phone');
 
 const YES = (process.env.BOT_CONFIRM_KEYWORDS || 'sim,ok,confirmo,quero,claro,pode,pode sim,tenho interesse,qual o valor,manda,enviar').split(',').map(s => s.trim()).filter(Boolean);
 const NO = (process.env.BOT_DENY_KEYWORDS || 'nao,não,dispenso,obrigado,sem interesse,nao quero,não quero').split(',').map(s => s.trim()).filter(Boolean);
@@ -18,7 +19,7 @@ function match(text, list) {
 }
 
 async function addOptOut(send, phone, reason) {
-    await db.run('INSERT OR IGNORE INTO opt_outs (organization_id,phone,reason) VALUES (?,?,?)', [send.organization_id || 1, phone, reason]);
+    await db.run('INSERT OR IGNORE INTO opt_outs (organization_id,phone,reason) VALUES (?,?,?)', [send.organization_id || 1, phoneKey(phone) || phone, reason]);
     await db.run("UPDATE leads SET status='nao', triage_status='declined', updated_at=datetime('now') WHERE id=?", [send.lead_id]);
     await db.run(
         'INSERT INTO lead_history (lead_id, seller_id, from_status, to_status) VALUES (?, ?, ?, "nao")',
@@ -32,9 +33,12 @@ async function addOptOut(send, phone, reason) {
 async function handleIncoming({ botNumber, phone, text }) {
     if (await handoffs.markReplied(botNumber, phone)) return { handled: true, action: 'seller_handoff_reply' };
 
-    const send = await db.get(`SELECT s.*, l.name AS lead_name, l.seller_id, l.organization_id
+    const variants = phoneVariants(phone);
+    const ph = variants.length ? variants : [phoneKey(phone) || String(phone || '').replace(/\D/g, '')];
+    const marks = ph.map(() => '?').join(',');
+    const send = await db.get(`SELECT s.*, l.name AS lead_name, l.seller_id, l.organization_id, l.phone
         FROM sends s JOIN leads l ON l.id=s.lead_id JOIN bot_numbers bn ON bn.id=s.number_id
-        WHERE l.phone=? AND bn.number=? AND s.status='sent' ORDER BY s.id DESC LIMIT 1`, [phone, botNumber]);
+        WHERE l.phone IN (${marks}) AND bn.number=? AND s.status='sent' ORDER BY s.id DESC LIMIT 1`, [...ph, botNumber]);
     if (!send) return { handled: false };
 
     if (match(text, STOP)) {

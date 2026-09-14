@@ -29,6 +29,21 @@ function fmtNum(n) {
     return n || '';
 }
 
+function waPhoneKey(input) {
+    let p = String(input || '').replace(/\D/g, '');
+    if (!p) return '';
+    if (p.startsWith('00')) p = p.slice(2);
+    if (p.length >= 11 && p.length <= 13 && p.startsWith('0')) p = p.slice(1);
+    if (p.length === 10 || p.length === 11) p = '55' + p;
+    if (!p.startsWith('55')) return p;
+    const rest = p.slice(2);
+    if (rest.length !== 10 && rest.length !== 11) return p;
+    const ddd = rest.slice(0, 2);
+    const sub = rest.slice(2);
+    const core = sub.length === 9 && sub[0] === '9' ? sub.slice(1) : sub;
+    return /^[6-9]/.test(core) ? `55${ddd}9${core}` : p;
+}
+
 export async function init() {
     const api = window.api;
     const toast = window.toast;
@@ -164,7 +179,17 @@ export async function init() {
             leadListEl.innerHTML = `<div class="ps-empty" style="padding:20px;">Nenhum lead encontrado</div>`;
             return;
         }
-        leadListEl.innerHTML = list.map(l => {
+        const byPhone = new Map();
+        for (const l of list) {
+            const key = waPhoneKey(l.phone) || String(l.id);
+            const prev = byPhone.get(key);
+            if (!prev) { byPhone.set(key, l); continue; }
+            const rank = x => (x.status === 'bloqueado' || x.status === 'duplicado') ? 0 : (x.wa && x.wa.has_chat ? 2 : 1);
+            if (rank(l) > rank(prev)) byPhone.set(key, l);
+        }
+        const viewList = [...byPhone.values()];
+
+        leadListEl.innerHTML = viewList.map(l => {
             const initials = (l.name || 'L').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
             const isActive = _activeLead && _activeLead.id === l.id;
             const statusStr = WA_STATUS_LABEL[l.status] || 'NOVO';
