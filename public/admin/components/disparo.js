@@ -59,6 +59,8 @@ export async function init() {
     let deselectedLeadIds = new Set();
     let alreadyScheduledLeadIds = new Set();
     let selectedQuantity = 10;
+    let campaignNumbers = [];
+    let selectedCampaignNumber = null;
     let selectedDay = new Date().getDay(); // 0-6 (0=DOM, 1=SEG...)
     let _dispViewMode = 'track'; // 'track' | 'agenda'
     let _dispAgendaPeriod = '7d'; // '7d' | '15d' | '30d'
@@ -385,7 +387,7 @@ export async function init() {
                 const weekday = Number(btn.dataset.weekday);
                 selectedDay = weekday;
                 updateDaySelectionUI();
-                openScheduleModal('10:00', 'novo');
+                openScheduleModal('10:00', 'novos');
             };
         });
 
@@ -537,7 +539,7 @@ export async function init() {
 
         targetEl.querySelectorAll('.dp-btn-schedule-trigger').forEach(btn => {
             btn.onclick = () => {
-                openScheduleModal('10:00', 'novo');
+                openScheduleModal('10:00', 'novos');
             };
         });
     }
@@ -546,7 +548,72 @@ export async function init() {
     function getSelectedStages() {
         const stages = [];
         document.querySelectorAll('.dp-stage-cb:checked').forEach(cb => stages.push(cb.value));
-        return stages.length ? stages : ['novo'];
+        return stages.length ? stages : ['novos'];
+    }
+
+    function selectedNumberCapacity() {
+        const globalLimit = Number(window.__dpDailyLimit || 0);
+        const n = campaignNumbers.find(x => String(x.number) === String(selectedCampaignNumber) || String(x.id) === String(selectedCampaignNumber));
+        if (!n) return { number: null, limit: 0, used: 0, available: 0 };
+        const limit = Number(n.daily_limit_override || globalLimit || 0);
+        const used = Number(n.messages_sent || 0);
+        return { number: n, limit, used, available: Math.max(0, limit - used) };
+    }
+
+    function updateNumberCapacityUI() {
+        const box = document.getElementById('dpNumberCapacity');
+        const submitBtn = document.getElementById('dpSchedSubmitBtn');
+        const cap = selectedNumberCapacity();
+        if (!box) return cap;
+        if (!cap.number) {
+            box.className = 'dp-number-capacity warn';
+            box.innerHTML = '<i class="fas fa-triangle-exclamation"></i><span>Selecione um número de campanha conectado.</span>';
+            return cap;
+        }
+        const requested = Number(selectedQuantity || 0);
+        const effective = cap.available ? Math.min(requested, cap.available) : 0;
+        const label = cap.number.label || `WhatsApp ${cap.number.slot_index || ''}`;
+        box.className = 'dp-number-capacity ' + (effective < requested ? 'warn' : 'ok');
+        box.innerHTML = `<i class="fas ${effective < requested ? 'fa-triangle-exclamation' : 'fa-shield-halved'}"></i>
+            <span><b>${escapeHtml(label)}</b>: limite ${cap.limit}/dia • usado ${cap.used} • disponível ${cap.available}. ${effective < requested ? `Você pediu ${requested}, então serão enviados só ${effective}.` : `Pode enviar ${effective} agora.`}</span>`;
+        if (submitBtn && cap.number) submitBtn.dataset.effectiveCount = String(effective);
+        return cap;
+    }
+
+    async function loadCampaignNumbers() {
+        const select = document.getElementById('dpCampaignNumberSelect');
+        if (!select) return;
+        try {
+            const data = await api('/whatsapp/status');
+            window.__dpDailyLimit = Number(data.daily_limit || 0);
+            campaignNumbers = (data.numbers || []).filter(n => {
+                const connected = n.connection === 'connected';
+                const active = n.status === 'ativo';
+                const forCampaign = Number(n.campaign_enabled) === 1;
+                return connected && active && forCampaign;
+            });
+            if (!campaignNumbers.length) {
+                select.innerHTML = '<option value="">Nenhum número de campanha conectado</option>';
+                selectedCampaignNumber = null;
+                updateNumberCapacityUI();
+                return;
+            }
+            select.innerHTML = campaignNumbers.map(n => {
+                const limit = Number(n.daily_limit_override || data.daily_limit || 0);
+                const used = Number(n.messages_sent || 0);
+                const avail = Math.max(0, limit - used);
+                const label = n.label || `WhatsApp ${n.slot_index || ''}`;
+                const real = n.realNumber || n.real_number || n.number;
+                return `<option value="${escapeHtml(n.id)}">${escapeHtml(label)} • ${escapeHtml(real)} • ${avail}/${limit} disponíveis</option>`;
+            }).join('');
+            selectedCampaignNumber = campaignNumbers[0].id;
+            select.value = selectedCampaignNumber;
+            updateNumberCapacityUI();
+        } catch (e) {
+            select.innerHTML = '<option value="">Erro ao carregar números</option>';
+            selectedCampaignNumber = null;
+            updateNumberCapacityUI();
+        }
     }
 
     async function loadLeadsForSchedule() {
@@ -565,9 +632,10 @@ export async function init() {
 
             if (!leads.length) leads = FALLBACK_LEADS;
 
-            allLeads = leads.filter(l => stages.includes(l.status || 'novo'));
+            const canon = s => ({ novo: 'novos', contato: 'enviados', confirmado: 'sim', concluido: 'sim' })[s] || s;
+            allLeads = leads.filter(l => stages.includes(canon(l.status || 'novos')));
             if (!allLeads.length) {
-                allLeads = FALLBACK_LEADS.filter(l => stages.includes(l.status || 'novo'));
+                allLeads = FALLBACK_LEADS.filter(l => stages.includes(canon(l.status || 'novos')));
             }
             if (!allLeads.length) allLeads = FALLBACK_LEADS;
 
@@ -594,7 +662,9 @@ export async function init() {
             return true;
         });
 
-        const activeTargets = candidatePool.slice(0, selectedQuantity);
+        const cap = updateNumberCapacityUI();
+        const effectiveQuantity = cap.number ? Math.min(selectedQuantity, cap.available || 0) : selectedQuantity;
+        const activeTargets = candidatePool.slice(0, effectiveQuantity);
 
         if (countVal) countVal.textContent = activeTargets.length;
 
@@ -700,7 +770,8 @@ export async function init() {
         }
     }
 
-    async function openScheduleModal(initialTimeStr = '10:00', targetStage = 'novo', campaignToEdit = null) {
+    async function openScheduleModal(initialTimeStr = '10:00', targetStage = 'novos', campaignToEdit = null) {
+        targetStage = ({ novo: 'novos', contato: 'enviados', confirmado: 'sim', concluido: 'sim' })[targetStage] || targetStage;
         const modal = document.getElementById('dpScheduleModal');
         if (!modal) return;
 
@@ -768,6 +839,7 @@ export async function init() {
         }
 
         modal.style.display = 'flex';
+        await loadCampaignNumbers();
         await loadLeadsForSchedule();
         updateLivePreview();
         updateSubmitBtnText();
@@ -996,10 +1068,13 @@ export async function init() {
             submitBtn.innerHTML = '<i class="fas fa-save"></i> SALVAR ALTERAÇÕES';
             return;
         }
+        const cap = selectedNumberCapacity();
+        const effective = cap.number && cap.available ? Math.min(selectedQuantity, cap.available) : selectedQuantity;
+        const suffix = effective < selectedQuantity ? ` (${selectedQuantity} solicitadas)` : '';
         if (_dispatchMode === 'now') {
-            submitBtn.innerHTML = `<i class="fas fa-bolt"></i> DISPARAR ${selectedQuantity} MENSAGENS AGORA`;
+            submitBtn.innerHTML = `<i class="fas fa-bolt"></i> DISPARAR ${effective} MENSAGENS AGORA${suffix}`;
         } else {
-            submitBtn.innerHTML = `<i class="fas fa-calendar-check"></i> CONFIRMAR AGENDAMENTO (${selectedQuantity} LEADS)`;
+            submitBtn.innerHTML = `<i class="fas fa-calendar-check"></i> CONFIRMAR AGENDAMENTO (${effective} LEADS${suffix})`;
         }
     }
 
@@ -1084,6 +1159,10 @@ export async function init() {
     // Mudança no horário ou cadência -> Recalcula colisão
     document.getElementById('dpSchedTime')?.addEventListener('change', () => renderSchedTargetLeads());
     document.getElementById('dpSchedCadence')?.addEventListener('change', () => renderSchedTargetLeads());
+    document.getElementById('dpCampaignNumberSelect')?.addEventListener('change', e => {
+        selectedCampaignNumber = e.target.value;
+        renderSchedTargetLeads();
+    });
 
     // Mudança de template no agendamento
     document.getElementById('dpSchedTemplateSelect')?.addEventListener('change', (e) => {
@@ -1110,7 +1189,11 @@ export async function init() {
             return true;
         });
 
-        const activeTargets = candidatePool.slice(0, selectedQuantity);
+        const cap = updateNumberCapacityUI();
+        if (!cap.number) return toast('Selecione um número de campanha conectado antes de disparar.', 'err');
+        if (!cap.available) return toast('O número selecionado não tem saldo disponível hoje.', 'err');
+        const effectiveQuantity = Math.min(selectedQuantity, cap.available);
+        const activeTargets = candidatePool.slice(0, effectiveQuantity);
 
         if (!msgVal) return toast('Preencha a mensagem do disparo', 'err');
         if (!activeTargets.length) return toast('Selecione ao menos 1 lead para o disparo', 'err');
@@ -1138,7 +1221,8 @@ export async function init() {
                         name: `Disparo Imediato (${activeTargets.length} leads)`,
                         message: msgVal,
                         lead_ids: activeTargets.map(l => l.id),
-                        filters: { status: getSelectedStages(), limit: selectedQuantity },
+                        number_ids: [Number(selectedCampaignNumber)],
+                        filters: { status: getSelectedStages(), limit: activeTargets.length, requested_limit: selectedQuantity },
                         scheduled_at: null
                     };
 
@@ -1167,7 +1251,8 @@ export async function init() {
                         name: `Disparo Agendado (${activeTargets.length} leads - ${timeVal})`,
                         message: msgVal,
                         lead_ids: activeTargets.map(l => l.id),
-                        filters: { status: getSelectedStages(), limit: selectedQuantity },
+                        number_ids: [Number(selectedCampaignNumber)],
+                        filters: { status: getSelectedStages(), limit: activeTargets.length, requested_limit: selectedQuantity },
                         scheduled_at: schedAt
                     };
 
@@ -1190,7 +1275,7 @@ export async function init() {
 
     // Submodal listeners
     document.getElementById('dp-btn-manage-templates')?.addEventListener('click', () => openTemplateManagerModal(false));
-    document.getElementById('dp-btn-new-dispatch')?.addEventListener('click', () => openScheduleModal('10:00', 'novo', null));
+    document.getElementById('dp-btn-new-dispatch')?.addEventListener('click', () => openScheduleModal('10:00', 'novos', null));
     document.getElementById('dp-btn-close-tmpl-modal')?.addEventListener('click', closeTemplateManagerModal);
     document.getElementById('dp-btn-close-sched-modal')?.addEventListener('click', closeScheduleModal);
     document.getElementById('dpSchedCancelBtn')?.addEventListener('click', closeScheduleModal);

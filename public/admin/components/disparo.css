@@ -416,6 +416,21 @@
     gap: 6px;
 }
 .dp-field-box.flex-1 { flex: 1; }
+.dp-number-capacity {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 8px 10px;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font: 800 .62rem/1.25 var(--font-body, 'Outfit', sans-serif);
+}
+.dp-number-capacity b { font-weight: 950; }
+.dp-number-capacity.ok { border-color: #bbf7d0; background: #ecfdf5; color: #14532d; }
+.dp-number-capacity.warn { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+.dp-number-capacity i { margin-top: 1px; }
 .dp-field-lbl {
     font-size: 0.72rem;
     font-weight: 850;

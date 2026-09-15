@@ -191,17 +191,17 @@
                             <label class="dp-field-lbl">Etapa do Lead no Funil:</label>
                             <div class="dp-stages-pills">
                                 <label class="dp-stage-pill active">
-                                    <input type="checkbox" class="dp-stage-cb" value="novo" checked>
+                                    <input type="checkbox" class="dp-stage-cb" value="novos" checked>
                                     <span class="pill-dot"></span>
                                     <span>Novos Leads</span>
                                 </label>
                                 <label class="dp-stage-pill">
-                                    <input type="checkbox" class="dp-stage-cb" value="contato">
+                                    <input type="checkbox" class="dp-stage-cb" value="enviados">
                                     <span class="pill-dot"></span>
                                     <span>Em Contato</span>
                                 </label>
                                 <label class="dp-stage-pill">
-                                    <input type="checkbox" class="dp-stage-cb" value="confirmado">
+                                    <input type="checkbox" class="dp-stage-cb" value="sim">
                                     <span class="pill-dot"></span>
                                     <span>Confirmados</span>
                                 </label>
@@ -227,6 +227,18 @@
 
                             <div class="dp-meta-summary-bar">
                                 <span id="dpSchedDurationBadge"><i class="fas fa-stopwatch"></i> Duração estimada: ~5 min</span>
+                            </div>
+                        </div>
+
+                        <!-- NÚMERO DE CAMPANHA -->
+                        <div class="dp-field-box">
+                            <label class="dp-field-lbl">Número de campanha:</label>
+                            <select class="ps-select" id="dpCampaignNumberSelect">
+                                <option value="">Carregando números...</option>
+                            </select>
+                            <div class="dp-number-capacity" id="dpNumberCapacity">
+                                <i class="fas fa-circle-info"></i>
+                                <span>Escolha um bot de campanha para ver limite disponível.</span>
                             </div>
                         </div>
 
