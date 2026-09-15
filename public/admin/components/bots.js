@@ -1427,14 +1427,27 @@ export async function init() {
             const heading = isSlot ? (n.realNumber ? fmtNum(n.realNumber) : (n.label || `WhatsApp ${n.slot_index}`)) : fmtNum(n.realNumber || n.number);
             const subLabel = isSlot ? (n.realNumber ? (n.label || `WhatsApp ${n.slot_index}`) : 'aguardando conexão') : (n.label || 'sem etiqueta');
             const isAutoPuxado = !!n.realNumber;
-            const usageBadge = n.seller_id
-                ? (Number(n.campaign_enabled) === 1
-                    ? '<span class="bt-badge" style="background:#fff7ed;color:#c2410c;border-color:#fb923c;"><i class="fas fa-bullhorn"></i> CAMPANHAS</span>'
-                    : '<span class="bt-badge" style="background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;"><i class="fas fa-shield-halved"></i> SÓ ATENDIMENTO</span>')
-                : '<span class="bt-badge" style="background:#ecfdf5;color:#047857;border-color:#86efac;"><i class="fas fa-building"></i> INSTITUCIONAL</span>';
+            const usageMode = n.seller_id
+                ? (Number(n.campaign_enabled) === 1 ? 'campaign' : 'attendance')
+                : 'institutional';
+            const usageBadge = usageMode === 'campaign'
+                ? '<span class="bt-badge bt-usage-campaign"><i class="fas fa-bullhorn"></i> CAMPANHAS</span>'
+                : usageMode === 'attendance'
+                    ? '<span class="bt-badge bt-usage-attendance"><i class="fas fa-headset"></i> SÓ ATENDIMENTO</span>'
+                    : '<span class="bt-badge bt-usage-institutional"><i class="fas fa-building"></i> INSTITUCIONAL</span>';
+            const usageTitle = usageMode === 'campaign' ? 'Bot de campanha' : usageMode === 'attendance' ? 'WhatsApp de atendimento' : 'Número institucional';
+            const usageText = usageMode === 'campaign'
+                ? 'Usado para disparar a primeira mensagem e filtrar SIM/NÃO. Não use para atendimento humano.'
+                : usageMode === 'attendance'
+                    ? 'Número oficial do vendedor para responder interessados e negociar com o cliente.'
+                    : 'Número geral da empresa; admin define se será usado em campanhas ou operação.';
 
             return `
-            <div class="bt-card" data-number="${n.number}">
+            <div class="bt-card bt-card-${usageMode}" data-number="${n.number}">
+                <div class="bt-role-strip">
+                    <span><i class="fas ${usageMode === 'campaign' ? 'fa-bullhorn' : usageMode === 'attendance' ? 'fa-headset' : 'fa-building'}"></i> ${usageTitle}</span>
+                    <em>${isOnline ? 'online agora' : (isConnecting ? 'aguardando QR' : 'desconectado')}</em>
+                </div>
                 <div class="bt-card-head">
                     <div>
                         <span class="bt-num">${esc(heading)}</span>
@@ -1447,6 +1460,10 @@ export async function init() {
                         <span class="bt-badge conn-${conn}"><i class="fas fa-circle"></i> ${connLabel}</span>
                         <span class="bt-badge ban-${n.status}">${BAN_LABEL[n.status] || n.status}</span>
                     </div>
+                </div>
+                <div class="bt-purpose-box">
+                    <i class="fas ${usageMode === 'campaign' ? 'fa-filter-circle-dollar' : usageMode === 'attendance' ? 'fa-comments' : 'fa-diagram-project'}"></i>
+                    <span>${usageText}</span>
                 </div>
                 <div class="bt-progress"><div class="bt-progress-bar ${barCls}" style="width:${pct}%;"></div></div>
                 <div class="bt-progress-meta">

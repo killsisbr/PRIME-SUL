@@ -2,6 +2,21 @@
    PRIME SUL — FUNIL DE VENDAS (CLEAN & ULTRA COMPACT)
    ========================================================================== */
 
+#dynamicModalOverlay:has(.fl-root) {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.5vh 0.5vw !important;
+}
+
+#dynamicModalOverlay:has(.fl-root) .hud-modal,
+.hud-modal:has(.fl-root) {
+    width: 99vw !important;
+    max-width: 99vw !important;
+    height: 99dvh !important;
+    max-height: 99dvh !important;
+    border-radius: 14px !important;
+}
+
 #dynamicModalBody:has(.fl-root) {
     display: flex;
     flex-direction: column;
