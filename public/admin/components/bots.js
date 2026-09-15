@@ -323,10 +323,14 @@ export async function init() {
         const badge = document.getElementById('waSendBotBadge');
         if (!select) return;
 
-        const readyBots = _availableBots.filter(b =>
-            (b.connection === 'connected' || b.connected) &&
-            b.status === 'ativo'
-        );
+        const readyBots = _availableBots.filter(b => {
+            const connected = b.connection === 'connected' || b.connected;
+            const active = b.status === 'ativo';
+            const label = String(b.label || '').toLowerCase();
+            const isArchived = label.includes('arquivado') || b.status === 'banido' || b.connection === 'banido';
+            const isSellerAttendance = b.usage_type === 'seller_attendance' || (!!b.seller_id && Number(b.campaign_enabled) === 0);
+            return connected && active && !isArchived && isSellerAttendance;
+        });
 
         if (!readyBots.length) {
             select.innerHTML = '<option value="">Nenhum WhatsApp conectado e ativo</option>';

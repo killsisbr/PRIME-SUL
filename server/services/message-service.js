@@ -37,7 +37,7 @@ async function record({ organizationId = 1, leadId = null, leadPhone, botNumber,
 // Auxiliar para obter metadados consolidados dos bots (banco + status Baileys em memória)
 async function getBotMetadata(organizationId = 1) {
     const rows = await db.all(
-        `SELECT id, organization_id, seller_id, number, label, status, slot_index, real_number, push_name, daily_limit_override, messages_sent
+        `SELECT id, organization_id, seller_id, number, label, status, slot_index, real_number, push_name, daily_limit_override, messages_sent, usage_type, campaign_enabled
          FROM bot_numbers WHERE organization_id = ?`,
         [organizationId]
     );
@@ -57,9 +57,12 @@ async function getBotMetadata(organizationId = 1) {
         const shortName = r.slot_index ? `WA ${r.slot_index}` : (r.label ? (r.label.length > 10 ? r.label.slice(0, 10) : r.label) : `Bot`);
         const item = {
             id: r.id,
+            seller_id: r.seller_id,
             number: r.number,
             label: displayLabel,
             short_name: shortName,
+            usage_type: r.usage_type,
+            campaign_enabled: r.campaign_enabled,
             slot_index: r.slot_index,
             real_number: realNum,
             push_name: push,
