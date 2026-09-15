@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS leads (
     name          TEXT NOT NULL,
     phone         TEXT NOT NULL UNIQUE,          -- telefone normalizado (E.164)
     cpf           TEXT,                          -- identificador forte (formato livre/limpo)
+    agencia       TEXT,                          -- agência bancária informada pelo lead
+    conta         TEXT,                          -- conta bancária informada pelo lead
     tags          TEXT,                          -- lista separada por vírgula (ex.: quente, prioridade)
     city          TEXT,
     origem        TEXT NOT NULL DEFAULT 'SITE',

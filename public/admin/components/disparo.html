@@ -297,12 +297,16 @@
                                 <label class="dp-field-lbl"><i class="fas fa-pen-to-square"></i> Texto que o cliente vai ler:</label>
                                 <span class="dp-char-count" id="dpCharCount">0 carac.</span>
                             </div>
-                            <textarea class="ps-textarea dp-msg-textarea" id="dpSchedMessage" rows="5" required placeholder="Olá {nome}! Vi que você pediu uma simulação de crédito. Posso te enviar as propostas agora?"></textarea>
+                            <textarea class="ps-textarea dp-msg-textarea" id="dpSchedMessage" rows="5" required placeholder="Olá {primeiro-nome}! Vi que você pediu uma simulação de crédito. Posso te enviar as propostas agora?"></textarea>
                             
                             <!-- VARIÁVEIS RÁPIDAS -->
                             <div class="dp-tags-row">
                                 <span class="dp-tags-label">Inserir no texto:</span>
+                                <button type="button" class="dp-tag-btn" data-tag="{primeiro-nome}">+ {primeiro-nome}</button>
                                 <button type="button" class="dp-tag-btn" data-tag="{nome}">+ {nome}</button>
+                                <button type="button" class="dp-tag-btn" data-tag="{cpf}">+ {cpf}</button>
+                                <button type="button" class="dp-tag-btn" data-tag="{agencia}">+ {agencia}</button>
+                                <button type="button" class="dp-tag-btn" data-tag="{conta}">+ {conta}</button>
                                 <button type="button" class="dp-tag-btn" data-tag="{cidade}">+ {cidade}</button>
                                 <button type="button" class="dp-tag-btn" data-tag="{renda}">+ {renda}</button>
                             </div>

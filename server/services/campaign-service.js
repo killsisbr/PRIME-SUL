@@ -23,17 +23,41 @@ const TARGETABLE_STATUSES = ['novos', 'enviados', 'sim'];
 // Quando a campanha não especifica status, mantém o comportamento padrão histórico (leads quentes)
 const DEFAULT_STATUSES = ['novos'];
 
+function firstNameOf(name = '') {
+    return String(name || '').trim().split(/\s+/).filter(Boolean)[0] || '';
+}
+
+function formatLeadMessage(tmpl, lead = {}) {
+    const fullName = String(lead.name || '').trim();
+    const values = {
+        nome: fullName,
+        'primeiro-nome': firstNameOf(fullName),
+        cpf: lead.cpf || '',
+        agencia: lead.agencia || lead.agência || '',
+        'agência': lead.agencia || lead.agência || '',
+        conta: lead.conta || '',
+        cidade: lead.city || lead.cidade || '',
+        renda: lead.renda || '',
+        limite: lead.limite_est || '',
+        'valor-desejado': lead.valor_desejado || ''
+    };
+    return String(tmpl || '').replace(/\{([^}]+)\}/g, (all, key) => {
+        const normalized = String(key || '').trim().toLowerCase();
+        return Object.prototype.hasOwnProperty.call(values, normalized) ? String(values[normalized] ?? '') : all;
+    });
+}
+
 // Message de entrada do bot principal (anti-ban): pergunta se pode encaminhar a simulação
 function buildMainMessage(lead) {
     const tmpl = process.env.BOT_MAIN_WELCOME ||
-        'Olá {nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.';
-    return tmpl.replace('{nome}', lead.name.split(' ')[0]);
+        'Olá {primeiro-nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.';
+    return formatLeadMessage(tmpl, lead);
 }
 
-// Substitui {nome} na mensagem customizada
+// Substitui variáveis da mensagem customizada usando dados do lead no banco
 function personalize(msg, lead) {
     if (!msg) return '';
-    return msg.replace(/\{nome\}/g, (lead.name || '').split(' ')[0]);
+    return formatLeadMessage(msg, lead);
 }
 
 // Constrói WHERE dinâmico para selecionar os leads-alvo da campanha

@@ -819,7 +819,7 @@ export async function init() {
             if (idInput) idInput.value = '';
             if (titleEl) titleEl.textContent = 'DISPARAR MENSAGENS NO WHATSAPP';
             if (timeInput) timeInput.value = initialTimeStr;
-            if (msgArea) msgArea.value = 'Olá {nome}! Vi que solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
+            if (msgArea) msgArea.value = 'Olá {primeiro-nome}! Vi que solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
             
             selectedQuantity = 10;
             if (rangeInput) rangeInput.value = 10;
@@ -1107,26 +1107,39 @@ export async function init() {
         const contactNameEl = document.getElementById('dpLivePreviewContactName');
         const msgTimeEl = document.getElementById('dpLiveMsgTime');
 
-        const raw = (msgArea?.value || '').trim() || 'Olá {nome}! Vi que você solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
+        const raw = (msgArea?.value || '').trim() || 'Olá {primeiro-nome}! Vi que você solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
         
         if (charCountEl) {
             charCountEl.textContent = `${(msgArea?.value || '').length} carac.`;
         }
 
         const firstLead = (typeof allLeads !== 'undefined' && allLeads.length) ? allLeads[0] : null;
-        const firstName = firstLead?.name ? firstLead.name.split(' ')[0] : 'Maria';
         const fullName = firstLead?.name || 'Maria Silva';
+        const firstName = fullName.trim().split(/\s+/).filter(Boolean)[0] || 'Maria';
         const city = firstLead?.city || 'Porto Alegre';
-        const renda = firstLead?.renda ? `R$ ${Number(firstLead.renda).toLocaleString('pt-BR')}` : 'R$ 3.500';
+        const rendaNum = firstLead?.renda != null && firstLead?.renda !== '' ? Number(firstLead.renda) : null;
+        const renda = rendaNum && !Number.isNaN(rendaNum) ? `R$ ${rendaNum.toLocaleString('pt-BR')}` : (firstLead?.renda || 'R$ 3.500');
+        const values = {
+            nome: fullName,
+            'primeiro-nome': firstName,
+            cpf: firstLead?.cpf || '',
+            agencia: firstLead?.agencia || firstLead?.agência || '',
+            'agência': firstLead?.agencia || firstLead?.agência || '',
+            conta: firstLead?.conta || '',
+            cidade: city,
+            renda,
+            limite: firstLead?.limite_est || '',
+            'valor-desejado': firstLead?.valor_desejado || ''
+        };
 
         if (contactNameEl) {
             contactNameEl.textContent = fullName;
         }
 
-        let rendered = raw
-            .replace(/\{nome\}/gi, firstName)
-            .replace(/\{cidade\}/gi, city)
-            .replace(/\{renda\}/gi, renda);
+        let rendered = raw.replace(/\{([^}]+)\}/g, (all, key) => {
+            const normalized = String(key || '').trim().toLowerCase();
+            return Object.prototype.hasOwnProperty.call(values, normalized) ? String(values[normalized] ?? '') : all;
+        });
 
         if (previewEl) {
             previewEl.innerHTML = esc(rendered).replace(/\n/g, '<br>');

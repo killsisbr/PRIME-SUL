@@ -66,12 +66,12 @@ router.get('/funnel', async (req, res, next) => {
 // Cria lead (com regra de duplicidade)
 router.post('/', async (req, res, next) => {
     try {
-        const { name, phone, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade } = req.body;
+        const { name, phone, cpf, agencia, conta, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade } = req.body;
         if (!name || !phone) return res.status(400).json({ error: 'Nome e telefone obrigatórios' });
         const result = await leadService.createLead({
             seller_id: req.user.id,
             organization_id: req.user.organization_id,
-            name, phone, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade
+            name, phone, cpf, agencia, conta, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade
         });
         res.status(201).json(result.lead);
     } catch (e) { next(e); }

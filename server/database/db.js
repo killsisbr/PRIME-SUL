@@ -43,7 +43,9 @@ const LEAD_MIGRATIONS = {
     phone3: 'TEXT',
     lead_code: 'TEXT',
     triage_status: "TEXT NOT NULL DEFAULT 'pending'", // pending|sent|qualified|declined|blocked
-    triage_bot_number_id: 'INTEGER'
+    triage_bot_number_id: 'INTEGER',
+    agencia: 'TEXT',
+    conta: 'TEXT'
 };
 
 const NUMBER_MIGRATIONS = {
@@ -98,6 +100,8 @@ async function migrateLeadStatusConstraint() {
             name TEXT NOT NULL,
             phone TEXT NOT NULL UNIQUE,
             cpf TEXT,
+            agencia TEXT,
+            conta TEXT,
             tags TEXT,
             city TEXT,
             origem TEXT NOT NULL DEFAULT 'SITE',

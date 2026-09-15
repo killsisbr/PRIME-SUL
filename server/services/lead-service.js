@@ -15,7 +15,7 @@ const stageConfig = require('./stage-config-service');
 
 const ALLOWED_ORIGEM = ['SITE', 'SIMULACAO', 'INDICACAO'];
 const ALLOWED_PRIORIDADE = ['alta', 'media', 'baixa'];
-const EDITABLE_FIELDS = ['name', 'phone', 'phone2', 'phone3', 'cpf', 'tags', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade', 'score'];
+const EDITABLE_FIELDS = ['name', 'phone', 'phone2', 'phone3', 'cpf', 'agencia', 'conta', 'tags', 'city', 'origem', 'limite_est', 'renda', 'valor_desejado', 'obs', 'prioridade', 'score'];
 
 // Campos que alteram o score automático
 const SCORE_FIELDS = ['renda', 'valor_desejado', 'limite_est', 'origem', 'prioridade', 'city', 'name'];
@@ -64,7 +64,7 @@ async function autoTriageNewLead(lead, sellerId) {
     }
 }
 
-async function createLead({ seller_id, organization_id = 1, name, phone, phone2, phone3, cpf, tags, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
+async function createLead({ seller_id, organization_id = 1, name, phone, phone2, phone3, cpf, agencia, conta, tags, city, origem = 'SITE', limite_est, renda, valor_desejado, obs, prioridade = 'media' }) {
     const normalized = phoneKey(phone); // forma canônica (celular BR sempre com o 9)
     if (!normalized) {
         const e = new Error('Telefone principal inválido');
@@ -129,9 +129,9 @@ async function createLead({ seller_id, organization_id = 1, name, phone, phone2,
         renda, valor_desejado, prioridade, status: 'novos'
     });
     const result = await db.run(
-        `INSERT INTO leads (organization_id, seller_id, name, phone, phone2, phone3, cpf, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [organization_id, seller_id, name.trim(), normalized, normPhone2, normPhone3, cleanCpfValue, cleanTagsValue, city || null, origem, limite_est || null,
+        `INSERT INTO leads (organization_id, seller_id, name, phone, phone2, phone3, cpf, agencia, conta, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade, score)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [organization_id, seller_id, name.trim(), normalized, normPhone2, normPhone3, cleanCpfValue, agencia || null, conta || null, cleanTagsValue, city || null, origem, limite_est || null,
          renda || null, valor_desejado || null, obs || null, prioridade, score]
     );
     const leadCode = `V${seller_id}-${String(result.lastID).padStart(6, '0')}`;
