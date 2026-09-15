@@ -125,6 +125,38 @@ export async function init() {
         });
     }
 
+    function showBpStageMenu(event, stage, count, renderStage) {
+        document.querySelector('.bp-context-menu')?.remove();
+        const menu = document.createElement('div');
+        menu.className = 'bp-context-menu bp-stage-context-menu';
+        menu.innerHTML = `
+            <button type="button" data-act="list"><i class="fas fa-list"></i><span>Listar ${count} leads desta etapa</span></button>
+            <button type="button" data-act="clear"><i class="fas fa-layer-group"></i><span>Voltar para prioridade geral</span></button>
+            <button type="button" data-act="wallet"><i class="fas fa-address-book"></i><span>Abrir Carteira de Clientes</span></button>
+            <button type="button" data-act="refresh"><i class="fas fa-rotate-right"></i><span>Atualizar Funil Bot</span></button>
+        `;
+        document.body.appendChild(menu);
+        const x = Math.min(event.clientX || 0, window.innerWidth - 260);
+        const y = Math.min(event.clientY || 0, window.innerHeight - 220);
+        menu.style.left = `${Math.max(8, x)}px`;
+        menu.style.top = `${Math.max(8, y)}px`;
+        const close = () => menu.remove();
+        setTimeout(() => document.addEventListener('click', close, { once: true }), 0);
+        menu.addEventListener('click', async e => {
+            e.stopPropagation();
+            const act = e.target.closest('button')?.dataset.act;
+            close();
+            if (act === 'list') return renderStage(stage);
+            if (act === 'clear') return renderStage(null);
+            if (act === 'refresh') return loadBotPipeline();
+            if (act === 'wallet') {
+                const item = document.querySelector('[data-module="leads"], [data-target="leads"], [data-page="leads"]');
+                if (item) item.click();
+                else toast('Abra a Carteira de Clientes pelo menu lateral.', 'info');
+            }
+        });
+    }
+
     async function loadBotPipeline() {
         const flowEl = document.getElementById('bp-flow');
         const prioEl = document.getElementById('bp-priority-list');
@@ -165,35 +197,21 @@ export async function init() {
             flowEl.innerHTML = stageDefs.map((s, idx) => {
                 const count = nums[s.key] || 0;
                 const pct = Math.round((count / total) * 100);
-                return `<article class="bp-stage" style="--bp:${s.color};">
+                return `<article class="bp-stage" data-bp-stage="${s.key}" style="--bp:${s.color};" title="Clique para listar. Botão direito para ações da etapa.">
                     <div class="bp-stage-top"><span><i class="fas ${s.icon}"></i></span><em>${String(idx + 1).padStart(2, '0')}</em></div>
                     <h3>${esc(s.title)}</h3>
                     <p>${esc(s.sub)}</p>
                     <div class="bp-stage-num"><b>${count}</b><small>${pct}% do funil</small></div>
                     <div class="bp-stage-bar"><i style="width:${pct}%;"></i></div>
-                    <strong>${esc(s.action)}</strong>
+                    <strong data-bp-stage-action="${s.key}">${esc(s.action)}</strong>
                 </article>`;
             }).join('');
 
-            const priority = [...normalizedLeads]
-                .filter(l => ['sim', 'enviados', 'novos'].includes(l.status))
-                .sort((a, b) => {
-                    const rank = { sim: 0, enviados: 1, novos: 2 };
-                    return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || Number(b.score || 0) - Number(a.score || 0);
-                })
-                .slice(0, 8);
-            prioEl.innerHTML = priority.length ? priority.map(l => `
-                <div class="bp-lead-row" data-bp-lead="${l.id}" title="Clique para abrir. Botão direito para ações rápidas.">
-                    <span class="bp-avatar">${esc(String(l.name || '?').split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase())}</span>
-                    <span class="bp-lead-main"><b>${esc(l.name || 'Sem nome')}</b><small>${esc(bpStageLabel(l.status))} • ${esc(bpRelTime(l.updated_at || l.created_at))}</small></span>
-                    <em>${l.score == null ? '—' : esc(l.score)}</em>
-                    <span class="bp-row-actions">
-                        <button type="button" data-bp-action="open" title="Abrir conversa"><i class="fas fa-comments"></i></button>
-                        <button type="button" data-bp-action="sim" title="Marcar interessado"><i class="fas fa-fire"></i></button>
-                        <button type="button" data-bp-action="menu" title="Mais ações"><i class="fas fa-ellipsis-vertical"></i></button>
-                    </span>
-                </div>`).join('') : '<div class="bp-empty">Nenhum lead pendente agora.</div>';
-
+            let currentBpStage = null;
+            const sortPriority = arr => [...arr].sort((a, b) => {
+                const rank = { sim: 0, enviados: 1, novos: 2, nao: 3 };
+                return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || Number(b.score || 0) - Number(a.score || 0);
+            });
             const findLead = el => normalizedLeads.find(l => String(l.id) === String(el.dataset.bpLead));
             const openLead = lead => {
                 const tab = document.querySelector('.bt-tab-btn[data-tab="conversas"]');
@@ -207,17 +225,50 @@ export async function init() {
                 await loadBotPipeline();
                 await loadLeads();
             };
-            prioEl.querySelectorAll('[data-bp-lead]').forEach(row => {
-                row.addEventListener('click', async e => {
-                    const action = e.target.closest('[data-bp-action]')?.dataset.bpAction;
-                    const lead = findLead(row);
-                    if (action === 'sim') return setLeadStatus(lead, 'sim');
-                    if (action === 'menu') return showBpContextMenu(e, lead, setLeadStatus, openLead);
-                    openLead(lead);
+            const bindBpRows = () => {
+                prioEl.querySelectorAll('[data-bp-lead]').forEach(row => {
+                    row.addEventListener('click', async e => {
+                        const action = e.target.closest('[data-bp-action]')?.dataset.bpAction;
+                        const lead = findLead(row);
+                        if (action === 'sim') return setLeadStatus(lead, 'sim');
+                        if (action === 'menu') return showBpContextMenu(e, lead, setLeadStatus, openLead);
+                        openLead(lead);
+                    });
+                    row.addEventListener('contextmenu', e => {
+                        e.preventDefault();
+                        showBpContextMenu(e, findLead(row), setLeadStatus, openLead);
+                    });
                 });
-                row.addEventListener('contextmenu', e => {
+            };
+            const renderBpLeadList = (stage = null) => {
+                currentBpStage = stage;
+                flowEl.querySelectorAll('.bp-stage').forEach(card => card.classList.toggle('active', !!stage && card.dataset.bpStage === stage));
+                const titleEl = document.querySelector('.bp-priority .bp-panel-head b');
+                if (titleEl) titleEl.textContent = stage ? `${bpStageLabel(stage)} — ${nums[stage] || 0} leads` : 'Quem merece ação agora';
+                const rows = sortPriority(stage ? normalizedLeads.filter(l => l.status === stage) : normalizedLeads.filter(l => ['sim', 'enviados', 'novos'].includes(l.status))).slice(0, stage ? 80 : 8);
+                prioEl.innerHTML = rows.length ? rows.map(l => `
+                <div class="bp-lead-row" data-bp-lead="${l.id}" title="Clique para abrir. Botão direito para ações rápidas.">
+                    <span class="bp-avatar">${esc(String(l.name || '?').split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase())}</span>
+                    <span class="bp-lead-main"><b>${esc(l.name || 'Sem nome')}</b><small>${esc(bpStageLabel(l.status))} • ${esc(bpRelTime(l.updated_at || l.created_at))}</small></span>
+                    <em>${l.score == null ? '—' : esc(l.score)}</em>
+                    <span class="bp-row-actions">
+                        <button type="button" data-bp-action="open" title="Abrir conversa"><i class="fas fa-comments"></i></button>
+                        <button type="button" data-bp-action="sim" title="Marcar interessado"><i class="fas fa-fire"></i></button>
+                        <button type="button" data-bp-action="menu" title="Mais ações"><i class="fas fa-ellipsis-vertical"></i></button>
+                    </span>
+                </div>`).join('') : '<div class="bp-empty">Nenhum lead nesta etapa.</div>';
+                bindBpRows();
+            };
+
+            renderBpLeadList(null);
+            flowEl.querySelectorAll('.bp-stage').forEach(card => {
+                card.addEventListener('click', e => {
+                    const stage = card.dataset.bpStage;
+                    renderBpLeadList(currentBpStage === stage ? null : stage);
+                });
+                card.addEventListener('contextmenu', e => {
                     e.preventDefault();
-                    showBpContextMenu(e, findLead(row), setLeadStatus, openLead);
+                    showBpStageMenu(e, card.dataset.bpStage, nums[card.dataset.bpStage] || 0, renderBpLeadList);
                 });
             });
 
