@@ -223,7 +223,7 @@
                                 <button type="button" class="dp-preset-btn" data-val="100">100 MAX</button>
                             </div>
 
-                            <input type="range" class="dp-range-slider" id="dpSchedRange" min="1" max="100" value="10">
+                            <input type="range" class="dp-range-slider" id="dpSchedRange" min="1" max="100" value="10" oninput="window.dpSchedQuantityChanged && window.dpSchedQuantityChanged(this.value)" onchange="window.dpSchedQuantityChanged && window.dpSchedQuantityChanged(this.value)">
 
                             <div class="dp-meta-summary-bar">
                                 <span id="dpSchedDurationBadge"><i class="fas fa-stopwatch"></i> Duração estimada: ~5 min</span>

@@ -1638,9 +1638,10 @@ export async function init() {
                     ${n.daily_limit_override ? `<button type="button" class="bt-action warn" data-act="limpar-limite" data-id="${n.id}" title="Voltar ao global"><i class="fas fa-rotate-left"></i></button>` : ''}
                 </div>` : '';
 
+            const cleanLabel = String(n.label || '').replace(/\s*\(arquivado\)\s*/gi, '').trim();
             const isSlot = n.slot_index != null;
-            const heading = isSlot ? (n.realNumber ? fmtNum(n.realNumber) : (n.label || `WhatsApp ${n.slot_index}`)) : fmtNum(n.realNumber || n.number);
-            const subLabel = isSlot ? (n.realNumber ? (n.label || `WhatsApp ${n.slot_index}`) : 'aguardando conexão') : (n.label || 'sem etiqueta');
+            const heading = isSlot ? (n.realNumber ? fmtNum(n.realNumber) : (cleanLabel || `WhatsApp ${n.slot_index}`)) : fmtNum(n.realNumber || n.number);
+            const subLabel = isSlot ? (n.realNumber ? (cleanLabel || `WhatsApp ${n.slot_index}`) : 'aguardando conexão') : (cleanLabel || 'sem etiqueta');
             const isAutoPuxado = !!n.realNumber;
             const usageMode = n.seller_id
                 ? (Number(n.campaign_enabled) === 1 ? 'campaign' : 'attendance')

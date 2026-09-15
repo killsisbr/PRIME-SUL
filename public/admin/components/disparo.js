@@ -551,6 +551,10 @@ export async function init() {
         return stages.length ? stages : ['novos'];
     }
 
+    function cleanBotLabel(label) {
+        return String(label || '').replace(/\s*\(arquivado\)\s*/gi, '').trim();
+    }
+
     function selectedNumberCapacity() {
         const globalLimit = Number(window.__dpDailyLimit || 0);
         const n = campaignNumbers.find(x => String(x.number) === String(selectedCampaignNumber) || String(x.id) === String(selectedCampaignNumber));
@@ -572,7 +576,7 @@ export async function init() {
         }
         const requested = Number(selectedQuantity || 0);
         const effective = cap.available ? Math.min(requested, cap.available) : 0;
-        const label = cap.number.label || `WhatsApp ${cap.number.slot_index || ''}`;
+        const label = cleanBotLabel(cap.number.label) || `WhatsApp ${cap.number.slot_index || ''}`;
         box.className = 'dp-number-capacity ' + (effective < requested ? 'warn' : 'ok');
         box.innerHTML = `<i class="fas ${effective < requested ? 'fa-triangle-exclamation' : 'fa-shield-halved'}"></i>
             <span><b>${escapeHtml(label)}</b>: limite ${cap.limit}/dia • usado ${cap.used} • disponível ${cap.available}. ${effective < requested ? `Você pediu ${requested}, então serão enviados só ${effective}.` : `Pode enviar ${effective} agora.`}</span>`;
@@ -602,7 +606,7 @@ export async function init() {
                 const limit = Number(n.daily_limit_override || data.daily_limit || 0);
                 const used = Number(n.messages_sent || 0);
                 const avail = Math.max(0, limit - used);
-                const label = n.label || `WhatsApp ${n.slot_index || ''}`;
+                const label = cleanBotLabel(n.label) || `WhatsApp ${n.slot_index || ''}`;
                 const real = n.realNumber || n.real_number || n.number;
                 return `<option value="${escapeHtml(n.id)}">${escapeHtml(label)} • ${escapeHtml(real)} • ${avail}/${limit} disponíveis</option>`;
             }).join('');
@@ -1006,10 +1010,17 @@ export async function init() {
     // Slider Hero de Quantidade
     function handleSchedQuantityChange(value) {
         selectedQuantity = Number(value) || 1;
+        const durationBadge = document.getElementById('dpSchedDurationBadge');
+        const cadenceSec = Number(document.getElementById('dpSchedCadence')?.value || 30);
+        const cap = selectedNumberCapacity();
+        const effective = cap.number && cap.available ? Math.min(selectedQuantity, cap.available) : selectedQuantity;
+        const totalDurationMin = Math.max(1, Math.ceil((effective * cadenceSec) / 60));
+        if (durationBadge) durationBadge.innerHTML = `<i class="fas fa-stopwatch"></i> DURAÇÃO ESTIMADA: ~${totalDurationMin} MIN`;
         document.querySelectorAll('.dp-preset-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.val) === selectedQuantity));
         renderSchedTargetLeads();
         updateSubmitBtnText();
     }
+    window.dpSchedQuantityChanged = handleSchedQuantityChange;
 
     const schedRange = document.getElementById('dpSchedRange');
     if (schedRange) {

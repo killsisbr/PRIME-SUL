@@ -151,7 +151,7 @@ async function setCampaignUsage(number_id, organizationId, enabled, usageType = 
     const n = await db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [number_id, organizationId]);
     if (!n) return null;
     const nextUsage = usageType || (enabled ? 'borrowed_disposable' : 'seller_attendance');
-    await db.run('UPDATE bot_numbers SET campaign_enabled = ?, usage_type = ? WHERE id = ? AND organization_id = ?', [enabled ? 1 : 0, nextUsage, number_id, organizationId]);
+    await db.run("UPDATE bot_numbers SET campaign_enabled = ?, usage_type = ?, label = TRIM(REPLACE(COALESCE(label, ''), ' (arquivado)', '')) WHERE id = ? AND organization_id = ?", [enabled ? 1 : 0, nextUsage, number_id, organizationId]);
     botEvents.log(n.number, enabled ? 'campaign_enabled' : 'campaign_disabled', enabled ? 'Liberado para campanhas/triagem' : 'Protegido: somente atendimento do vendedor', n.label);
     return db.get('SELECT * FROM bot_numbers WHERE id = ? AND organization_id = ?', [number_id, organizationId]);
 }
