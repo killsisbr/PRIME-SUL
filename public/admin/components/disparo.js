@@ -1004,23 +1004,32 @@ export async function init() {
     });
 
     // Slider Hero de Quantidade
+    function handleSchedQuantityChange(value) {
+        selectedQuantity = Number(value) || 1;
+        document.querySelectorAll('.dp-preset-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.val) === selectedQuantity));
+        renderSchedTargetLeads();
+        updateSubmitBtnText();
+    }
+
     const schedRange = document.getElementById('dpSchedRange');
     if (schedRange) {
-        schedRange.oninput = (e) => {
-            selectedQuantity = Number(e.target.value);
-            document.querySelectorAll('.dp-preset-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.val) === selectedQuantity));
-            renderSchedTargetLeads();
-        };
+        schedRange.oninput = (e) => handleSchedQuantityChange(e.target.value);
+        schedRange.onchange = (e) => handleSchedQuantityChange(e.target.value);
+        schedRange.addEventListener('input', e => handleSchedQuantityChange(e.target.value));
+        schedRange.addEventListener('change', e => handleSchedQuantityChange(e.target.value));
     }
+
+    document.addEventListener('input', e => {
+        if (e.target?.id === 'dpSchedRange') handleSchedQuantityChange(e.target.value);
+    });
 
     // Botões de Preset (5, 10, 25, 50, 100)
     document.querySelectorAll('.dp-preset-btn').forEach(btn => {
         btn.onclick = () => {
-            selectedQuantity = Number(btn.dataset.val);
-            if (schedRange) schedRange.value = selectedQuantity;
+            if (schedRange) schedRange.value = Number(btn.dataset.val);
             document.querySelectorAll('.dp-preset-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            renderSchedTargetLeads();
+            handleSchedQuantityChange(btn.dataset.val);
         };
     });
 
