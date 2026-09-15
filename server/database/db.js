@@ -81,6 +81,65 @@ async function addMissingColumns(table, definitions) {
     }
 }
 
+async function migrateLeadStatusConstraint() {
+    const row = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name='leads'");
+    const sql = row?.sql || '';
+    if (!sql || sql.includes("'novos'") || !sql.includes("'novo'")) return;
+
+    console.log('[db] migração: leads.status → novos/enviados/sim/nao...');
+    await run('PRAGMA foreign_keys = OFF');
+    await run('BEGIN IMMEDIATE');
+    try {
+        await run('ALTER TABLE leads RENAME TO leads_old_status');
+        await run(`CREATE TABLE leads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+            seller_id INTEGER NOT NULL REFERENCES sellers(id),
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL UNIQUE,
+            cpf TEXT,
+            tags TEXT,
+            city TEXT,
+            origem TEXT NOT NULL DEFAULT 'SITE',
+            limite_est TEXT,
+            renda TEXT,
+            valor_desejado TEXT,
+            obs TEXT,
+            prioridade TEXT NOT NULL DEFAULT 'media' CHECK (prioridade IN ('alta','media','baixa')),
+            score INTEGER,
+            lead_code TEXT,
+            triage_status TEXT NOT NULL DEFAULT 'pending',
+            triage_bot_number_id INTEGER REFERENCES bot_numbers(id),
+            phone2 TEXT,
+            phone3 TEXT,
+            status TEXT NOT NULL DEFAULT 'novos' CHECK (status IN ('novos','enviados','sim','nao','bloqueado','duplicado')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )`);
+        await run(`INSERT INTO leads (
+            id, organization_id, seller_id, name, phone, cpf, tags, city, origem, limite_est,
+            renda, valor_desejado, obs, prioridade, score, lead_code, triage_status,
+            triage_bot_number_id, phone2, phone3, status, created_at, updated_at
+        )
+        SELECT
+            id, COALESCE(organization_id, 1), seller_id, name, phone, cpf, tags, city, COALESCE(origem, 'SITE'), limite_est,
+            renda, valor_desejado, obs, COALESCE(prioridade, 'media'), score, lead_code,
+            COALESCE(triage_status, 'pending'), triage_bot_number_id, phone2, phone3,
+            CASE status WHEN 'novo' THEN 'novos' WHEN 'contato' THEN 'enviados' WHEN 'confirmado' THEN 'sim' WHEN 'concluido' THEN 'sim' ELSE status END,
+            COALESCE(created_at, datetime('now')), COALESCE(updated_at, datetime('now'))
+        FROM leads_old_status`);
+        await run('DROP TABLE leads_old_status');
+        await run(`UPDATE sqlite_sequence SET seq = COALESCE((SELECT MAX(id) FROM leads), 0) WHERE name = 'leads'`);
+        await run('COMMIT');
+        console.log('[db] leads.status rebuild concluído');
+    } catch (e) {
+        await run('ROLLBACK').catch(() => {});
+        throw e;
+    } finally {
+        await run('PRAGMA foreign_keys = ON');
+    }
+}
+
 async function migrate() {
     await run(`CREATE TABLE IF NOT EXISTS organizations (
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
@@ -99,6 +158,7 @@ async function migrate() {
             console.log(`[db] migração: coluna leads.${name} adicionada`);
         }
     }
+    await migrateLeadStatusConstraint();
     await run("UPDATE leads SET lead_code = 'V' || seller_id || '-' || printf('%06d', id) WHERE lead_code IS NULL OR lead_code = ''");
     await run("UPDATE leads SET status = CASE status WHEN 'novo' THEN 'novos' WHEN 'contato' THEN 'enviados' WHEN 'confirmado' THEN 'sim' WHEN 'concluido' THEN 'sim' ELSE status END WHERE status IN ('novo','contato','confirmado','concluido')");
     await run("UPDATE leads SET triage_status = CASE WHEN status = 'sim' THEN 'qualified' WHEN status = 'nao' THEN 'declined' WHEN status = 'enviados' THEN 'sent' ELSE COALESCE(triage_status, 'pending') END WHERE triage_status IS NULL OR triage_status = 'pending'");
