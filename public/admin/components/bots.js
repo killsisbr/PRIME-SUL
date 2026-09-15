@@ -326,10 +326,9 @@ export async function init() {
         const readyBots = _availableBots.filter(b => {
             const connected = b.connection === 'connected' || b.connected;
             const active = b.status === 'ativo';
-            const label = String(b.label || '').toLowerCase();
-            const isArchived = label.includes('arquivado') || b.status === 'banido' || b.connection === 'banido';
-            const isSellerAttendance = b.usage_type === 'seller_attendance' || (!!b.seller_id && Number(b.campaign_enabled) === 0);
-            return connected && active && !isArchived && isSellerAttendance;
+            const blocked = b.status === 'banido' || b.connection === 'banido';
+            const attendanceOnly = Number(b.campaign_enabled) === 0 || b.usage_type === 'seller_attendance';
+            return connected && active && !blocked && attendanceOnly;
         });
 
         if (!readyBots.length) {
