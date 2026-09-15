@@ -653,6 +653,7 @@ export async function init() {
     function renderSchedTargetLeads() {
         const container = document.getElementById('dpSchedTargetGrid');
         const countVal = document.getElementById('dpSchedCountVal');
+        const countLabel = document.getElementById('dpSchedCountLabel');
         const durationBadge = document.getElementById('dpSchedDurationBadge');
 
         if (!container) return;
@@ -671,12 +672,13 @@ export async function init() {
         const activeTargets = candidatePool.slice(0, effectiveQuantity);
 
         if (countVal) countVal.textContent = activeTargets.length;
+        if (countLabel) countLabel.textContent = activeTargets.length === 1 ? 'LEAD' : 'LEADS';
 
         const cadenceSec = Number(document.getElementById('dpSchedCadence')?.value || 30);
         const totalDurationMin = Math.max(1, Math.ceil((activeTargets.length * cadenceSec) / 60));
 
         if (durationBadge) {
-            durationBadge.innerHTML = `<i class="fas fa-stopwatch"></i> DURAÇÃO ESTIMADA: ~${totalDurationMin} MIN`;
+            durationBadge.innerHTML = `<i class="fas fa-stopwatch"></i> DURAÇÃO ESTIMADA: ${totalDurationMin} min`;
         }
 
         checkTimeCollision(totalDurationMin);
@@ -1015,7 +1017,7 @@ export async function init() {
         const cap = selectedNumberCapacity();
         const effective = cap.number && cap.available ? Math.min(selectedQuantity, cap.available) : selectedQuantity;
         const totalDurationMin = Math.max(1, Math.ceil((effective * cadenceSec) / 60));
-        if (durationBadge) durationBadge.innerHTML = `<i class="fas fa-stopwatch"></i> DURAÇÃO ESTIMADA: ~${totalDurationMin} MIN`;
+        if (durationBadge) durationBadge.innerHTML = `<i class="fas fa-stopwatch"></i> DURAÇÃO ESTIMADA: ${totalDurationMin} min`;
         document.querySelectorAll('.dp-preset-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.val) === selectedQuantity));
         renderSchedTargetLeads();
         updateSubmitBtnText();
