@@ -144,6 +144,96 @@ async function migrateLeadStatusConstraint() {
     }
 }
 
+async function tableSql(name) {
+    const row = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [name]);
+    return row?.sql || '';
+}
+
+async function repairLeadForeignKeys() {
+    const targets = ['lead_history', 'sends', 'handoffs'];
+    const needsRepair = [];
+    for (const t of targets) {
+        const sql = await tableSql(t);
+        if (sql && sql.includes('leads_old_status')) needsRepair.push(t);
+    }
+    if (needsRepair.includes('sends') && await tableSql('handoffs') && !needsRepair.includes('handoffs')) {
+        needsRepair.push('handoffs');
+    }
+    if (!needsRepair.length) return;
+
+    console.log(`[db] reparando FKs órfãs para leads_old_status: ${needsRepair.join(', ')}`);
+    await run('PRAGMA foreign_keys = OFF');
+    await run('BEGIN IMMEDIATE');
+    try {
+        if (needsRepair.includes('lead_history')) {
+            await run('ALTER TABLE lead_history RENAME TO lead_history_fk_old');
+            await run(`CREATE TABLE lead_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lead_id INTEGER NOT NULL REFERENCES leads(id),
+                seller_id INTEGER NOT NULL REFERENCES sellers(id),
+                from_status TEXT,
+                to_status TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )`);
+            await run(`INSERT INTO lead_history (id, lead_id, seller_id, from_status, to_status, created_at)
+                       SELECT id, lead_id, seller_id, from_status, to_status, created_at FROM lead_history_fk_old`);
+            await run('DROP TABLE lead_history_fk_old');
+        }
+        if (needsRepair.includes('sends')) {
+            await run('ALTER TABLE sends RENAME TO sends_fk_old');
+            await run(`CREATE TABLE sends (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                campaign_id INTEGER REFERENCES campaigns(id),
+                lead_id INTEGER NOT NULL REFERENCES leads(id),
+                number_id INTEGER NOT NULL REFERENCES bot_numbers(id),
+                status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','confirmado','recusado','falhou','caiu')),
+                wa_message TEXT,
+                sent_at TEXT,
+                replied_at TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )`);
+            await run(`INSERT INTO sends (id, campaign_id, lead_id, number_id, status, wa_message, sent_at, replied_at, created_at)
+                       SELECT id, campaign_id, lead_id, number_id, status, wa_message, sent_at, replied_at, created_at FROM sends_fk_old`);
+            await run('DROP TABLE sends_fk_old');
+        }
+        if (needsRepair.includes('handoffs')) {
+            await run('ALTER TABLE handoffs RENAME TO handoffs_fk_old');
+            await run(`CREATE TABLE handoffs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                organization_id INTEGER NOT NULL DEFAULT 1 REFERENCES organizations(id),
+                lead_id INTEGER NOT NULL REFERENCES leads(id),
+                seller_id INTEGER NOT NULL REFERENCES sellers(id),
+                send_id INTEGER REFERENCES sends(id),
+                seller_number_id INTEGER REFERENCES seller_numbers(id),
+                status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sending','sent','replied','failed','cancelled')),
+                attempts INTEGER NOT NULL DEFAULT 0,
+                max_attempts INTEGER NOT NULL DEFAULT 5,
+                run_after TEXT,
+                error TEXT,
+                sent_at TEXT,
+                replied_at TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE (send_id)
+            )`);
+            await run(`INSERT OR IGNORE INTO handoffs (id, organization_id, lead_id, seller_id, send_id, seller_number_id, status, attempts, max_attempts, run_after, error, sent_at, replied_at, created_at, updated_at)
+                       SELECT id, organization_id, lead_id, seller_id, send_id, seller_number_id, status, attempts, max_attempts, run_after, error, sent_at, replied_at, created_at, updated_at FROM handoffs_fk_old`);
+            await run('DROP TABLE handoffs_fk_old');
+        }
+        await run('CREATE INDEX IF NOT EXISTS idx_lead_history_lead ON lead_history(lead_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_sends_campaign ON sends(campaign_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_sends_lead ON sends(lead_id)');
+        await run('CREATE INDEX IF NOT EXISTS idx_handoffs_due ON handoffs(status, run_after)');
+        await run('CREATE INDEX IF NOT EXISTS idx_handoffs_seller ON handoffs(seller_id, status)');
+        await run('COMMIT');
+    } catch (e) {
+        await run('ROLLBACK').catch(() => {});
+        throw e;
+    } finally {
+        await run('PRAGMA foreign_keys = ON');
+    }
+}
+
 async function migrate() {
     await run(`CREATE TABLE IF NOT EXISTS organizations (
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
@@ -163,6 +253,7 @@ async function migrate() {
         }
     }
     await migrateLeadStatusConstraint();
+    await repairLeadForeignKeys();
     await run("UPDATE leads SET lead_code = 'V' || seller_id || '-' || printf('%06d', id) WHERE lead_code IS NULL OR lead_code = ''");
     await run("UPDATE leads SET status = CASE status WHEN 'novo' THEN 'novos' WHEN 'contato' THEN 'enviados' WHEN 'confirmado' THEN 'sim' WHEN 'concluido' THEN 'sim' ELSE status END WHERE status IN ('novo','contato','confirmado','concluido')");
     await run("UPDATE leads SET triage_status = CASE WHEN status = 'sim' THEN 'qualified' WHEN status = 'nao' THEN 'declined' WHEN status = 'enviados' THEN 'sent' ELSE COALESCE(triage_status, 'pending') END WHERE triage_status IS NULL OR triage_status = 'pending'");
