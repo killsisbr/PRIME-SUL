@@ -100,6 +100,7 @@ async function migrate() {
         }
     }
     await run("UPDATE leads SET lead_code = 'V' || seller_id || '-' || printf('%06d', id) WHERE lead_code IS NULL OR lead_code = ''");
+    await run("UPDATE leads SET status = CASE status WHEN 'novo' THEN 'novos' WHEN 'contato' THEN 'enviados' WHEN 'confirmado' THEN 'sim' WHEN 'concluido' THEN 'sim' ELSE status END WHERE status IN ('novo','contato','confirmado','concluido')");
     await run("UPDATE leads SET triage_status = CASE WHEN status = 'sim' THEN 'qualified' WHEN status = 'nao' THEN 'declined' WHEN status = 'enviados' THEN 'sent' ELSE COALESCE(triage_status, 'pending') END WHERE triage_status IS NULL OR triage_status = 'pending'");
     await run('CREATE INDEX IF NOT EXISTS idx_leads_cpf ON leads(cpf)');
     await run('CREATE INDEX IF NOT EXISTS idx_leads_code ON leads(lead_code)');

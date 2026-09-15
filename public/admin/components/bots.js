@@ -84,8 +84,45 @@ export async function init() {
         return `${Math.floor(h / 24)}d atrás`;
     }
 
+    function bpCanonicalStatus(status) {
+        return ({ novo: 'novos', contato: 'enviados', confirmado: 'sim', concluido: 'sim' })[status] || status;
+    }
+
     function bpStageLabel(status) {
-        return ({ novos: 'A fazer', enviados: 'Aguardando resposta', sim: 'Interessado', nao: 'Não quer', bloqueado: 'Bloqueado', duplicado: 'Duplicado' })[status] || status || 'Lead';
+        const s = bpCanonicalStatus(status);
+        return ({ novos: 'A fazer', enviados: 'Aguardando resposta', sim: 'Interessado', nao: 'Não quer', bloqueado: 'Bloqueado', duplicado: 'Duplicado' })[s] || s || 'Lead';
+    }
+
+    function showBpContextMenu(event, lead, setStatus, openLead) {
+        if (!lead) return;
+        document.querySelector('.bp-context-menu')?.remove();
+        const phone = String(lead.phone || '').replace(/\D/g, '');
+        const wa = phone ? (phone.startsWith('55') ? phone : `55${phone}`) : '';
+        const menu = document.createElement('div');
+        menu.className = 'bp-context-menu';
+        menu.innerHTML = `
+            <button type="button" data-act="open"><i class="fas fa-comments"></i><span>Abrir conversa</span></button>
+            <button type="button" data-act="enviados"><i class="fas fa-paper-plane"></i><span>Marcar aguardando resposta</span></button>
+            <button type="button" data-act="sim"><i class="fas fa-fire"></i><span>Marcar interessado</span></button>
+            <button type="button" data-act="nao"><i class="fas fa-ban"></i><span>Marcar não quer</span></button>
+            <button type="button" data-act="bloqueado"><i class="fas fa-lock"></i><span>Bloquear lead</span></button>
+            ${wa ? `<button type="button" data-act="wa"><i class="fab fa-whatsapp"></i><span>Abrir WhatsApp Web</span></button>` : ''}
+        `;
+        document.body.appendChild(menu);
+        const x = Math.min(event.clientX || 0, window.innerWidth - 250);
+        const y = Math.min(event.clientY || 0, window.innerHeight - 250);
+        menu.style.left = `${Math.max(8, x)}px`;
+        menu.style.top = `${Math.max(8, y)}px`;
+        const close = () => menu.remove();
+        setTimeout(() => document.addEventListener('click', close, { once: true }), 0);
+        menu.addEventListener('click', async e => {
+            e.stopPropagation();
+            const act = e.target.closest('button')?.dataset.act;
+            close();
+            if (act === 'open') return openLead(lead);
+            if (act === 'wa' && wa) return window.open(`https://wa.me/${wa}`, '_blank');
+            if (['novos', 'enviados', 'sim', 'nao', 'bloqueado'].includes(act)) return setStatus(lead, act);
+        });
     }
 
     async function loadBotPipeline() {
@@ -96,14 +133,19 @@ export async function init() {
         flowEl.innerHTML = '<div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Montando funil inteligente...</div>';
         try {
             const [funnel, leads] = await Promise.all([api('/leads/funnel'), api('/leads')]);
+            const normalizedLeads = (leads || []).map(l => ({ ...l, status: bpCanonicalStatus(l.status) }));
+            const fromLeads = normalizedLeads.reduce((acc, l) => {
+                if (['novos', 'enviados', 'sim', 'nao'].includes(l.status)) acc[l.status] = (acc[l.status] || 0) + 1;
+                return acc;
+            }, { novos: 0, enviados: 0, sim: 0, nao: 0 });
             const stages = funnel.stages || {};
-            const total = Math.max(1, Number(funnel.total || leads.length || 0));
             const nums = {
-                novos: Number(stages.novos || 0),
-                enviados: Number(stages.enviados || 0),
-                sim: Number(stages.sim || 0),
-                nao: Number(stages.nao || 0)
+                novos: Math.max(Number(stages.novos || 0), fromLeads.novos),
+                enviados: Math.max(Number(stages.enviados || 0), fromLeads.enviados),
+                sim: Math.max(Number(stages.sim || 0), fromLeads.sim),
+                nao: Math.max(Number(stages.nao || 0), fromLeads.nao)
             };
+            const total = Math.max(1, nums.novos + nums.enviados + nums.sim + nums.nao, Number(funnel.total || 0), normalizedLeads.length);
             const replyTotal = nums.sim + nums.nao;
             const responseRate = nums.enviados + replyTotal ? Math.round((replyTotal / (nums.enviados + replyTotal)) * 100) : 0;
             const hotRate = replyTotal ? Math.round((nums.sim / replyTotal) * 100) : 0;
@@ -133,7 +175,7 @@ export async function init() {
                 </article>`;
             }).join('');
 
-            const priority = [...(leads || [])]
+            const priority = [...normalizedLeads]
                 .filter(l => ['sim', 'enviados', 'novos'].includes(l.status))
                 .sort((a, b) => {
                     const rank = { sim: 0, enviados: 1, novos: 2 };
@@ -141,18 +183,41 @@ export async function init() {
                 })
                 .slice(0, 8);
             prioEl.innerHTML = priority.length ? priority.map(l => `
-                <button type="button" class="bp-lead-row" data-bp-lead="${l.id}">
+                <div class="bp-lead-row" data-bp-lead="${l.id}" title="Clique para abrir. Botão direito para ações rápidas.">
                     <span class="bp-avatar">${esc(String(l.name || '?').split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase())}</span>
                     <span class="bp-lead-main"><b>${esc(l.name || 'Sem nome')}</b><small>${esc(bpStageLabel(l.status))} • ${esc(bpRelTime(l.updated_at || l.created_at))}</small></span>
                     <em>${l.score == null ? '—' : esc(l.score)}</em>
-                </button>`).join('') : '<div class="bp-empty">Nenhum lead pendente agora.</div>';
+                    <span class="bp-row-actions">
+                        <button type="button" data-bp-action="open" title="Abrir conversa"><i class="fas fa-comments"></i></button>
+                        <button type="button" data-bp-action="sim" title="Marcar interessado"><i class="fas fa-fire"></i></button>
+                        <button type="button" data-bp-action="menu" title="Mais ações"><i class="fas fa-ellipsis-vertical"></i></button>
+                    </span>
+                </div>`).join('') : '<div class="bp-empty">Nenhum lead pendente agora.</div>';
 
-            prioEl.querySelectorAll('[data-bp-lead]').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const tab = document.querySelector('.bt-tab-btn[data-tab="conversas"]');
-                    tab?.click();
-                    const lead = (leads || []).find(l => String(l.id) === String(btn.dataset.bpLead));
-                    if (lead) setTimeout(() => selectLead(lead), 80);
+            const findLead = el => normalizedLeads.find(l => String(l.id) === String(el.dataset.bpLead));
+            const openLead = lead => {
+                const tab = document.querySelector('.bt-tab-btn[data-tab="conversas"]');
+                tab?.click();
+                if (lead) setTimeout(() => selectLead(lead), 80);
+            };
+            const setLeadStatus = async (lead, status) => {
+                if (!lead) return;
+                await api(`/leads/${lead.id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+                toast(`Lead movido para ${bpStageLabel(status)}`, 'ok');
+                await loadBotPipeline();
+                await loadLeads();
+            };
+            prioEl.querySelectorAll('[data-bp-lead]').forEach(row => {
+                row.addEventListener('click', async e => {
+                    const action = e.target.closest('[data-bp-action]')?.dataset.bpAction;
+                    const lead = findLead(row);
+                    if (action === 'sim') return setLeadStatus(lead, 'sim');
+                    if (action === 'menu') return showBpContextMenu(e, lead, setLeadStatus, openLead);
+                    openLead(lead);
+                });
+                row.addEventListener('contextmenu', e => {
+                    e.preventDefault();
+                    showBpContextMenu(e, findLead(row), setLeadStatus, openLead);
                 });
             });
 

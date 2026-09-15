@@ -158,7 +158,7 @@ async function listLeads({ seller_id, status, search, origem, prioridade, tag, c
     const params = [seller_id];
     if (status && status !== 'TODOS') {
         sql += ' AND l.status = ?';
-        params.push(status.toLowerCase());
+        params.push(normalizeStatusAlias(String(status).toLowerCase()));
     }
     if (origem) {
         sql += ' AND l.origem = ?';

@@ -1,7 +1,12 @@
 const STATUS_LABEL = {
-    novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO',
-    concluido: 'CONCLUÍDO', bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO'
+    novos: 'NOVO', enviados: 'EM CONTATO', sim: 'CONFIRMADO', nao: 'SEM INTERESSE',
+    bloqueado: 'BLOQUEADO', duplicado: 'DUPLICADO',
+    novo: 'NOVO', contato: 'EM CONTATO', confirmado: 'CONFIRMADO', concluido: 'CONCLUÍDO'
 };
+
+function canonicalStatus(status) {
+    return ({ novo: 'novos', contato: 'enviados', confirmado: 'sim', concluido: 'sim' })[status] || status;
+}
 
 let _ctpTimer = null;
 
@@ -71,7 +76,7 @@ export async function init() {
         const scoreMin = document.getElementById('kbx-score')?.value ? Number(document.getElementById('kbx-score').value) : null;
 
         const filtered = LEADS.filter(l => {
-            if (status && l.status !== status) return false;
+            if (status && canonicalStatus(l.status) !== canonicalStatus(status)) return false;
             if (origem && l.origem !== origem) return false;
             if (prio && l.prioridade !== prio) return false;
             if (tag && !(l.tags || '').split(',').map(t => t.trim().toLowerCase()).includes(tag)) return false;
@@ -87,21 +92,25 @@ export async function init() {
     function cardHtml(l) {
         const score = l.score == null ? '—' : l.score;
         const scoreIcon = (l.score ?? 0) >= 70 ? '<i class="fas fa-bolt"></i> ' : '';
-        const statusOptions = Object.entries(STATUS_LABEL).map(([k, v]) =>
-            `<option value="${k}" ${l.status === k ? 'selected' : ''}>${v}</option>`).join('');
+        const statusChoices = [
+            ['novos', 'NOVO'], ['enviados', 'EM CONTATO'], ['sim', 'CONFIRMADO'], ['nao', 'SEM INTERESSE'], ['bloqueado', 'BLOQUEADO'], ['duplicado', 'DUPLICADO']
+        ];
+        const curStatus = canonicalStatus(l.status);
+        const statusOptions = statusChoices.map(([k, v]) =>
+            `<option value="${k}" ${curStatus === k ? 'selected' : ''}>${v}</option>`).join('');
 
         const prioLabel = { alta: 'Alta', media: 'Média', baixa: 'Baixa' }[l.prioridade] || 'Média';
         const avCls = AV_COLORS[(l.id || 0) % AV_COLORS.length];
         const dateFormatted = new Date((l.created_at || '').replace(' ', 'T')).toLocaleString('pt-BR');
 
         return `
-        <article class="ld-client-card status-${l.status || 'novo'}" data-id="${l.id}">
+        <article class="ld-client-card status-${canonicalStatus(l.status) || 'novos'}" data-id="${l.id}">
             <div class="ld-cc-main">
                 <span class="ld-cc-av ${avCls}">${esc(initials(l.name))}</span>
                 <div class="ld-cc-identity">
                     <div class="ld-cc-top">
                         <strong class="ld-cc-name">${esc(l.name)}</strong>
-                        <span class="ld-status-badge status-${l.status || 'novo'}">${STATUS_LABEL[l.status] || 'NOVO'}</span>
+                        <span class="ld-status-badge status-${canonicalStatus(l.status) || 'novos'}">${STATUS_LABEL[canonicalStatus(l.status)] || 'NOVO'}</span>
                         <span class="ld-prio-badge pri-${l.prioridade || 'media'}">${prioLabel}</span>
                         ${l.origem ? `<span class="ld-origin-tag">${esc(l.origem)}</span>` : ''}
                     </div>
@@ -457,7 +466,7 @@ export async function init() {
 
     // ================= FERRAMENTAS DE ETAPA (AÇÕES EM MASSA) =================
     const DEFAULT_AUTO_MSG = 'Olá {nome}! Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar? Responda SIM para continuar.';
-    let toolsStatus = 'novo';
+    let toolsStatus = 'novos';
     let toolsConfig = {};
     let ctpJobId = null;
     let ctpRunning = false;
@@ -482,7 +491,9 @@ export async function init() {
         const statusEl = document.getElementById('ctools-status');
         if (statusEl) statusEl.textContent = STATUS_LABEL[status] || status.toUpperCase();
 
-        const canSend = status === 'novo' || status === 'contato';
+        status = canonicalStatus(status);
+        toolsStatus = status;
+        const canSend = status === 'novos' || status === 'enviados';
         const sendWrap = document.getElementById('ctools-send-wrap');
         if (sendWrap) sendWrap.style.display = canSend ? '' : 'none';
 
@@ -490,7 +501,7 @@ export async function init() {
         document.getElementById('ctools-limit').value = '';
         document.getElementById('ctools-move-limit').value = '';
         document.getElementById('ctools-recalc-limit').value = '';
-        document.getElementById('ctools-to').value = status === 'novo' ? 'contato' : 'confirmado';
+        document.getElementById('ctools-to').value = status === 'novos' ? 'enviados' : 'sim';
 
         loadNumbers();
         document.getElementById('ctoolsOverlay').style.display = 'flex';
