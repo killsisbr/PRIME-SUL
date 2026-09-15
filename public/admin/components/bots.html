@@ -6,6 +6,7 @@
         <div class="bt-tabs">
             <button type="button" class="bt-tab-btn active" data-tab="conversas"><i class="fas fa-comments"></i> CONVERSAS</button>
             <button type="button" class="bt-tab-btn" data-tab="config"><i class="fas fa-qrcode"></i> SCANNER DE QR</button>
+            <button type="button" class="bt-tab-btn" data-tab="pipeline"><i class="fas fa-wand-magic-sparkles"></i> FUNIL BOT</button>
         </div>
         <div class="bt-tab-status">
             <span class="bt-badge conn-offline" id="bt-tab-connection-status" title="WhatsApp Offline.&#10;Clique para abrir o scanner e escanear o QR Code."><i class="fas fa-circle"></i> WHATSAPP OFFLINE</span>
@@ -233,6 +234,45 @@
                     </div>
                 </div>
             </aside>
+        </div>
+    </div>
+
+    <!-- PAINEL: FUNIL BOT / OPERAÇÃO -->
+    <div class="bt-tab-panel" id="bt-panel-pipeline">
+        <div class="bp-root">
+            <section class="bp-hero">
+                <div class="bp-hero-copy">
+                    <span class="bp-kicker"><i class="fas fa-wand-magic-sparkles"></i> Central de Conversão</span>
+                    <h2>FUNIL BOT → VENDEDOR</h2>
+                    <p>Veja onde cada lead está parado: primeira abordagem, aguardando resposta, interessado, atendimento ou perda.</p>
+                </div>
+                <div class="bp-hero-score">
+                    <small>SAÚDE DO FUNIL</small>
+                    <strong id="bp-health">—</strong>
+                    <span id="bp-health-label">Carregando operação...</span>
+                </div>
+            </section>
+
+            <section class="bp-flow" id="bp-flow">
+                <div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Montando funil inteligente...</div>
+            </section>
+
+            <section class="bp-bottom">
+                <div class="bp-panel bp-priority">
+                    <div class="bp-panel-head">
+                        <div><span>PRIORIDADE DO VENDEDOR</span><b>Quem merece ação agora</b></div>
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="bp-lead-list" id="bp-priority-list"></div>
+                </div>
+                <div class="bp-panel bp-brain">
+                    <div class="bp-panel-head">
+                        <div><span>LEITURA AUTOMÁTICA</span><b>Diagnóstico do gargalo</b></div>
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="bp-insights" id="bp-insights"></div>
+                </div>
+            </section>
         </div>
     </div>
 

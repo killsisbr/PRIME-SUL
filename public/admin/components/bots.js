@@ -67,8 +67,107 @@ export async function init() {
             tabBtns.forEach(b => b.classList.toggle('active', b === btn));
             tabPanels.forEach(p => p.classList.toggle('active', p.id === `bt-panel-${targetTab}`));
             if (targetTab === 'config') refresh();
+            if (targetTab === 'pipeline') loadBotPipeline();
         });
     });
+
+    // ================= FUNIL BOT: CENTRAL DE CONVERSÃO =================
+    function bpRelTime(value) {
+        if (!value) return 'sem data';
+        const d = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(d.getTime())) return 'sem data';
+        const diff = Math.max(0, Date.now() - d.getTime());
+        const min = Math.floor(diff / 60000);
+        if (min < 60) return `${min || 1} min atrás`;
+        const h = Math.floor(min / 60);
+        if (h < 24) return `${h}h atrás`;
+        return `${Math.floor(h / 24)}d atrás`;
+    }
+
+    function bpStageLabel(status) {
+        return ({ novos: 'A fazer', enviados: 'Aguardando resposta', sim: 'Interessado', nao: 'Não quer', bloqueado: 'Bloqueado', duplicado: 'Duplicado' })[status] || status || 'Lead';
+    }
+
+    async function loadBotPipeline() {
+        const flowEl = document.getElementById('bp-flow');
+        const prioEl = document.getElementById('bp-priority-list');
+        const insightEl = document.getElementById('bp-insights');
+        if (!flowEl || !prioEl || !insightEl) return;
+        flowEl.innerHTML = '<div class="ps-loading"><i class="fas fa-spinner fa-spin"></i> Montando funil inteligente...</div>';
+        try {
+            const [funnel, leads] = await Promise.all([api('/leads/funnel'), api('/leads')]);
+            const stages = funnel.stages || {};
+            const total = Math.max(1, Number(funnel.total || leads.length || 0));
+            const nums = {
+                novos: Number(stages.novos || 0),
+                enviados: Number(stages.enviados || 0),
+                sim: Number(stages.sim || 0),
+                nao: Number(stages.nao || 0)
+            };
+            const replyTotal = nums.sim + nums.nao;
+            const responseRate = nums.enviados + replyTotal ? Math.round((replyTotal / (nums.enviados + replyTotal)) * 100) : 0;
+            const hotRate = replyTotal ? Math.round((nums.sim / replyTotal) * 100) : 0;
+            const health = Math.max(0, Math.min(100, Math.round((hotRate * 0.55) + (responseRate * 0.35) + (nums.novos ? 5 : 10))));
+            const healthEl = document.getElementById('bp-health');
+            const healthLabel = document.getElementById('bp-health-label');
+            if (healthEl) healthEl.textContent = `${health}%`;
+            if (healthLabel) healthLabel.textContent = health >= 70 ? 'Operação aquecida' : health >= 40 ? 'Funil em formação' : 'Precisa gerar respostas';
+
+            const stageDefs = [
+                { key: 'novos', icon: 'fa-seedling', title: 'Captar', sub: 'Leads novos aguardando primeiro disparo', action: 'Criar disparo', color: '#3b82f6' },
+                { key: 'enviados', icon: 'fa-paper-plane', title: 'Bot trabalhando', sub: 'Mensagem enviada; esperar SIM/NÃO', action: 'Monitorar retorno', color: '#f59e0b' },
+                { key: 'sim', icon: 'fa-fire-flame-curved', title: 'Quentes', sub: 'Cliente demonstrou interesse', action: 'Vendedor atende agora', color: '#10b981' },
+                { key: 'nao', icon: 'fa-circle-xmark', title: 'Perdidos', sub: 'Não quer ou sem interesse', action: 'Não insistir', color: '#ef4444' }
+            ];
+
+            flowEl.innerHTML = stageDefs.map((s, idx) => {
+                const count = nums[s.key] || 0;
+                const pct = Math.round((count / total) * 100);
+                return `<article class="bp-stage" style="--bp:${s.color};">
+                    <div class="bp-stage-top"><span><i class="fas ${s.icon}"></i></span><em>${String(idx + 1).padStart(2, '0')}</em></div>
+                    <h3>${esc(s.title)}</h3>
+                    <p>${esc(s.sub)}</p>
+                    <div class="bp-stage-num"><b>${count}</b><small>${pct}% do funil</small></div>
+                    <div class="bp-stage-bar"><i style="width:${pct}%;"></i></div>
+                    <strong>${esc(s.action)}</strong>
+                </article>`;
+            }).join('');
+
+            const priority = [...(leads || [])]
+                .filter(l => ['sim', 'enviados', 'novos'].includes(l.status))
+                .sort((a, b) => {
+                    const rank = { sim: 0, enviados: 1, novos: 2 };
+                    return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || Number(b.score || 0) - Number(a.score || 0);
+                })
+                .slice(0, 8);
+            prioEl.innerHTML = priority.length ? priority.map(l => `
+                <button type="button" class="bp-lead-row" data-bp-lead="${l.id}">
+                    <span class="bp-avatar">${esc(String(l.name || '?').split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase())}</span>
+                    <span class="bp-lead-main"><b>${esc(l.name || 'Sem nome')}</b><small>${esc(bpStageLabel(l.status))} • ${esc(bpRelTime(l.updated_at || l.created_at))}</small></span>
+                    <em>${l.score == null ? '—' : esc(l.score)}</em>
+                </button>`).join('') : '<div class="bp-empty">Nenhum lead pendente agora.</div>';
+
+            prioEl.querySelectorAll('[data-bp-lead]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const tab = document.querySelector('.bt-tab-btn[data-tab="conversas"]');
+                    tab?.click();
+                    const lead = (leads || []).find(l => String(l.id) === String(btn.dataset.bpLead));
+                    if (lead) setTimeout(() => selectLead(lead), 80);
+                });
+            });
+
+            const bottleneck = nums.novos >= nums.enviados && nums.novos >= nums.sim ? 'Muitos leads ainda sem abordagem. Priorize disparo de campanha.'
+                : nums.enviados > nums.sim ? 'O gargalo está em resposta: acompanhe mensagens e melhore a chamada para SIM.'
+                : nums.sim ? 'Você tem leads quentes: vendedor precisa atender rápido para converter.'
+                : 'Funil limpo. Gere novos leads ou novos disparos.';
+            insightEl.innerHTML = `
+                <div class="bp-insight good"><i class="fas fa-chart-line"></i><span>Taxa de resposta estimada</span><b>${responseRate}%</b></div>
+                <div class="bp-insight hot"><i class="fas fa-fire"></i><span>Qualidade dos retornos SIM</span><b>${hotRate}%</b></div>
+                <div class="bp-insight warn"><i class="fas fa-triangle-exclamation"></i><span>${esc(bottleneck)}</span></div>`;
+        } catch (e) {
+            flowEl.innerHTML = `<div class="bp-empty">Erro ao carregar funil: ${esc(e.message)}</div>`;
+        }
+    }
 
     // ================= WHATSAPP PREVIEW: LEADS LIST =================
     const leadListEl = document.getElementById('waLeadList');

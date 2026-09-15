@@ -896,6 +896,55 @@
 .bt-action.warn { background: #ffb800; color: var(--ink, #181716); }
 .bt-action.danger { background: #ef4444; color: #ffffff; }
 
+/* --- FUNIL BOT / CENTRAL DE CONVERSÃO --- */
+.bp-root { display:grid; grid-template-rows:auto auto minmax(0,1fr); gap:12px; min-height:0; height:100%; overflow:hidden; }
+.bp-hero { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 20px; border:3px solid var(--ink,#181716); border-radius:18px; background:radial-gradient(circle at 12% 0%,rgba(37,211,102,.22),transparent 28%),linear-gradient(135deg,#07111f 0%,#111827 58%,#172554 100%); color:#fff; box-shadow:5px 5px 0 var(--ink,#181716); }
+.bp-kicker { display:inline-flex; align-items:center; gap:8px; color:#86efac; font:900 .68rem var(--font-body); text-transform:uppercase; letter-spacing:1px; }
+.bp-hero h2 { margin:5px 0 2px; font:900 2.45rem/.9 var(--font-title); letter-spacing:1px; }
+.bp-hero p { margin:0; color:#cbd5e1; font:750 .78rem/1.35 var(--font-body); max-width:760px; }
+.bp-hero-score { display:grid; place-items:center; min-width:170px; padding:13px 16px; border:2px solid rgba(255,255,255,.28); border-radius:18px; background:rgba(255,255,255,.1); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+.bp-hero-score small { color:#93c5fd; font:900 .56rem var(--font-body); letter-spacing:1px; }
+.bp-hero-score strong { font:900 2.2rem/.9 var(--font-title); color:#22c55e; }
+.bp-hero-score span { color:#e2e8f0; font:800 .62rem var(--font-body); }
+.bp-flow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; min-height:180px; }
+.bp-stage { position:relative; overflow:hidden; display:flex; flex-direction:column; gap:8px; padding:14px; border:3px solid var(--ink,#181716); border-radius:18px; background:#fff; box-shadow:4px 4px 0 var(--ink,#181716); }
+.bp-stage::before { content:''; position:absolute; inset:0 0 auto; height:7px; background:var(--bp); }
+.bp-stage-top { display:flex; justify-content:space-between; align-items:center; }
+.bp-stage-top span { display:grid; place-items:center; width:38px; height:38px; border:2px solid var(--ink,#181716); border-radius:12px; background:var(--bp); color:#fff; box-shadow:2px 2px 0 var(--ink,#181716); }
+.bp-stage-top em { font:900 .72rem var(--font-title); color:#94a3b8; font-style:normal; }
+.bp-stage h3 { margin:0; color:var(--ink,#181716); font:900 1.22rem/.95 var(--font-title); letter-spacing:.6px; }
+.bp-stage p { min-height:32px; margin:0; color:#64748b; font:800 .64rem/1.25 var(--font-body); }
+.bp-stage-num { display:flex; align-items:flex-end; gap:8px; margin-top:auto; }
+.bp-stage-num b { font:900 2.3rem/.8 var(--font-title); color:var(--bp); }
+.bp-stage-num small { color:#475569; font:900 .58rem var(--font-body); text-transform:uppercase; }
+.bp-stage-bar { height:9px; border:2px solid var(--ink,#181716); border-radius:999px; overflow:hidden; background:#e5e7eb; }
+.bp-stage-bar i { display:block; height:100%; background:var(--bp); }
+.bp-stage > strong { display:inline-flex; align-self:flex-start; padding:5px 9px; border-radius:999px; background:#f8fafc; color:#0f172a; border:1.5px solid #e2e8f0; font:900 .58rem var(--font-body); text-transform:uppercase; }
+.bp-bottom { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr); gap:12px; min-height:0; overflow:hidden; }
+.bp-panel { min-height:0; overflow:hidden; display:flex; flex-direction:column; border:3px solid var(--ink,#181716); border-radius:18px; background:#fffdf8; box-shadow:4px 4px 0 var(--ink,#181716); }
+.bp-panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border-bottom:2px solid var(--ink,#181716); background:#fff; }
+.bp-panel-head span { display:block; color:#f59e0b; font:900 .58rem var(--font-body); letter-spacing:1px; }
+.bp-panel-head b { display:block; color:var(--ink,#181716); font:900 1.22rem/.95 var(--font-title); }
+.bp-panel-head > i { color:#10b981; font-size:1.2rem; }
+.bp-lead-list,.bp-insights { display:flex; flex-direction:column; gap:8px; padding:12px; overflow:auto; min-height:0; }
+.bp-lead-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; width:100%; padding:9px; border:2px solid var(--ink,#181716); border-radius:13px; background:#fff; color:var(--ink,#181716); box-shadow:2px 2px 0 var(--ink,#181716); cursor:pointer; text-align:left; }
+.bp-lead-row:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink,#181716); }
+.bp-avatar { display:grid; place-items:center; width:36px; height:36px; border:2px solid var(--ink,#181716); border-radius:12px; background:#ffb800; color:#fff; font:900 .72rem var(--font-body); }
+.bp-lead-main b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:900 .78rem var(--font-body); }
+.bp-lead-main small { display:block; color:#64748b; font:800 .6rem var(--font-body); }
+.bp-lead-row em { min-width:38px; padding:4px 7px; border-radius:999px; background:#dcfce7; color:#059669; font:900 .65rem var(--font-body); text-align:center; font-style:normal; }
+.bp-insight { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; padding:12px; border:2px solid #e2e8f0; border-radius:14px; background:#f8fafc; }
+.bp-insight i { color:#2563eb; }
+.bp-insight span { color:#334155; font:850 .68rem/1.25 var(--font-body); }
+.bp-insight b { color:#0f172a; font:900 1.25rem var(--font-title); }
+.bp-insight.hot { background:#ecfdf5; border-color:#bbf7d0; }
+.bp-insight.hot i,.bp-insight.hot b { color:#059669; }
+.bp-insight.warn { grid-template-columns:auto minmax(0,1fr); background:#fff7ed; border-color:#fed7aa; }
+.bp-insight.warn i { color:#ea580c; }
+.bp-empty { padding:20px; color:#64748b; font:900 .78rem var(--font-body); text-align:center; }
+@media (max-width:1100px){ .bp-flow{grid-template-columns:repeat(2,1fr);} .bp-bottom{grid-template-columns:1fr;} }
+@media (max-width:700px){ .bp-root{overflow:auto;} .bp-hero{flex-direction:column;align-items:flex-start;} .bp-flow{grid-template-columns:1fr;} }
+
 /* MODAL DE RESPOSTAS RÁPIDAS (GERENCIAR) */
 .wa-quick-info-banner { padding: 8px 12px; border: 1.5px solid #bfdbfe; border-radius: 8px; background: #eff6ff; font-size: .72rem; font-weight: 600; color: #1e40af; display: flex; align-items: center; gap: 8px; }
 .wa-quick-items-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
