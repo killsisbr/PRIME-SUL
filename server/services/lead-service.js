@@ -462,6 +462,7 @@ async function funnelBySeller(seller_id) {
     const conversoes = {
         novos_enviados: rate(pipeline.novos, pipeline.enviados),
         enviados_sim: rate(pipeline.enviados, pipeline.sim),
+        enviados_nao: rate(pipeline.enviados, pipeline.nao),
         sim_ratio: rate(pipeline.enviados, pipeline.sim)
     };
 

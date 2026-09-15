@@ -5,8 +5,8 @@ const ws = require('./websocket-service');
 const botEvents = require('./bot-events-service');
 const { phoneVariants, phoneKey } = require('../utils/phone');
 
-const YES = (process.env.BOT_CONFIRM_KEYWORDS || 'sim,ok,confirmo,quero,claro,pode,pode sim,tenho interesse,qual o valor,manda,enviar').split(',').map(s => s.trim()).filter(Boolean);
-const NO = (process.env.BOT_DENY_KEYWORDS || 'nao,não,dispenso,obrigado,sem interesse,nao quero,não quero').split(',').map(s => s.trim()).filter(Boolean);
+const YES = (process.env.BOT_CONFIRM_KEYWORDS || 'sim,ok,confirmo,quero,claro,pode,pode sim,tenho interesse,tenho interesse sim,aceito,me manda,manda,enviar,qual o valor,quais valores,passa a proposta').split(',').map(s => s.trim()).filter(Boolean);
+const NO = (process.env.BOT_DENY_KEYWORDS || 'nao,não,dispenso,obrigado,sem interesse,nao quero,não quero,nao tenho interesse,não tenho interesse,agora nao,agora não,não preciso,nao preciso,já resolvi,ja resolvi').split(',').map(s => s.trim()).filter(Boolean);
 const STOP = (process.env.BOT_OPTOUT_KEYWORDS || 'pare,parar,sair,cancelar,remover,bloquear').split(',').map(s => s.trim()).filter(Boolean);
 
 function normalizeText(t = '') { return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }

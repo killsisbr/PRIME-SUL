@@ -1,8 +1,8 @@
 const STAGES = [
-    { key: 'novos', label: 'NOVOS LEADS', color: '#3b82f6', dark: false, icon: 'fa-user-plus' },
-    { key: 'enviados', label: 'ENVIADOS', color: '#ffbd16', dark: true, icon: 'fa-paper-plane' },
-    { key: 'sim', label: 'SIM - INTERESSE', color: '#10b981', dark: false, icon: 'fa-thumbs-up' },
-    { key: 'nao', label: 'SEM INTERESSE', color: '#df4632', dark: false, icon: 'fa-thumbs-down' }
+    { key: 'novos', label: 'A FAZER', subtitle: 'Ainda não abordados', action: 'Criar disparo / primeira abordagem', color: '#3b82f6', dark: false, icon: 'fa-clipboard-list' },
+    { key: 'enviados', label: 'AGUARDANDO RESPOSTA', subtitle: 'Disparo enviado, aguardando SIM/NÃO', action: 'Acompanhar retorno do bot', color: '#ffbd16', dark: true, icon: 'fa-paper-plane' },
+    { key: 'sim', label: 'INTERESSADOS', subtitle: 'Respondeu SIM / quer proposta', action: 'Atender rápido pelo bot do vendedor', color: '#10b981', dark: false, icon: 'fa-fire' },
+    { key: 'nao', label: 'NÃO QUER', subtitle: 'Recusou ou sem interesse', action: 'Não insistir; registrar resultado', color: '#df4632', dark: false, icon: 'fa-ban' }
 ];
 
 const TRANSITIONS = [
@@ -273,6 +273,8 @@ export async function init() {
                         }
                     }
 
+                    const stageAction = s.action || 'Abrir ficha e acompanhar';
+                    const updatedTxt = relTime(l.updated_at || l.created_at);
                     const cleanPhone = (l.phone || '').replace(/\D/g, '');
                     const waLinkHtml = cleanPhone ? `
                         <a href="https://wa.me/${cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone}" target="_blank" class="fl-btn-wa-link" onclick="event.stopPropagation();" title="Abrir conversa no WhatsApp">
@@ -295,6 +297,11 @@ export async function init() {
                             ${limitChip}
                             ${l.city ? `<span class="fl-tag">${escapeHtml(l.city)}</span>` : ''}
                         </div>
+                        <div class="fl-card-next-action stage-${s.key}">
+                            <i class="fas ${s.icon}"></i>
+                            <span>${escapeHtml(stageAction)}</span>
+                            ${updatedTxt ? `<small>${escapeHtml(updatedTxt)}</small>` : ''}
+                        </div>
                         ${sellerBotBtnHtml}
                         <div class="fl-crm-card-actions">
                             ${prevStage ? `<button type="button" class="fl-crm-move-btn" data-move-to="${prevStage}" title="Recuar para ${prevStage.toUpperCase()}"><i class="fas fa-chevron-left"></i></button>` : '<span></span>'}
@@ -310,7 +317,10 @@ export async function init() {
                     <div class="fl-crm-column-header" style="border-top-color:${stageColor};">
                         <div class="fl-crm-col-title">
                             <i class="fas ${s.icon}" style="color:${stageColor};"></i>
-                            <strong>${s.label}</strong>
+                            <div>
+                                <strong>${s.label}</strong>
+                                <small>${escapeHtml(s.subtitle || '')}</small>
+                            </div>
                         </div>
                         <span class="fl-crm-col-badge">${stageLeads.length}</span>
                     </div>
@@ -436,7 +446,8 @@ export async function init() {
                         <div class="fl-seg-left">
                             <span class="fl-seg-icon"><i class="fas ${s.icon}"></i></span>
                             <div class="fl-seg-main">
-                                <span class="fl-seg-label">${s.label}${isDefaultStage ? ' <small style="font-size:0.6rem; opacity:0.85; font-weight:800; letter-spacing:0.5px;">(TRIAGEM / ENTRADA)</small>' : ''}</span>
+                                <span class="fl-seg-label">${s.label}</span>
+                                <span class="fl-seg-help">${escapeHtml(s.subtitle || '')}</span>
                                 <span class="fl-seg-count">${nf(count)}</span>
                             </div>
                         </div>
