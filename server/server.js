@@ -39,6 +39,7 @@ app.use('/api/handoffs', require('./routes/handoffs'));
 app.use('/api/templates', require('./routes/templates'));
 app.use('/api/sends', require('./routes/sends'));
 app.use('/api/public', require('./routes/public'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/copilot', require('./routes/copilot'));
 
 // TEMPORÁRIO — editor de site via IA (só admin). Desativado em produção.

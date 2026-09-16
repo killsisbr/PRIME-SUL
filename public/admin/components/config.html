@@ -17,6 +17,7 @@
         <button type="button" class="cfg-tab active" data-cfg-tab="bb"><i class="fas fa-bank"></i> PARCERIA BB</button>
         <button type="button" class="cfg-tab" data-cfg-tab="msg"><i class="fas fa-comment-dots"></i> MENSAGENS</button>
         <button type="button" class="cfg-tab" data-cfg-tab="antiban"><i class="fas fa-shield-halved"></i> ANTI-BAN</button>
+        <button type="button" class="cfg-tab" data-cfg-tab="reset"><i class="fas fa-history"></i> RESET DB</button>
     </div>
 
     <div class="cfg-tabpanel" data-cfg-panel="bb">
@@ -105,7 +106,81 @@
         </div>
     </div>
 
+    <!-- Reset Database Panel -->
+    <div class="cfg-tabpanel" data-cfg-panel="reset" hidden>
+        <div class="ps-card">
+            <div class="ps-card-title"><i class="fas fa-history" style="color: var(--bad);"></i> Reset do Banco de Dados</div>
+            <div class="ps-alert ps-alert-warn">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div><strong>Atenção:</strong> Esta operação apagará TODOS os dados do sistema EXCETO as sessões do WhatsApp (para manter as conexões ativas). Use com extrema cautela.</div>
+            </div>
+            <div class="ps-field">
+                <label for="resetConfirmation">Digite "RESET" para confirmar:</label>
+                <input type="text" class="ps-input" id="resetConfirmation" placeholder="RESET">
+            </div>
+            <button class="ps-btn-danger" id="btnResetDatabase">
+                <i class="fas fa-history"></i> RESETAR BANCO DE DADOS
+            </button>
+            <div id="resetResult" class="ps-hint" style="margin-top: 12px; min-height: 20px;"></div>
+        </div>
+    </div>
+
     <footer class="cfg-footer">
         <button class="ps-btn-save" onclick="saveFiscalSettings()"><i class="fas fa-save"></i> SALVAR CONFIGURAÇÕES</button>
     </footer>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnReset = document.getElementById('btnResetDatabase');
+    const resetInput = document.getElementById('resetConfirmation');
+    const resetResult = document.getElementById('resetResult');
+
+    if (btnReset) {
+        btnReset.addEventListener('click', function() {
+            const confirmation = resetInput.value.trim();
+            if (confirmation !== 'RESET') {
+                resetResult.textContent = 'Por favor, digite "RESET" exatamente para confirmar.';
+                resetResult.style.color = 'var(--bad)';
+                return;
+            }
+
+            // Disable button and show loading state
+            btnReset.disabled = true;
+            btnReset.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetando...';
+            resetResult.textContent = '';
+            resetResult.style.color = '';
+
+            // Send POST request to reset database
+            fetch('/api/admin/reset-database', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resetResult.textContent = data.message || 'Banco de dados resetado com sucesso!';
+                    resetResult.style.color = 'var(--brand)';
+                    // Optionally, clear the input after success
+                    resetInput.value = '';
+                } else {
+                    resetResult.textContent = data.error || 'Erro desconhecido.';
+                    resetResult.style.color = 'var(--bad)';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resetResult.textContent = 'Erro de conexão com o servidor.';
+                resetResult.style.color = 'var(--bad)';
+            })
+            .finally(() => {
+                // Re-enable button
+                btnReset.disabled = false;
+                btnReset.innerHTML = '<i class="fas fa-history"></i> RESETAR BANCO DE DADOS';
+            });
+        });
+    }
+});
+</script>
