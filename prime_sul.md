@@ -2,6 +2,14 @@
 
 ## 1. Visão Geral
 
+## 22. Atualizações recentes (14/09/2026)
+
+- Movimentação automática de leads para enviados ao iniciar disparo (campaign-service.js).
+- Correção de status do lead e edição de campanha (bots.html, bots.js, disparo.js, lead-service.js).
+- Mescla de leads duplicados por nono dígito (funil.js, leads.js, db.js).
+- Filtragem de números indisponíveis no envio (bots.js).
+- Unificação de telefones com nono dígito (bots.js, bot-flow-service.js, handoff-service.js, lead-service.js).
+
 O **Prime Sul** será uma plataforma interna de gestão comercial
 desenvolvida para centralizar o trabalho da equipe de vendas, organizar
 leads, controlar a responsabilidade de cada vendedor, acompanhar o funil

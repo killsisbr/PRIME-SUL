@@ -1,6 +1,6 @@
 # Relatório — PRIME SUL (SaaS de CRM + Disparo WhatsApp)
 
-> Gerado em 18/08/2026. Estado atual do projeto: funcional e testável localmente.
+> Gerado em 14/09/2026. Estado atual do projeto: funcional e testável localmente. Últimas correções: movimentação de leads para enviados ao iniciar disparo, correção de status do lead e edição de campanha, mescla de leads duplicados por nono dígito, filtragem de números indisponíveis no envio e unificação de telefones com nono dígito.
 
 ## 1. Estado geral
 
