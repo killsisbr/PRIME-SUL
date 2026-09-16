@@ -996,6 +996,17 @@ export async function init() {
             const pct = Math.min(100, Math.max(0, (clickX / rect.width) * 100));
             const clickTime = pctToTime(pct);
 
+            const now = new Date();
+            const currentDay = now.getDay();
+            if (selectedDay === currentDay) {
+                const nowHour = now.getHours();
+                const nowMin = now.getMinutes();
+                const [clickH, clickM] = clickTime.split(':').map(Number);
+                if (clickH < nowHour || (clickH === nowHour && clickM < nowMin)) {
+                    return toast('Não é possível agendar para um horário que já passou.', 'err');
+                }
+            }
+
             toast(`Horário selecionado: ${clickTime}. Abrindo agendador...`, 'ok');
             openScheduleModal(clickTime, 'novo', null);
         });
@@ -1234,6 +1245,18 @@ export async function init() {
         if (!activeTargets.length) return toast('Selecione ao menos 1 lead para o disparo', 'err');
 
         if (submitBtn) submitBtn.disabled = true;
+
+        const now = new Date();
+        const currentDay = now.getDay();
+        if (_dispatchMode !== 'now' && !campaignId && selectedDay === currentDay) {
+            const nowHour = now.getHours();
+            const nowMin = now.getMinutes();
+            const [timeH, timeM] = timeVal.split(':').map(Number);
+            if (timeH < nowHour || (timeH === nowHour && timeM < nowMin)) {
+                if (submitBtn) submitBtn.disabled = false;
+                return toast('Não é possível agendar para um horário no passado.', 'err');
+            }
+        }
 
         try {
             if (campaignId) {

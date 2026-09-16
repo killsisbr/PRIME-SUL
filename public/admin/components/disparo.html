@@ -1,15 +1,15 @@
 <div class="dp-saas-root">
-    <!-- ============ HEADER UNIFICADO (META DIÁRIA + AÇÕES COMERCIAIS) ============ -->
-    <div class="dp-saas-header dp-saas-unified-header">
+    <!-- ============ TOP BAR INTEGRADA (META DIÁRIA + AÇÕES COMERCIAIS) ============ -->
+    <header class="dp-saas-header dp-saas-unified-header">
         <div class="dp-meta-info-combined">
             <div class="dp-meta-info">
-                <i class="fas fa-bullseye" style="color:var(--holo-primary, #0ea5e9); font-size:1.2rem;"></i>
+                <i class="fas fa-bullseye"></i>
                 <div>
                     <strong>META DIÁRIA DE ENGAJAMENTO (100 LEADS / DIA)</strong>
                     <span id="dp-meta-sub">0 de 100 disparos executados para o dia de hoje</span>
                 </div>
             </div>
-            <div class="dp-meta-progress-wrap" style="min-width:200px;">
+            <div class="dp-meta-progress-wrap">
                 <div class="dp-meta-progress-bar"><div class="dp-meta-progress-fill" id="dp-meta-fill" style="width:0%"></div></div>
                 <span class="dp-meta-pct" id="dp-meta-pct">0%</span>
             </div>
@@ -24,128 +24,133 @@
                 <i class="fas fa-rocket"></i> NOVO DISPARO
             </button>
         </div>
-    </div>
+    </header>
 
-    <!-- ============ PROGRAMAÇÃO EM HORÁRIO COMERCIAL (08:00 - 18:00) ============ -->
-    <div class="dp-saas-timeline-box">
-        <div class="dp-timeline-top">
-            <div class="dp-timeline-title">
-                <i class="fas fa-business-time" style="color:#ff7417;"></i> PROGRAMAÇÃO EM HORÁRIO COMERCIAL (08:00 - 18:00)
+    <!-- ============ WORKSPACE EM 2 COLUNAS ============ -->
+    <div class="dp-workspace-grid">
+        <!-- COLUNA ESQUERDA: LISTA OPERACIONAL DE DISPAROS -->
+        <section class="dp-saas-single-card dp-col-dispatches">
+            <div class="dp-cat-header">
+                <span class="dp-cat-header-title">
+                    <i class="fas fa-list-check" style="color:#ffb703;"></i> DISPAROS PROGRAMADOS
+                </span>
+                <span class="dp-saas-status-badge" id="dpDispatchesCountBadge">0 AGENDADOS</span>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto;">
-                <!-- Alternador de Visão: Régua Horária vs Agenda Preview -->
-                <div class="dp-view-mode-toggle" id="dpViewModeToggle">
-                    <button type="button" class="dp-vmode-btn active" id="dpBtnModeTrack" title="Régua de horário diária">
-                        <i class="fas fa-clock"></i> RÉGUA DO DIA
-                    </button>
-                    <button type="button" class="dp-vmode-btn" id="dpBtnModeAgenda" title="Agenda preview da semana, 15 dias e mensal">
-                        <i class="fas fa-calendar-days"></i> AGENDA PREVIEW
-                        <span class="dp-vmode-badge">TOP</span>
-                    </button>
-                </div>
-                <div class="dp-days-selector" id="dpDaysSelector">
-                    <button type="button" class="dp-day-btn" data-day="1">SEG</button>
-                    <button type="button" class="dp-day-btn" data-day="2">TER</button>
-                    <button type="button" class="dp-day-btn active" data-day="3">QUA</button>
-                    <button type="button" class="dp-day-btn" data-day="4">QUI</button>
-                    <button type="button" class="dp-day-btn" data-day="5">SEX</button>
-                    <button type="button" class="dp-day-btn" data-day="6">SÁB</button>
-                    <button type="button" class="dp-day-btn" data-day="0">DOM</button>
-                </div>
+            <div class="dp-cat-body" id="dpSingleDispatchesList">
+                <!-- Renderizado dinamicamente via disparo.js -->
             </div>
-        </div>
+        </section>
 
-        <!-- RÉGUA DO HORÁRIO COMERCIAL ULTRAPRO (08H ÀS 18H) -->
-        <div class="dp-24h-bar-container" id="dp24hBarContainer">
-            <div class="dp-24h-labels">
-                <span>08:00 ☕</span>
-                <span>09:00</span>
-                <span>10:00 📈</span>
-                <span>11:00</span>
-                <span>12:00 🥪</span>
-                <span>13:00</span>
-                <span>14:00 🎯</span>
-                <span>15:00</span>
-                <span>16:00 💼</span>
-                <span>17:00</span>
-                <span>18:00 🚪</span>
-            </div>
-
-            <div class="dp-24h-track" id="dp24hTrack" title="Clique no horário desejado para agendar um disparo!">
-                <!-- LINHAS DE GRADE DA RÉGUA -->
-                <div class="dp-track-grid-lines">
-                    <span style="left:0%;"></span>
-                    <span style="left:10%;"></span>
-                    <span style="left:20%;"></span>
-                    <span style="left:30%;"></span>
-                    <span style="left:40%;"></span>
-                    <span style="left:50%;"></span>
-                    <span style="left:60%;"></span>
-                    <span style="left:70%;"></span>
-                    <span style="left:80%;"></span>
-                    <span style="left:90%;"></span>
-                    <span style="left:100%;"></span>
+        <!-- COLUNA DIREITA: RÉGUA DE HORÁRIOS & AGENDA PREVIEW -->
+        <section class="dp-saas-timeline-box dp-col-timeline">
+            <div class="dp-timeline-top">
+                <div class="dp-timeline-title">
+                    <i class="fas fa-business-time" style="color:#ff7417;"></i> PROGRAMAÇÃO (08:00 - 18:00)
                 </div>
-
-                <!-- FAIXA DE AGENDAMENTOS EXISTENTES (BLOQUEIO VISUAL ANTI-BAN) -->
-                <div id="dpScheduledBlocksContainer" class="dp-sched-blocks-wrapper"></div>
-
-                <!-- CURSOR FLOATING TIME PIN AO PASSAR O MOUSE -->
-                <div class="dp-hover-time-pin" id="dpHoverTimePin" style="display:none;">
-                    <div class="dp-hover-line"></div>
-                    <div class="dp-hover-badge" id="dpHoverTimeBadge">10:00</div>
-                </div>
-
-                <!-- INDICADOR PIN AGORA -->
-                <div class="dp-now-pin" id="dpNowPin" style="left:40%;">
-                    <span>AGORA</span>
+                <div class="dp-timeline-controls">
+                    <!-- Alternador de Visão: Régua Horária vs Agenda Preview -->
+                    <div class="dp-view-mode-toggle" id="dpViewModeToggle">
+                        <button type="button" class="dp-vmode-btn active" id="dpBtnModeTrack" title="Régua de horário diária">
+                            <i class="fas fa-clock"></i> RÉGUA DO DIA
+                        </button>
+                        <button type="button" class="dp-vmode-btn" id="dpBtnModeAgenda" title="Agenda preview da semana, 15 dias e mensal">
+                            <i class="fas fa-calendar-days"></i> AGENDA PREVIEW
+                            <span class="dp-vmode-badge">TOP</span>
+                        </button>
+                    </div>
+                    <div class="dp-days-selector" id="dpDaysSelector">
+                        <button type="button" class="dp-day-btn" data-day="1">SEG</button>
+                        <button type="button" class="dp-day-btn" data-day="2">TER</button>
+                        <button type="button" class="dp-day-btn active" data-day="3">QUA</button>
+                        <button type="button" class="dp-day-btn" data-day="4">QUI</button>
+                        <button type="button" class="dp-day-btn" data-day="5">SEX</button>
+                        <button type="button" class="dp-day-btn" data-day="6">SÁB</button>
+                        <button type="button" class="dp-day-btn" data-day="0">DOM</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="dp-24h-footer">
-                <span id="dp-24h-sub"><i class="fas fa-eye"></i> VISUALIZANDO AGENDAMENTOS DO DIA</span>
-                <small><i class="fas fa-mouse-pointer"></i> Passe o mouse para ver o horário exato e clique para agendar!</small>
-            </div>
-        </div>
-
-        <!-- VISUALIZAÇÃO EM AGENDA PREVIEW (SEMANA, 15 DIAS, MENSAL) -->
-        <div class="dp-agenda-view-container" id="dpAgendaViewContainer" style="display:none;">
-            <div class="dp-agenda-sub-bar">
-                <div class="dp-ag-period-group">
-                    <button type="button" class="dp-ag-period-btn active" data-period="7d">
-                        <i class="fas fa-calendar-week"></i> 7 DIAS (SEMANA)
-                    </button>
-                    <button type="button" class="dp-ag-period-btn" data-period="15d">
-                        <i class="fas fa-calendar-days"></i> 15 DIAS
-                    </button>
-                    <button type="button" class="dp-ag-period-btn" data-period="30d">
-                        <i class="fas fa-calendar"></i> MENSAL (30 DIAS)
-                    </button>
+            <!-- RÉGUA DO HORÁRIO COMERCIAL (08H ÀS 18H) -->
+            <div class="dp-24h-bar-container" id="dp24hBarContainer">
+                <div class="dp-24h-labels">
+                    <span>08:00 ☕</span>
+                    <span>09:00</span>
+                    <span>10:00 📈</span>
+                    <span>11:00</span>
+                    <span>12:00 🥪</span>
+                    <span>13:00</span>
+                    <span>14:00 🎯</span>
+                    <span>15:00</span>
+                    <span>16:00 💼</span>
+                    <span>17:00</span>
+                    <span>18:00 🚪</span>
                 </div>
 
-                <div class="dp-ag-nav-group">
-                    <button type="button" class="dp-ag-nav-btn" id="dpAgPrev" title="Anterior"><i class="fas fa-chevron-left"></i></button>
-                    <button type="button" class="dp-ag-nav-btn today" id="dpAgToday" title="Ir para hoje">HOJE</button>
-                    <button type="button" class="dp-ag-nav-btn" id="dpAgNext" title="Próximo"><i class="fas fa-chevron-right"></i></button>
-                    <span class="dp-ag-range-text" id="dpAgRangeText">07 SET — 13 SET 2026</span>
+                <div class="dp-24h-track" id="dp24hTrack" title="Clique no horário desejado para agendar um disparo!">
+                    <!-- LINHAS DE GRADE DA RÉGUA -->
+                    <div class="dp-track-grid-lines">
+                        <span style="left:0%;"></span>
+                        <span style="left:10%;"></span>
+                        <span style="left:20%;"></span>
+                        <span style="left:30%;"></span>
+                        <span style="left:40%;"></span>
+                        <span style="left:50%;"></span>
+                        <span style="left:60%;"></span>
+                        <span style="left:70%;"></span>
+                        <span style="left:80%;"></span>
+                        <span style="left:90%;"></span>
+                        <span style="left:100%;"></span>
+                    </div>
+
+                    <!-- FAIXA DE AGENDAMENTOS EXISTENTES (BLOQUEIO VISUAL ANTI-BAN) -->
+                    <div id="dpScheduledBlocksContainer" class="dp-sched-blocks-wrapper"></div>
+
+                    <!-- CURSOR FLOATING TIME PIN AO PASSAR O MOUSE -->
+                    <div class="dp-hover-time-pin" id="dpHoverTimePin" style="display:none;">
+                        <div class="dp-hover-line"></div>
+                        <div class="dp-hover-badge" id="dpHoverTimeBadge">10:00</div>
+                    </div>
+
+                    <!-- INDICADOR PIN AGORA -->
+                    <div class="dp-now-pin" id="dpNowPin" style="left:40%;">
+                        <span>AGORA</span>
+                    </div>
+                </div>
+
+                <div class="dp-24h-footer">
+                    <span id="dp-24h-sub"><i class="fas fa-eye"></i> VISUALIZANDO AGENDAMENTOS DO DIA</span>
+                    <small><i class="fas fa-mouse-pointer"></i> Passe o mouse para ver o horário exato e clique para agendar!</small>
                 </div>
             </div>
 
-            <div class="dp-agenda-grid" id="dpAgendaGrid">
-                <div style="padding:20px; text-align:center; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Carregando agenda preview...</div>
-            </div>
-        </div>
-    </div>
+            <!-- VISUALIZAÇÃO EM AGENDA PREVIEW (SEMANA, 15 DIAS, MENSAL) -->
+            <div class="dp-agenda-view-container" id="dpAgendaViewContainer" style="display:none;">
+                <div class="dp-agenda-sub-bar">
+                    <div class="dp-ag-period-group">
+                        <button type="button" class="dp-ag-period-btn active" data-period="7d">
+                            <i class="fas fa-calendar-week"></i> 7 DIAS (SEMANA)
+                        </button>
+                        <button type="button" class="dp-ag-period-btn" data-period="15d">
+                            <i class="fas fa-calendar-days"></i> 15 DIAS
+                        </button>
+                        <button type="button" class="dp-ag-period-btn" data-period="30d">
+                            <i class="fas fa-calendar"></i> MENSAL (30 DIAS)
+                        </button>
+                    </div>
 
-    <!-- ============ CARD ÚNICO DE DISPAROS PROGRAMADOS ============ -->
-    <div class="dp-saas-single-card">
-        <div class="dp-cat-header dark-green" style="background:#181716; padding:10px 16px;">
-            <span style="font-size:.82rem; font-weight:900; letter-spacing:.5px;"><i class="fas fa-list-check" style="color:#ffb703;"></i> DISPAROS PROGRAMADOS PARA O DIA</span>
-            <span class="dp-saas-status-badge" id="dpDispatchesCountBadge" style="margin-left:auto;">0 AGENDADOS</span>
-        </div>
-        <div class="dp-cat-body" id="dpSingleDispatchesList" style="padding:14px;">
-            <!-- Renderizado dinamicamente via disparo.js -->
-        </div>
+                    <div class="dp-ag-nav-group">
+                        <button type="button" class="dp-ag-nav-btn" id="dpAgPrev" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                        <button type="button" class="dp-ag-nav-btn today" id="dpAgToday" title="Ir para hoje">HOJE</button>
+                        <button type="button" class="dp-ag-nav-btn" id="dpAgNext" title="Próximo"><i class="fas fa-chevron-right"></i></button>
+                        <span class="dp-ag-range-text" id="dpAgRangeText">07 SET — 13 SET 2026</span>
+                    </div>
+                </div>
+
+                <div class="dp-agenda-grid" id="dpAgendaGrid">
+                    <div style="padding:20px; text-align:center; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Carregando agenda preview...</div>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
 
