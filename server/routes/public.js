@@ -2,6 +2,8 @@ const express = require('express');
 const leadService = require('../services/lead-service');
 const products = require('../services/site-products-service');
 const { normalizePhone } = require('../utils/phone');
+const bcrypt = require('bcryptjs');
+const db = require('../database/db');
 
 const router = express.Router();
 
@@ -86,6 +88,65 @@ router.post('/lead', rateLimit, async (req, res, next) => {
         if (e.status === 409 && e.code === 'LEAD_LIMIT') {
             return res.status(503).json({ error: 'Estamos em capacidade máxima no momento. Tente novamente em breve.' });
         }
+        next(e);
+    }
+});
+
+// Cadastro de vendedor (público) - Anti-spam: rate-limit por IP.
+router.post('/register-vendedor', rateLimit, async (req, res, next) => {
+    try {
+        const { name, email, password, phone } = req.body;
+
+        // Validação básica
+        if (!name || !String(name).trim() || String(name).trim().length < 2) {
+            return res.status(400).json({ error: 'Nome inválido' });
+        }
+        if (!email || !String(email).trim()) {
+            return res.status(400).json({ error: 'E-mail inválido' });
+        }
+        const emailTrimmed = String(email).trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailTrimmed)) {
+            return res.status(400).json({ error: 'E-mail inválido' });
+        }
+        if (!password || String(password).length < 6) {
+            return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
+        }
+        if (!phone) {
+            return res.status(400).json({ error: 'Telefone inválido' });
+        }
+        const normalized = normalizePhone(phone);
+        if (!normalized) {
+            return res.status(400).json({ error: 'Telefone inválido' });
+        }
+
+        // Verifica se e-mail ou telefone já existem
+        const existing = await db.get(
+            'SELECT id FROM sellers WHERE organization_id = 1 AND (email = ? OR phone = ?)',
+            [emailTrimmed, normalized]
+        );
+        if (existing) {
+            return res.status(409).json({ error: 'E-mail ou telefone já em uso' });
+        }
+
+        // Hash da senha
+        const hash = await bcrypt.hash(password.trim(), 10);
+
+        // Insere vendedor
+        const sellerResult = await db.run(
+            'INSERT INTO sellers (organization_id, name, email, password, phone, max_leads, role, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [1, name.trim(), emailTrimmed, hash, normalized, 0, 'seller', 1]
+        );
+        const sellerId = sellerResult.lastID;
+
+        // Insere número do vendedor
+        await db.run(
+            'INSERT INTO seller_numbers (organization_id, seller_id, number, label) VALUES (?, ?, ?, ?)',
+            [1, sellerId, normalized, 'principal']
+        );
+
+        res.status(201).json({ id: sellerId });
+    } catch (e) {
         next(e);
     }
 });

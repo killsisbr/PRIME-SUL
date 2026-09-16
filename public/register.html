@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Sul — Cadastro de Vendedor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%232563eb'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Arial' font-size='28' font-weight='bold'>PS</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/tokens.css">
+    <link rel="stylesheet" href="/css/design.css">
+    <script src="/js/theme.js"></script>
+    <style>
+        .v3-login-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .v3-login-card { width: min(420px, 100%); display: flex; flex-direction: column; gap: 18px; }
+        .v3-login-hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .v3-login-hero .v3-store-logo { width: 84px; height: 84px; font-size: 2.4rem; }
+        .v3-form-row { display: flex; flex-direction: column; gap: 8px; }
+        .v3-form-row label { font-size: 0.9rem; font-weight: 600; color: var(--v3-fg-muted); }
+        .v3-form-row input, .v3-form-row select {
+            padding: 12px 14px;
+            border: 1px solid var(--v3-border);
+            border-radius: 8px;
+            font: 1rem/1.5 var(--v3-font-sans);
+            background: var(--v3-bg-input);
+            color: var(--v3-fg);
+        }
+        .v3-form-row input:focus, .v3-form-row select:focus {
+            outline: 2px solid var(--brand, #2563eb);
+            border-color: var(--brand, #2563eb);
+        }
+        .v3-form-row .v3-hint { font-size: 0.8rem; color: var(--v3-fg-muted); margin-top: 4px; }
+        .v3-form-row .v3-error { color: var(--v3-danger); font-size: 0.85rem; min-height: 1.2em; }
+        .v3-form-actions { display: flex; flex-direction: column; gap: 12px; }
+        .v3-btn { display: flex; height: 48px; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; border: 0; border-radius: 8px; font: 600 1rem/1 var(--v3-font-sans); cursor: pointer; transition: background-color .2s ease; }
+        .v3-btn-primary { background: var(--brand, #2563eb); color: white; }
+        .v3-btn-primary:hover { background: var(--brand-hover, #1d4ed8); }
+        .v3-btn-secondary { background: var(--v3-bg-muted); color: var(--v3-fg); }
+        .v3-btn-secondary:hover { background: var(--v3-bg-muted-hover); }
+        .v3-footer { text-align: center; font-size: 0.9rem; color: var(--v3-fg-muted); margin-top: 20px; }
+        .v3-footer a { color: var(--brand, #2563eb); text-decoration: none; }
+        .v3-footer a:hover { text-decoration: underline; }
+        .v3-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
+        .v3-checkbox-label input { width: 16px; height: 16px; }
+    </style>
+</head>
+<body class="v3-body">
+    <div class="v3-login-shell">
+        <div class="v3-product-card v3-login-card">
+            <div class="v3-login-hero">
+                <div class="v3-store-logo"><i class="fas fa-user-plus" style="color:var(--brand, #2563eb);"></i></div>
+                <span class="v3-eyebrow"><i class="fas fa-user-tag"></i> CRM PRIME SUL</span>
+                <h1 style="font:2.4rem/1 var(--v3-font-sans); margin:0;">Cadastro de Vendedor</h1>
+            </div>
+            <form id="registerForm" novalidate>
+                <div class="v3-form-row">
+                    <label for="name">Nome completo</label>
+                    <input type="text" id="name" name="name" autocomplete="name" required>
+                    <div class="v3-hint">Nome como será exibido no sistema</div>
+                    <div class="v3-error" id="nameError"></div>
+                </div>
+                <div class="v3-form-row">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required>
+                    <div class="v3-hint">E-mail para login e notificações</div>
+                    <div class="v3-error" id="emailError"></div>
+                </div>
+                <div class="v3-form-row">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" autocomplete="new-password" required minlength="6">
+                    <div class="v3-hint">Mínimo 6 caracteres</div>
+                    <div class="v3-error" id="passwordError"></div>
+                </div>
+                <div class="v3-form-row">
+                    <label for="confirmPassword">Confirmar senha</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+                    <div class="v3-error" id="confirmPasswordError"></div>
+                </div>
+                <div class="v3-form-row">
+                    <label for="phone">Telefone (WhatsApp)</label>
+                    <input type="tel" id="phone" name="phone" autocomplete="tel" required>
+                    <div class="v3-hint">Formato: (DD) 9XXXX-XXXX</div>
+                    <div class="v3-error" id="phoneError"></div>
+                </div>
+                <div class="v3-form-row v3-checkbox-label">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <span>Li e aceito os <a href="/terms.html" target="_blank">Termos de Serviço</a> e <a href="/privacy.html" target="_blank">Política de Privacidade</a></span>
+                </div>
+                <div class="v3-form-actions">
+                    <button type="submit" class="v3-btn v3-btn-primary" id="submitBtn">Criar conta</button>
+                    <button type="button" class="v3-btn v3-btn-secondary" id="loginLink">Já tenho conta, entrar</button>
+                </div>
+                <div class="v3-footer">
+                    <p>Ao se cadastrar, você concorda com o tratamento de seus dados conforme nossa política.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const loginLink = document.getElementById('loginLink');
+    const errors = {
+        name: document.getElementById('nameError'),
+        email: document.getElementById('emailError'),
+        password: document.getElementById('passwordError'),
+        confirmPassword: document.getElementById('confirmPasswordError'),
+        phone: document.getElementById('phoneError')
+    };
+
+    loginLink.addEventListener('click', () => {
+        window.location.href = '/login.html';
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Clear errors
+        Object.values(errors).forEach(el => el.textContent = '');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Criando...';
+
+        const formData = {
+            name: form.name.value.trim(),
+            email: form.email.value.trim(),
+            password: form.password.value,
+            phone: form.phone.value.trim()
+        };
+
+        // Client-side validation
+        let valid = true;
+        if (!formData.name || formData.name.length < 2) {
+            errors.name.textContent = 'Nome inválido';
+            valid = false;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!formData.email || !emailRegex.test(formData.email)) {
+            errors.email.textContent = 'E-mail inválido';
+            valid = false;
+        }
+        if (!formData.password || formData.password.length < 6) {
+            errors.password.textContent = 'Senha deve ter pelo menos 6 caracteres';
+            valid = false;
+        }
+        if (formData.password !== form.confirmPassword.value) {
+            errors.confirmPassword.textContent = 'Senhas não coincidem';
+            valid = false;
+        }
+        if (!formData.phone) {
+            errors.phone.textContent = 'Telefone inválido';
+            valid = false;
+        }
+
+        if (!valid) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Criar conta';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/public/register-vendedor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro ao cadastrar');
+            }
+            // Success
+            alert('Cadastro realizado com sucesso! Faça login para acessar o painel.');
+            window.location.href = '/login.html';
+        } catch (err) {
+            // Handle specific field errors from server (if we implement them)
+            const msg = err.message;
+            // For now, show generic error under submit
+            alert(msg || 'Erro ao cadastrar. Verifique os dados e tente novamente.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Criar conta';
+        }
+    });
+});
+</script>
+</body>
+</html>
