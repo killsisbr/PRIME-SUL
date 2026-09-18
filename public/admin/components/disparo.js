@@ -941,7 +941,7 @@ export async function init() {
             const schedulingState = document.getElementById('dpSchedulingState');
             if (timingState) timingState.style.display = 'none';
             if (schedulingState) schedulingState.style.display = 'block';
-            updateEndTimePreview();
+            initializeScheduleForm();
         }
         else if (targetId === 'dpBackToTiming') {
             const timingState = document.getElementById('dpTimingState');
@@ -964,10 +964,40 @@ export async function init() {
     });
 
     document.addEventListener('change', (e) => {
-        if (e.target.id === 'dpScheduleTime') {
+        if (e.target.id === 'dpScheduleTime' || e.target.id === 'dpScheduleDate') {
             updateEndTimePreview();
         }
     });
+
+    function initializeScheduleForm() {
+        const now = new Date();
+        const currentHour = now.getHours();
+        let scheduleDate = new Date(now);
+        let defaultHour = '10:00';
+
+        // Se passou de 18h, agenda para amanhã
+        if (currentHour >= 18) {
+            scheduleDate.setDate(scheduleDate.getDate() + 1);
+            defaultHour = '08:00';
+        }
+
+        const dateInput = document.getElementById('dpScheduleDate');
+        const timeInput = document.getElementById('dpScheduleTime');
+
+        if (dateInput) {
+            const year = scheduleDate.getFullYear();
+            const month = String(scheduleDate.getMonth() + 1).padStart(2, '0');
+            const day = String(scheduleDate.getDate()).padStart(2, '0');
+            dateInput.value = `${year}-${month}-${day}`;
+            dateInput.min = `${year}-${month}-${day}`;
+        }
+
+        if (timeInput) {
+            timeInput.value = defaultHour;
+        }
+
+        updateEndTimePreview();
+    }
 
     // Atualiza o card de timing quando a quantidade muda
     document.getElementById('dpSchedRange')?.addEventListener('input', () => {
