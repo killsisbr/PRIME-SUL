@@ -185,10 +185,10 @@
                                             </div>
                                         </div>
                                         <div class="dp-timing-actions">
-                                            <button type="button" class="dp-timing-btn primary" id="dpBtnSendNow" onclick="document.getElementById('dpSchedTime').value='now'">
+                                            <button type="button" class="dp-timing-btn primary" id="dpBtnSendNow" aria-label="Enviar disparo agora" onclick="document.getElementById('dpSchedTime').value='now'">
                                                 <i class="fas fa-bolt"></i> AGORA
                                             </button>
-                                            <button type="button" class="dp-timing-btn secondary" id="dpBtnOpenScheduler" onclick="document.getElementById('dpTimingState').style.display='none'; document.getElementById('dpSchedulingState').style.display='block'">
+                                            <button type="button" class="dp-timing-btn secondary" id="dpBtnOpenScheduler" aria-label="Agendar disparo para data e hora específica" onclick="document.getElementById('dpTimingState').style.display='none'; document.getElementById('dpSchedulingState').style.display='block'">
                                                 <i class="fas fa-calendar-plus"></i> AGENDAR
                                             </button>
                                         </div>
@@ -199,7 +199,7 @@
                                 <div class="dp-scheduling-state" id="dpSchedulingState" style="display:none;">
                                     <div class="dp-schedule-header">
                                         <span>Escolha o horário</span>
-                                        <button type="button" class="dp-schedule-back" id="dpBackToTiming" onclick="document.getElementById('dpTimingState').style.display='block'; document.getElementById('dpSchedulingState').style.display='none'">
+                                        <button type="button" class="dp-schedule-back" id="dpBackToTiming" aria-label="Voltar ao modo de envio rápido" onclick="document.getElementById('dpTimingState').style.display='block'; document.getElementById('dpSchedulingState').style.display='none'">
                                             <i class="fas fa-arrow-left"></i>
                                         </button>
                                     </div>
@@ -222,7 +222,7 @@
                                                 <strong id="dpEndTimeText">~10:05</strong>
                                             </div>
                                         </div>
-                                        <button type="button" class="dp-schedule-confirm" id="dpConfirmSchedule" onclick="const st=document.getElementById('dpScheduleTime').value; if(st) document.getElementById('dpSchedTime').value=st; document.getElementById('dpTimingState').style.display='block'; document.getElementById('dpSchedulingState').style.display='none'">
+                                        <button type="button" class="dp-schedule-confirm" id="dpConfirmSchedule" aria-label="Confirmar agendamento do disparo" onclick="const st=document.getElementById('dpScheduleTime').value; if(st) document.getElementById('dpSchedTime').value=st; document.getElementById('dpTimingState').style.display='block'; document.getElementById('dpSchedulingState').style.display='none'">
                                             <i class="fas fa-check"></i> Confirmar
                                         </button>
                                     </div>
