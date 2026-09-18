@@ -1,17 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
-
-// Middleware to check if user is admin
-const adminMiddleware = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem executar esta operação.' });
-  }
-  next();
-};
+const { auth, adminOnly } = require('../middleware/auth');
 
 // Reset database endpoint (preserve sessions table)
-router.post('/reset-database', auth, adminMiddleware, async (req, res, next) => {
+router.post('/reset-database', auth, adminOnly, async (req, res, next) => {
   try {
     const db = require('../database/db');
 

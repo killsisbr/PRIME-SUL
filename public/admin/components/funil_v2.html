@@ -1,0 +1,245 @@
+<div class="fl-root">
+<style>
+  :root {
+    --animation-duration: 200ms;
+    --easing-out: cubic-bezier(0.33, 1, 0.68, 1);
+    --easing-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+  .fl-empty-note {
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  .fl-mode-btn:focus-visible,
+  .fl-btn-action-primary:focus-visible,
+  .fl-refresh-btn:focus-visible,
+  .fl-btn-fiche:focus-visible,
+  .fl-drawer-back-btn:focus-visible,
+  .fl-drawer-close-btn:focus-visible,
+  .fl-btn-dispatch:focus-visible,
+  .fl-btn-cancel:focus-visible,
+  .fl-btn-submit:focus-visible,
+  .fl-close-submodal-btn:focus-visible,
+  .fl-edit-save:focus-visible,
+  .fl-edit-cancel:focus-visible,
+  .fl-c-save-obs:focus-visible,
+  .fl-c-done-btn:focus-visible,
+  .fl-c-transfer-btn:focus-visible,
+  .fl-c-close-btn:focus-visible,
+  .fl-c-wa-btn:focus-visible,
+  .fl-c-seller-bot-btn:focus-visible,
+  .fl-sched-close-btn:focus-visible,
+  .fl-sched-cancel:focus-visible,
+  .fl-sched-submit:focus-visible,
+  .fl-tab-btn:focus-visible,
+  .fl-tag-btn:focus-visible,
+  .fl-hour-chip:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 2px;
+  }
+  .fl-pill-stat b {
+    transition: transform var(--animation-duration) var(--easing-out);
+  }
+  .fl-pill-stat b:hover {
+    transform: scale(1.05);
+  }
+  .fl-seg-wrap:hover .fl-seg {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+  }
+  .fl-seg-wrap.active .fl-seg {
+    box-shadow: inset 0 0 0 2px #fff, 0 8px 16px rgba(0,0,0,0.5);
+  }
+  .fl-drawer {
+    border-radius: 14px;
+  }
+  .fl-client-card {
+    transition: transform var(--animation-duration) var(--easing-out), box-shadow var(--animation-duration) var(--easing-out);
+  }
+  .fl-client-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  }
+  .fl-client-card.selected {
+    border-color: #00a884;
+    background-color: rgba(0,168,132,0.1);
+  }
+  .fl-client-card.pri-alta { border-left-color: #ef4444; }
+  .fl-client-card.pri-media { border-left-color: #fbbf24; }
+  .fl-client-card.pri-baixa { border-left-color: #64748b; }
+  .fl-btn-action-primary {
+    position: relative;
+    overflow: hidden;
+  }
+  .fl-btn-action-primary::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    transform: translate(-50%,-50%);
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+  .fl-btn-action-primary:active::after {
+    width: 200px;
+    height: 200px;
+  }
+</style>
+
+    <!-- ============ TOP COMPACT BAR (1 LINHA SEM CARDS GIGANTES) ============ -->
+    <div class="fl-top-strip">
+        <div class="fl-mode-switcher">
+            <button type="button" class="fl-mode-btn active" id="fl-mode-funnel">
+                <i class="fas fa-filter"></i> FUNIL
+            </button>
+            <button type="button" class="fl-mode-btn" id="fl-mode-crm">
+                <i class="fas fa-table-columns"></i> KANBAN
+            </button>
+        </div>
+
+        <!-- STATS COMPACTAS EM LINHA (ECONOMIZA 100PX DE ALTURA) -->
+        <div class="fl-compact-metrics">
+            <div class="fl-pill-stat" title="Total de Leads no Funil">
+                <i class="fas fa-users text-blue"></i>
+                <b id="fl-total" aria-live="polite">0</b>
+                <span>leads</span>
+            </div>
+            <div class="fl-pill-stat" title="Novos cadastrados hoje">
+                <i class="fas fa-calendar-plus text-green"></i>
+                <b id="fl-hoje" aria-live="polite">0</b>
+                <span>hoje</span>
+            </div>
+            <div class="fl-pill-stat" title="Envios do Bot">
+                <i class="fas fa-paper-plane text-orange"></i>
+                <b id="fl-envios" aria-live="polite">0</b>
+                <span>envios</span>
+            </div>
+            <div class="fl-pill-stat" title="Taxa de Conversão Global">
+                <i class="fas fa-chart-line text-cyan"></i>
+                <b id="fl-taxa" aria-live="polite">0%</b>
+                <span>conv.</span>
+            </div>
+        </div>
+
+        <div class="fl-top-right-actions">
+            <button type="button" class="fl-btn-action-primary" id="fl-btn-new-lead">
+                <i class="fas fa-plus"></i> Novo Lead
+            </button>
+            <span class="fl-live-badge"><i class="fas fa-circle"></i> Ao vivo</span>
+            <button type="button" class="fl-refresh-btn" id="fl-refresh" title="Atualizar dados"><i
+                    class="fas fa-rotate-right"></i></button>
+        </div>
+    </div>
+
+    <!-- ============ VISÃO 1: FUNIL DE VENDAS & DRAWER ============ -->
+    <div class="fl-body" id="fl-view-funnel">
+        <!-- LADO ESQUERDO: FUNIL GEOMÉTRICO ANIMADO -->
+        <section class="fl-funnel">
+            <div class="fl-column" id="fl-column"></div>
+            <div class="fl-legend" id="fl-legend"></div>
+        </section>
+
+        <!-- LADO DIREITO: CONTAINER DINÂMICO (RESUMO / DRAWER LATERAL DE CLIENTES) -->
+        <aside class="fl-right-container">
+            <!-- PAINEL DE RESUMO DEFAULT -->
+            <div class="fl-overview-panel" id="fl-overview-panel">
+                <div class="fl-panel-title"><i class="fas fa-calendar-check"></i> RETORNOS DE HOJE</div>
+                <div class="fl-returns" id="fl-returns">
+                    <div class="fl-return-empty"><i class="fas fa-circle-check"></i> Nenhum retorno pendente para hoje.
+                    </div>
+                </div>
+
+                <div class="fl-panel-title"><i class="fas fa-chart-simple"></i> DETALHAMENTO</div>
+                <div class="fl-detail" id="fl-detail"></div>
+
+                <div class="fl-panel-title"><i class="fas fa-broom"></i> GARGALO</div>
+                <div class="fl-bottleneck" id="fl-bottleneck"></div>
+            </div>
+
+            <!-- DRAWER LATERAL ANIMADO DE CLIENTES (INFO LIST) -->
+            <div class="fl-drawer" id="fl-drawer" style="display:none;">
+                <div class="fl-drawer-header">
+                    <div class="fl-drawer-title-group">
+                        <span class="fl-drawer-stage-badge" id="fl-drawer-badge">NOVO</span>
+                        <div>
+                            <h3 id="fl-drawer-title">CLIENTES DA ETAPA</h3>
+                            <p id="fl-drawer-subtitle">Clique em um cliente para ver a ficha completa</p>
+                        </div>
+                    </div>
+                    <button type="button" class="fl-drawer-back-btn" id="fl-drawer-back-btn" title="Voltar ao Resumo">
+                        <i class="fas fa-arrow-left"></i> RESUMO
+                    </button>
+                </div>
+
+                <!-- FILTROS E CONTROLES DE SELEÇÃO DO DRAWER -->
+                <div class="fl-drawer-filters">
+                    <div class="fl-search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="fl-drawer-search" placeholder="Buscar por nome, telefone ou CPF...">
+                    </div>
+                    <select id="fl-drawer-prio" class="fl-select-pill">
+                        <option value="">TODAS PRIORIDADES</option>
+                        <option value="alta">Alta</option>
+                        <option value="media">Média</option>
+                        <option value="baixa">Baixa</option>
+                    </select>
+                </div>
+
+                <!-- BARRA DE SELEÇÃO EM MASSA -->
+                <div class="fl-drawer-select-bar">
+                    <label class="fl-select-all-label">
+                        <input type="checkbox" id="fl-select-all-leads" class="fl-custom-check">
+                        <span>Selecionar Todos (<b id="fl-visible-lead-count">0</b>)</span>
+                    </label>
+                    <span class="fl-selected-badge" id="fl-selected-badge" style="display:none;">
+                        <i class="fas fa-check-circle"></i> <b id="fl-selected-count">0</b> selecionados
+                    </span>
+                    <button type="button" class="fl-clear-sel-btn" id="fl-clear-selection-btn" style="display:none;"
+                        title="Limpar seleção">
+                        <i class="fas fa-times"></i> Limpar
+                    </button>
+                </div>
+
+                <!-- LISTA DE CLIENTES DO ESTÁGIO -->
+                <div class="fl-client-list" id="fl-drawer-clients"></div>
+
+                <div class="fl-drawer-footer">
+                    <span id="fl-drawer-count">0 clientes exibidos</span>
+                    <div class="fl-drawer-footer-actions">
+                        <button type="button" class="btn-retro fl-btn-dispatch" id="fl-btn-create-campaign"
+                            style="display:none;">
+                            <i class="fas fa-paper-plane"></i> CRIAR DISPARO (<span
+                                id="fl-campaign-target-count">0</span>)
+                        </button>
+                        <button type="button" class="fl-btn-secondary" id="fl-drawer-close-btn">
+                            <i class="fas fa-chevron-right"></i> RECOLHER
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ============ VISÃO 2: MODO CRM KANBAN COMPLETO ============ -->
+    <div class="fl-view-crm" id="fl-view-crm" style="display:none;">
+        <div class="fl-crm-toolbar">
+            <div class="fl-search-box" style="max-width:320px;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="fl-crm-search" placeholder="Buscar no CRM (nome, tel, CPF)...">
+            </div>
+            <select id="fl-crm-prio" class="fl-select-pill">
+                <option value="">TODAS PRIORIDADES</option>
+                <option value="alta">Alta</option>
+                <option value="media">Média</option
