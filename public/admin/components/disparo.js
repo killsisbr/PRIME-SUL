@@ -26,27 +26,7 @@ function animateCounter(elId, targetVal) {
     });
 }
 
-const FIRST_NAMES = ['Maria', 'João', 'Ana', 'Carlos', 'Fernanda', 'Roberto', 'Juliana', 'Lucas', 'Patricia', 'Thiago', 'Vanessa', 'Rodrigo', 'Camila', 'Diego', 'Bruna', 'Marcelo', 'Larissa', 'Gabriel', 'Aline', 'Rafael', 'Renata', 'Felipe', 'Mariana', 'Gustavo', 'Beatriz'];
-const LAST_NAMES = ['Silva', 'Santos', 'Oliveira', 'Ferreira', 'Souza', 'Mendes', 'Costa', 'Ramos', 'Fonseca', 'Machado', 'Castro', 'Pinto', 'Nogueira', 'Freitas', 'Barbosa', 'Carvalho', 'Azevedo', 'Teixeira', 'Cardoso', 'Almeida', 'Duarte', 'Moraes'];
-const CITIES = ['Porto Alegre', 'Caxias do Sul', 'Canoas', 'Pelotas', 'Novo Hamburgo', 'Santa Maria', 'São Leopoldo', 'Passo Fundo', 'Rio Grande', 'Gravataí', 'Viamão', 'Bento Gonçalves', 'Alvorada', 'Uruguaiana', 'Santa Cruz do Sul'];
-const STAGES = ['novo', 'novo', 'novo', 'contato', 'contato', 'confirmado'];
 const DAY_NAMES = { 1: 'SEGUNDA-FEIRA', 2: 'TERÇA-FEIRA', 3: 'QUARTA-FEIRA', 4: 'QUINTA-FEIRA', 5: 'SEXTA-FEIRA', 6: 'SÁBADO', 0: 'DOMINGO' };
-
-const FALLBACK_LEADS = Array.from({ length: 50 }, (_, i) => {
-    const fn = FIRST_NAMES[i % FIRST_NAMES.length];
-    const ln1 = LAST_NAMES[(i * 3) % LAST_NAMES.length];
-    const ln2 = LAST_NAMES[(i * 7) % LAST_NAMES.length];
-    const city = CITIES[i % CITIES.length];
-    const stage = STAGES[i % STAGES.length];
-    const phoneNum = String(99100 + i * 137).slice(0, 5) + '-' + String(1000 + i * 43).slice(0, 4);
-    return {
-        id: 100 + i + 1,
-        name: `${fn} ${ln1} ${ln2}`,
-        phone: `(51) ${phoneNum}`,
-        city: city,
-        status: stage
-    };
-});
 
 export async function init() {
     const api = window.api;
@@ -645,18 +625,12 @@ export async function init() {
             const res = await api('/leads?limit=300').catch(() => []);
             let leads = Array.isArray(res) ? res : (res.leads || []);
 
-            if (!leads.length) leads = FALLBACK_LEADS;
-
             const canon = s => ({ novo: 'novos', contato: 'enviados', confirmado: 'sim', concluido: 'sim' })[s] || s;
             allLeads = leads.filter(l => stages.includes(canon(l.status || 'novos')));
-            if (!allLeads.length) {
-                allLeads = FALLBACK_LEADS.filter(l => stages.includes(canon(l.status || 'novos')));
-            }
-            if (!allLeads.length) allLeads = FALLBACK_LEADS;
 
             renderSchedTargetLeads();
         } catch (e) {
-            allLeads = FALLBACK_LEADS;
+            allLeads = [];
             renderSchedTargetLeads();
         }
     }
