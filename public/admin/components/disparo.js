@@ -1614,6 +1614,16 @@ export async function init() {
 
             const card = document.createElement('div');
             card.className = 'dp-day-card';
+            card.style.cursor = 'pointer';
+
+            const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            card.onclick = () => {
+                const dateInput = document.getElementById('dpScheduleDate');
+                if (dateInput) dateInput.value = dateStr;
+                document.getElementById('dpTimingState').style.display = 'none';
+                document.getElementById('dpSchedulingState').style.display = 'block';
+            };
+
             card.innerHTML = `
                 <div class="dp-day-card-label">${dayLabels[date.getDay()]}</div>
                 <div class="dp-day-card-date">${date.getDate()}</div>
