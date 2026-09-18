@@ -697,7 +697,7 @@ export async function init() {
         if (activeTargets.length) {
             const first = activeTargets[0];
             const nameEl = document.getElementById('dpLivePreviewContactName');
-            if (nameEl) nameEl.textContent = first.name || 'Maria Silva';
+            if (nameEl) nameEl.textContent = first.name || '—';
         }
         updateLivePreview();
         updateSubmitBtnText();
@@ -830,7 +830,7 @@ export async function init() {
             if (idInput) idInput.value = '';
             if (titleEl) titleEl.textContent = 'DISPARAR MENSAGENS NO WHATSAPP';
             if (timeInput) timeInput.value = initialTimeStr;
-            if (msgArea) msgArea.value = 'Olá {primeiro-nome}! Vi que solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
+            if (msgArea) msgArea.value = '';
             
             selectedQuantity = 10;
             if (rangeInput) rangeInput.value = 10;
@@ -1062,7 +1062,7 @@ export async function init() {
         if (selectedTmplId === 'new') {
             if (idInput) idInput.value = '';
             if (nameInput) nameInput.value = '';
-            if (bodyInput) bodyInput.value = 'Olá {nome}! Vi que solicitou uma simulação de crédito. Posso te enviar a proposta agora?';
+            if (bodyInput) bodyInput.value = '';
             if (delBtn) delBtn.style.display = 'none';
             if (titleEl) titleEl.textContent = 'CRIAR NOVO TEMPLATE DO WHATSAPP';
         } else {
@@ -1086,7 +1086,7 @@ export async function init() {
         if (body) {
             prevTextEl.textContent = body.replace(/\{nome\}/g, 'Maria');
         } else {
-            prevTextEl.textContent = 'Olá Maria! Vi que solicitou uma simulação de crédito. Posso te enviar a proposta agora?';
+            prevTextEl.textContent = '—';
         }
     }
 
@@ -1262,16 +1262,16 @@ export async function init() {
         const contactNameEl = document.getElementById('dpLivePreviewContactName');
         const msgTimeEl = document.getElementById('dpLiveMsgTime');
 
-        const raw = (msgArea?.value || '').trim() || 'Olá {primeiro-nome}! Vi que você solicitou uma simulação de crédito. Posso te enviar as propostas agora?';
+        const raw = (msgArea?.value || '').trim() || '';
         
         if (charCountEl) {
             charCountEl.textContent = `${(msgArea?.value || '').length} carac.`;
         }
 
         const firstLead = (typeof allLeads !== 'undefined' && allLeads.length) ? allLeads[0] : null;
-        const fullName = firstLead?.name || 'Maria Silva';
+        const fullName = firstLead?.name || '—';
         const firstName = fullName.trim().split(/\s+/).filter(Boolean)[0] || 'Maria';
-        const city = firstLead?.city || 'Porto Alegre';
+        const city = firstLead?.city || '—';
         const rendaNum = firstLead?.renda != null && firstLead?.renda !== '' ? Number(firstLead.renda) : null;
         const renda = rendaNum && !Number.isNaN(rendaNum) ? `R$ ${rendaNum.toLocaleString('pt-BR')}` : (firstLead?.renda || 'R$ 3.500');
         const values = {
