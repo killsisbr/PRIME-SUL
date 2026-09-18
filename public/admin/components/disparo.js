@@ -141,22 +141,23 @@ export async function init() {
     }
 
     function updateDaySelectionUI() {
-        document.querySelectorAll('.dp-day-btn').forEach(btn => {
-            const bDay = Number(btn.dataset.day);
-            btn.classList.toggle('active', bDay === selectedDay);
-        });
+        // // Função desabilitada - novo design não usa seleção de dias
+        // document.querySelectorAll('.dp-day-btn').forEach(btn => {
+        //     const bDay = Number(btn.dataset.day);
+        //     btn.classList.toggle('active', bDay === selectedDay);
+        // });
 
-        const labelEl = document.getElementById('dp-24h-sub');
-        if (labelEl) {
-            labelEl.innerHTML = `<i class="fas fa-eye"></i> VISUALIZANDO AGENDAMENTOS DE: <b>${DAY_NAMES[selectedDay] || 'HOJE'}</b>`;
-        }
+        // const labelEl = document.getElementById('dp-24h-sub');
+        // if (labelEl) {
+        //     labelEl.innerHTML = `<i class="fas fa-eye"></i> VISUALIZANDO AGENDAMENTOS DE: <b>${DAY_NAMES[selectedDay] || 'HOJE'}</b>`;
+        // }
 
-        updateNowPin();
-        if (_dispViewMode === 'agenda') {
-            renderDispAgenda();
-        } else {
-            renderScheduledTimelineBlocks();
-        }
+        // updateNowPin();
+        // if (_dispViewMode === 'agenda') {
+        //     renderDispAgenda();
+        // } else {
+        //     renderScheduledTimelineBlocks();
+        // }
         renderCategoryCards();
     }
 
@@ -413,133 +414,143 @@ export async function init() {
         });
     }
 
-    // Renderiza a lista única de disparos do dia selecionado
+    // Renderiza a lista única de disparos - NOVO DESIGN COM PREVIEW DE DATA/HORA
+    let _currentAgendaFilter = 'all';
+
     function renderCategoryCards() {
-        const targetEl = document.getElementById('dpSingleDispatchesList');
+        const agendaGrid = document.getElementById('dpAgendaGrid');
         const countBadge = document.getElementById('dpDispatchesCountBadge');
 
-        const activeCampaigns = getFilteredCampaigns();
+        // Mostra todos os disparos, não apenas do dia selecionado
+        let allDispatchesForDisplay = allCampaigns || [];
 
-        if (countBadge) {
-            countBadge.textContent = `${activeCampaigns.length} AGENDADO${activeCampaigns.length === 1 ? '' : 'S'}`;
+        // Aplica filtro
+        if (_currentAgendaFilter === 'scheduled') {
+            allDispatchesForDisplay = allDispatchesForDisplay.filter(c =>
+                !c.status || c.status === 'draft'
+            );
+        } else if (_currentAgendaFilter === 'sent') {
+            allDispatchesForDisplay = allDispatchesForDisplay.filter(c =>
+                c.status === 'done' || c.status === 'running' || c.status === 'paused'
+            );
         }
 
-        if (!targetEl) return;
+        if (countBadge) {
+            countBadge.textContent = `${allCampaigns.length} AGENDADO${allCampaigns.length === 1 ? '' : 'S'}`;
+        }
 
-        if (!activeCampaigns.length) {
-            targetEl.innerHTML = `
-                <div class="dp-cat-empty" style="padding:16px 0;">
-                    <i class="far fa-calendar-alt" style="font-size:1.8rem;"></i>
-                    <span style="font-size:.76rem;">NENHUM DISPARO AGENDADO PARA ${DAY_NAMES[selectedDay] || 'ESTE DIA'}</span>
-                    <button type="button" class="dp-saas-btn prim dp-btn-schedule-trigger" data-stage="novo" style="margin-top:6px;">
-                        <i class="fas fa-plus"></i> + AGENDAR NOVO DISPARO
-                    </button>
+        if (!agendaGrid) return;
+
+        if (!allDispatchesForDisplay.length) {
+            agendaGrid.innerHTML = `
+                <div style="padding:60px 20px; text-align:center; color:var(--text-muted);">
+                    <i class="fas fa-calendar-check" style="font-size:48px; margin-bottom:16px; opacity:0.4;"></i>
+                    <p style="font-size:16px; margin:12px 0;">Nenhum disparo ${_currentAgendaFilter === 'sent' ? 'enviado' : _currentAgendaFilter === 'scheduled' ? 'agendado' : ''}</p>
+                    <small>Clique em "NOVO DISPARO" para começar a agendar suas campanhas!</small>
                 </div>`;
         } else {
-            targetEl.innerHTML = activeCampaigns.map(c => {
+            agendaGrid.innerHTML = allDispatchesForDisplay.map(c => {
                 let timeStr = '10:00';
+                let dayStr = 'Hoje';
                 if (c.scheduled_at) {
                     const d = new Date(c.scheduled_at.replace(' ', 'T'));
                     if (!isNaN(d.getTime())) {
                         timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                        const today = new Date();
+                        const isToday = d.toDateString() === today.toDateString();
+                        if (!isToday) {
+                            const dayOfWeek = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'][d.getDay()];
+                            const monthDay = String(d.getDate()).padStart(2, '0');
+                            dayStr = `${dayOfWeek}, ${monthDay} ${['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'][d.getMonth()]}`;
+                        }
                     }
                 }
 
                 const total = extractCampaignTargetCount(c);
                 const sent = c.total_sent || 0;
-                const sentPct = Math.min(100, Math.round((sent / total) * 100));
-
-                const cadenceSec = 30; // 30s por lead
-                const durationMin = Math.max(1, Math.ceil((total * cadenceSec) / 60));
-
-                const [startH, startM] = timeStr.split(':').map(Number);
-                const startTotalMin = (startH || 0) * 60 + (startM || 0);
-                const endTotalMin = startTotalMin + durationMin;
-                const endH = String(Math.floor(endTotalMin / 60)).padStart(2, '0');
-                const endM = String(endTotalMin % 60).padStart(2, '0');
-                const endStr = `${endH}:${endM}`;
-
                 const status = c.status || 'draft';
-                let statusBadge = `<span class="dp-camp-status-badge draft"><i class="fas fa-clock"></i> AGENDADO</span>`;
-                if (status === 'running') statusBadge = `<span class="dp-camp-status-badge running"><i class="fas fa-spinner fa-spin"></i> EM ANDAMENTO</span>`;
-                else if (status === 'paused') statusBadge = `<span class="dp-camp-status-badge paused"><i class="fas fa-pause"></i> PAUSADO</span>`;
-                else if (status === 'done') statusBadge = `<span class="dp-camp-status-badge done"><i class="fas fa-circle-check"></i> CONCLUÍDO</span>`;
-                else if (status === 'cancelled') statusBadge = `<span class="dp-camp-status-badge cancelled"><i class="fas fa-ban"></i> CANCELADO</span>`;
+
+                // Determina classe de estilo baseado em status
+                let cardClass = 'scheduled';
+                let timeIcon = '🕙';
+                if (status === 'done') {
+                    cardClass = 'sent';
+                    timeIcon = '✓';
+                } else if (status === 'running') {
+                    cardClass = 'running';
+                    timeIcon = '⏱';
+                } else if (status === 'failed' || status === 'cancelled') {
+                    cardClass = 'failed';
+                    timeIcon = '✗';
+                }
 
                 return `
-                <div class="dp-cat-camp-item" data-id="${c.id}" style="margin-bottom:10px; cursor:pointer;" title="Clique em qualquer lugar para abrir a ficha de disparo (${timeStr} às ${endStr})">
-                    <div class="dp-camp-item-head" style="align-items:center;">
-                        <strong class="dp-camp-card-title" data-id="${c.id}"><i class="fas fa-rocket"></i> ${esc(c.name)}</strong>
-                        ${statusBadge}
-                        <span class="dp-camp-time-tag" style="margin-left:auto;"><i class="far fa-clock"></i> ${timeStr} às ${endStr}</span>
-                    </div>
-                    <div class="dp-camp-item-progress" style="margin-top:6px;">
-                        <div class="dp-camp-mini-bar"><div class="dp-camp-mini-fill" style="width:${sentPct}%"></div></div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-                            <small>${sent} / ${total} enviados • <i class="fas fa-stopwatch"></i> ~${durationMin} min</small>
-                            <div class="dp-camp-ctrl-group" data-id="${c.id}">
-                                ${status !== 'running' && status !== 'done' ? `<button type="button" class="dp-ctrl-btn play" data-act="start" title="Iniciar / Retomar envio"><i class="fas fa-play"></i> INICIAR</button>` : ''}
-                                ${status === 'running' ? `<button type="button" class="dp-ctrl-btn pause" data-act="pause" title="Pausar disparo"><i class="fas fa-pause"></i> PAUSAR</button>` : ''}
-                                ${status === 'running' || status === 'paused' ? `<button type="button" class="dp-ctrl-btn stop" data-act="cancel" title="Cancelar disparo"><i class="fas fa-stop"></i> PARAR</button>` : ''}
-                                <button type="button" class="dp-ctrl-btn reset" data-act="reset" title="Reiniciar do zero"><i class="fas fa-rotate-right"></i> REINICIAR</button>
+                <div class="dp-dispatch-card ${cardClass}" data-id="${c.id}">
+                    <div class="dp-dispatch-info">
+                        <div class="dp-dispatch-time">
+                            <span class="dp-dispatch-time-icon">${timeIcon}</span>
+                            <strong>${dayStr} • ${timeStr}</strong>
+                        </div>
+                        <div class="dp-dispatch-campaign">
+                            <span class="dp-dispatch-campaign-name">${esc(c.name)}</span>
+                        </div>
+                        <div class="dp-dispatch-audience">
+                            <div class="dp-dispatch-audience-item">
+                                <i class="fas fa-users"></i>
+                                <span>${total} ${status === 'done' || status === 'running' ? 'leads enviados' : 'leads'}</span>
+                            </div>
+                            <div class="dp-dispatch-audience-item">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Bot ${c.bot_slot || 'Principal'}</span>
                             </div>
                         </div>
                     </div>
+                    <div class="dp-dispatch-actions">
+                        <button class="dp-btn-action" data-act="edit" data-id="${c.id}" title="Editar agendamento">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="dp-btn-action delete" data-act="delete" data-id="${c.id}" title="Deletar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>`;
-            }).join('') + `
-            <div style="display:flex; justify-content:center; margin-top:10px;">
-                <button type="button" class="dp-saas-btn prim dp-btn-schedule-trigger" data-stage="novo">
-                    <i class="fas fa-plus"></i> + AGENDAR NOVO DISPARO
-                </button>
-            </div>`;
+            }).join('');
         }
 
-        targetEl.querySelectorAll('.dp-cat-camp-item').forEach(card => {
+        // Listeners para os cards
+        agendaGrid.querySelectorAll('.dp-dispatch-card').forEach(card => {
             card.onclick = (e) => {
-                if (e.target.closest('.dp-ctrl-btn')) return;
+                if (e.target.closest('.dp-btn-action')) return;
                 const id = card.dataset.id;
                 const c = allCampaigns.find(x => String(x.id) === String(id));
                 if (c) openScheduleModal('10:00', 'novo', c);
             };
         });
 
-        targetEl.querySelectorAll('.dp-ctrl-btn').forEach(btn => {
+        // Listeners para botões de ação
+        agendaGrid.querySelectorAll('.dp-btn-action').forEach(btn => {
             btn.onclick = async (e) => {
                 e.stopPropagation();
-                const group = btn.closest('.dp-camp-ctrl-group');
-                const campaignId = group?.dataset.id;
+                const id = btn.dataset.id;
                 const action = btn.dataset.act;
-                if (!campaignId || !action) return;
+                const c = allCampaigns.find(x => String(x.id) === String(id));
+                if (!c) return;
 
-                btn.disabled = true;
-                try {
-                    if (action === 'start') {
-                        await api(`/campaigns/${campaignId}/start`, { method: 'POST' });
-                        toast('Disparo iniciado em segundo plano!', 'ok');
-                    } else if (action === 'pause') {
-                        await api(`/campaigns/${campaignId}/pause`, { method: 'POST' });
-                        toast('Disparo pausado', 'ok');
-                    } else if (action === 'cancel') {
-                        if (!confirm('Deseja realmente cancelar este disparo?')) return;
-                        await api(`/campaigns/${campaignId}/cancel`, { method: 'POST' });
-                        toast('Disparo cancelado', 'ok');
-                    } else if (action === 'reset') {
-                        if (!confirm('Deseja zerar e reiniciar este disparo do início?')) return;
-                        await api(`/campaigns/${campaignId}/reset`, { method: 'POST' });
-                        toast('Disparo reiniciado com sucesso!', 'ok');
+                if (action === 'edit') {
+                    openScheduleModal('10:00', 'novo', c);
+                } else if (action === 'delete') {
+                    if (!confirm(`Deseja deletar o disparo "${c.name}"?`)) return;
+                    btn.disabled = true;
+                    try {
+                        await api(`/campaigns/${id}`, { method: 'DELETE' });
+                        toast('Disparo deletado!', 'ok');
+                        await loadData();
+                    } catch (err) {
+                        toast(err.message || 'Erro ao deletar', 'err');
+                    } finally {
+                        btn.disabled = false;
                     }
-                    await loadData();
-                } catch (err) {
-                    toast(err.message || 'Erro ao executar ação', 'err');
-                } finally {
-                    btn.disabled = false;
                 }
-            };
-        });
-
-        targetEl.querySelectorAll('.dp-btn-schedule-trigger').forEach(btn => {
-            btn.onclick = () => {
-                openScheduleModal('10:00', 'novos');
             };
         });
     }
@@ -849,12 +860,145 @@ export async function init() {
         await loadLeadsForSchedule();
         updateLivePreview();
         updateSubmitBtnText();
+        updateTimingCard(); // Atualiza o card de timing
+
+        // Adicionar listeners dos novos estados
+        console.log('[openScheduleModal] Adicionando listeners dos novos estados...');
+        const agBtn = document.getElementById('dpBtnOpenScheduler');
+        console.log('[openScheduleModal] dpBtnOpenScheduler encontrado?', !!agBtn);
+        if (agBtn && !agBtn.dataset.listenerAttached) {
+            console.log('[openScheduleModal] Adicionando listener para AGENDAR');
+            agBtn.addEventListener('click', () => {
+                const ts = document.getElementById('dpTimingState');
+                const ss = document.getElementById('dpSchedulingState');
+                if (ts) ts.style.display = 'none';
+                if (ss) ss.style.display = 'block';
+                updateEndTimePreview();
+            });
+            agBtn.dataset.listenerAttached = 'true';
+        }
+
+        const backBtn = document.getElementById('dpBackToTiming');
+        if (backBtn && !backBtn.dataset.listenerAttached) {
+            backBtn.addEventListener('click', () => {
+                const ts = document.getElementById('dpTimingState');
+                const ss = document.getElementById('dpSchedulingState');
+                if (ts) ts.style.display = 'block';
+                if (ss) ss.style.display = 'none';
+            });
+            backBtn.dataset.listenerAttached = 'true';
+        }
+
+        const confirmBtn = document.getElementById('dpConfirmSchedule');
+        if (confirmBtn && !confirmBtn.dataset.listenerAttached) {
+            confirmBtn.addEventListener('click', () => {
+                const startTime = document.getElementById('dpScheduleTime')?.value;
+                const timeInput = document.getElementById('dpSchedTime');
+                if (startTime && timeInput) {
+                    timeInput.value = startTime;
+                    const ts = document.getElementById('dpTimingState');
+                    const ss = document.getElementById('dpSchedulingState');
+                    if (ts) ts.style.display = 'block';
+                    if (ss) ss.style.display = 'none';
+                }
+            });
+            confirmBtn.dataset.listenerAttached = 'true';
+        }
     }
 
     function closeScheduleModal() {
         const modal = document.getElementById('dpScheduleModal');
         if (modal) modal.style.display = 'none';
     }
+
+    // ================= NOVO SISTEMA DE TIMING INTERATIVO =================
+    function updateTimingCard() {
+        const quantity = selectedQuantity || 10;
+        const cadence = 30; // segundos por lead
+        const totalSeconds = quantity * cadence;
+        const minutes = Math.ceil(totalSeconds / 60);
+
+        const estimatedEl = document.getElementById('dpEstimatedTime');
+        const durationPreviewEl = document.getElementById('dpDurationText');
+
+        if (estimatedEl) {
+            estimatedEl.textContent = `~${minutes} min`;
+        }
+        if (durationPreviewEl) {
+            durationPreviewEl.textContent = `~${minutes} min`;
+        }
+
+        updateEndTimePreview();
+    }
+
+    function updateEndTimePreview() {
+        const startTimeInput = document.getElementById('dpScheduleTime');
+        const endTimePreviewEl = document.getElementById('dpEndTimeText');
+        const durationPreviewEl = document.getElementById('dpDurationText');
+
+        if (!startTimeInput || !endTimePreviewEl || !durationPreviewEl) return;
+
+        const startTime = startTimeInput.value;
+        if (!startTime) return;
+
+        const quantity = selectedQuantity || 10;
+        const minutes = Math.ceil((quantity * 30) / 60);
+
+        const [h, m] = startTime.split(':').map(Number);
+        const totalMinutes = h * 60 + m + minutes;
+        const endH = Math.floor(totalMinutes / 60);
+        const endM = totalMinutes % 60;
+
+        const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+        durationPreviewEl.textContent = `~${minutes} min`;
+        endTimePreviewEl.textContent = `~${endTimeStr}`;
+    }
+
+    // Listeners para o novo sistema de timing (dois estados no card) - usando delegação
+    document.addEventListener('click', (e) => {
+        const targetId = e.target.id || e.target.parentElement?.id;
+
+        if (targetId === 'dpBtnSendNow') {
+            const timeInput = document.getElementById('dpSchedTime');
+            if (timeInput) timeInput.value = 'now';
+        }
+        else if (targetId === 'dpBtnOpenScheduler') {
+            const timingState = document.getElementById('dpTimingState');
+            const schedulingState = document.getElementById('dpSchedulingState');
+            if (timingState) timingState.style.display = 'none';
+            if (schedulingState) schedulingState.style.display = 'block';
+            updateEndTimePreview();
+        }
+        else if (targetId === 'dpBackToTiming') {
+            const timingState = document.getElementById('dpTimingState');
+            const schedulingState = document.getElementById('dpSchedulingState');
+            if (timingState) timingState.style.display = 'block';
+            if (schedulingState) schedulingState.style.display = 'none';
+        }
+        else if (targetId === 'dpConfirmSchedule') {
+            const startTime = document.getElementById('dpScheduleTime')?.value;
+            const timeInput = document.getElementById('dpSchedTime');
+            if (startTime && timeInput) {
+                timeInput.value = startTime;
+                // Volta ao estado de timing
+                const timingState = document.getElementById('dpTimingState');
+                const schedulingState = document.getElementById('dpSchedulingState');
+                if (timingState) timingState.style.display = 'block';
+                if (schedulingState) schedulingState.style.display = 'none';
+            }
+        }
+    });
+
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'dpScheduleTime') {
+            updateEndTimePreview();
+        }
+    });
+
+    // Atualiza o card de timing quando a quantidade muda
+    document.getElementById('dpSchedRange')?.addEventListener('input', () => {
+        updateTimingCard();
+    });
 
     document.getElementById('dpSchedDeleteBtn')?.addEventListener('click', async () => {
         const campaignId = document.getElementById('dpSchedCampaignId')?.value;
@@ -1390,21 +1534,21 @@ export async function init() {
         } catch (e) { toast(e.message, 'err'); }
     });
 
-    // Controles do Alternador de Visão (Régua Diária vs Agenda Preview)
-    document.getElementById('dpBtnModeTrack')?.addEventListener('click', () => switchDispView('track'));
-    document.getElementById('dpBtnModeAgenda')?.addEventListener('click', () => switchDispView('agenda'));
+    // // Controles do Alternador de Visão (Régua Diária vs Agenda Preview) - REMOVIDO
+    // document.getElementById('dpBtnModeTrack')?.addEventListener('click', () => switchDispView('track'));
+    // document.getElementById('dpBtnModeAgenda')?.addEventListener('click', () => switchDispView('agenda'));
 
-    // Botões de Período da Agenda Preview (7d, 15d, 30d)
-    document.querySelectorAll('.dp-ag-period-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.dp-ag-period-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            _dispAgendaPeriod = btn.dataset.period || '7d';
-            renderDispAgenda();
-        });
-    });
+    // // Botões de Período da Agenda Preview (7d, 15d, 30d) - REMOVIDO
+    // document.querySelectorAll('.dp-ag-period-btn').forEach(btn => {
+    //     btn.addEventListener('click', () => {
+    //         document.querySelectorAll('.dp-ag-period-btn').forEach(b => b.classList.remove('active'));
+    //         btn.classList.add('active');
+    //         _dispAgendaPeriod = btn.dataset.period || '7d';
+    //         renderDispAgenda();
+    //     });
+    // });
 
-    // Controles de Navegação da Agenda Preview
+    // // Controles de Navegação da Agenda Preview - REMOVIDO
     document.getElementById('dpAgPrev')?.addEventListener('click', () => {
         if (_dispAgendaPeriod === '7d') _dispAgendaAnchor = addDays(_dispAgendaAnchor, -7);
         else if (_dispAgendaPeriod === '15d') _dispAgendaAnchor = addDays(_dispAgendaAnchor, -15);
@@ -1439,6 +1583,16 @@ export async function init() {
             }
         });
     }
+
+    // Listeners para filtros da agenda
+    document.querySelectorAll('.dp-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.dp-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _currentAgendaFilter = btn.dataset.filter || 'all';
+            renderCategoryCards();
+        });
+    });
 
     // Inicialização
     updateNowPin();

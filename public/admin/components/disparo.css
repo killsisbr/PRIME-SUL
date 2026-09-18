@@ -1607,6 +1607,527 @@
     .dp-meta-progress-wrap { max-width: 180px; }
 }
 
+/* ============ NOVA VISUALIZAÇÃO: AGENDA COM PREVIEW DE DATA/HORA ============ */
+.dp-agenda-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dp-agenda-filter-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-bottom: 1px solid var(--holo-border, #27364d);
+    flex-wrap: wrap;
+}
+
+.dp-filter-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--holo-border, #27364d);
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.dp-filter-btn:hover {
+    border-color: var(--holo-primary, #0ea5e9);
+    color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-filter-btn.active {
+    background: var(--holo-primary, #0ea5e9);
+    border-color: var(--holo-primary, #0ea5e9);
+    color: #fff;
+}
+
+.dp-agenda-grid {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.dp-dispatch-card {
+    background: var(--holo-card, #172134);
+    border: 1px solid var(--holo-border, #27364d);
+    border-left: 3px solid transparent;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.dp-dispatch-card:hover {
+    border-color: var(--holo-border, #334d66);
+    background: #1a2332;
+}
+
+.dp-dispatch-card.scheduled {
+    border-left-color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-dispatch-card.sent {
+    border-left-color: #22c55e;
+}
+
+.dp-dispatch-card.failed {
+    border-left-color: #ef4444;
+}
+
+.dp-dispatch-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dp-dispatch-time {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dp-dispatch-time-icon {
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.dp-dispatch-campaign {
+    font-size: 13px;
+    color: var(--holo-muted, #94a3b8);
+}
+
+.dp-dispatch-campaign-name {
+    font-weight: 500;
+    color: #cbd5e1;
+}
+
+.dp-dispatch-audience {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.dp-dispatch-audience-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dp-dispatch-audience-item i {
+    font-size: 12px;
+}
+
+.dp-dispatch-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.dp-btn-action {
+    padding: 6px 12px;
+    border: 1px solid var(--holo-border, #27364d);
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #cbd5e1;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dp-btn-action:hover {
+    background: #1e293b;
+    border-color: var(--holo-primary, #0ea5e9);
+    color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-btn-action.delete:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.dp-timeline-top {
+    padding: 12px 18px;
+    border: 1px solid var(--holo-border, #27364d);
+    border-radius: 12px;
+    background: var(--holo-card, #172134);
+    margin-bottom: 12px;
+}
+
+.dp-timeline-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #f8fafc;
+    font-size: 14px;
+}
+
+/* ============ NOVO SISTEMA DE MOMENTO DO ENVIO ============ */
+.dp-timing-card {
+    background: linear-gradient(135deg, #1a3a52, #0f1e2e);
+    border: 1px solid var(--holo-primary, #0ea5e9);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+}
+
+.dp-timing-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.dp-timing-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dp-timing-label {
+    font-size: 12px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dp-timing-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-timing-value i {
+    font-size: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.dp-timing-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.dp-timing-btn {
+    padding: 10px 16px;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--holo-primary, #0ea5e9);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.dp-timing-btn:hover {
+    background: rgba(14, 165, 233, 0.1);
+    border-color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-timing-btn.primary {
+    background: var(--holo-primary, #0ea5e9);
+    border-color: var(--holo-primary, #0ea5e9);
+    color: #fff;
+}
+
+.dp-timing-btn.primary:hover {
+    background: #0284c7;
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+}
+
+/* Scheduler Modal */
+.dp-scheduler-modal {
+    background: var(--holo-card, #172134);
+    border: 1px solid var(--holo-border, #27364d);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dp-scheduler-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--holo-border, #27364d);
+}
+
+.dp-scheduler-header span {
+    font-weight: 600;
+    color: #f8fafc;
+    font-size: 13px;
+}
+
+.dp-scheduler-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+}
+
+.dp-scheduler-close:hover {
+    color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-scheduler-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dp-scheduler-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dp-scheduler-input-group label {
+    font-size: 12px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.dp-scheduler-input-group input {
+    padding: 8px 12px;
+    border: 1px solid var(--holo-border, #27364d);
+    background: #0f1624;
+    color: #f8fafc;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.dp-scheduler-input-group input:focus {
+    outline: none;
+    border-color: var(--holo-primary, #0ea5e9);
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.2);
+}
+
+.dp-scheduler-preview {
+    background: rgba(14, 165, 233, 0.1);
+    border-left: 3px solid var(--holo-primary, #0ea5e9);
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dp-scheduler-preview span {
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.dp-scheduler-preview span b {
+    color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-scheduler-preview small {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.dp-scheduler-confirm {
+    padding: 10px 16px;
+    background: var(--holo-primary, #0ea5e9);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.dp-scheduler-confirm:hover {
+    background: #0284c7;
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+}
+
+/* ============ DOIS ESTADOS DO CARD: TIMING E SCHEDULING ============ */
+.dp-timing-state,
+.dp-scheduling-state {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.dp-schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.dp-schedule-header span {
+    font-weight: 600;
+    color: #f8fafc;
+    font-size: 13px;
+}
+
+.dp-schedule-back {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.dp-schedule-back:hover {
+    color: var(--holo-primary, #0ea5e9);
+}
+
+.dp-schedule-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dp-schedule-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dp-schedule-input-group label {
+    font-size: 12px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.dp-schedule-input {
+    padding: 10px 12px;
+    border: 2px solid var(--holo-primary, #0ea5e9) !important;
+    background: #0f1624 !important;
+    color: #f8fafc !important;
+    border-radius: 8px !important;
+    font-size: 14px;
+}
+
+.dp-schedule-input:focus {
+    outline: none;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.3) !important;
+}
+
+.dp-schedule-preview {
+    background: rgba(14, 165, 233, 0.08);
+    border-left: 3px solid var(--holo-primary, #0ea5e9);
+    padding: 12px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dp-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.dp-preview-item span {
+    color: #94a3b8;
+}
+
+.dp-preview-item strong {
+    color: var(--holo-primary, #0ea5e9);
+    font-size: 13px;
+}
+
+.dp-schedule-confirm {
+    padding: 10px 16px;
+    background: var(--holo-primary, #0ea5e9);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+}
+
+.dp-schedule-confirm:hover {
+    background: #0284c7;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+}
+
+/* Garantir que dpSchedulingState começa oculto */
+#dpSchedulingState {
+    display: none;
+}
+
+/* Garantir que dpTimingState começa visível */
+#dpTimingState {
+    display: block;
+}
+
 @media (max-width: 860px) {
     #dynamicModalOverlay:has(.dp-saas-root) #dynamicModalBody,
     #dynamicModalOverlay.is-disparo #dynamicModalBody,
@@ -1643,11 +2164,13 @@
     .dp-col-timeline {
         min-height: 380px;
     }
-    .dp-24h-bar-container {
-        overflow-x: auto;
+    .dp-dispatch-card {
+        flex-direction: column;
+        gap: 12px;
     }
-    .dp-24h-labels, .dp-24h-track, .dp-24h-footer {
-        min-width: 680px;
+    .dp-dispatch-actions {
+        width: 100%;
+        justify-content: flex-end;
     }
 }
 

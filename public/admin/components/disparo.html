@@ -45,109 +45,30 @@
         <section class="dp-saas-timeline-box dp-col-timeline">
             <div class="dp-timeline-top">
                 <div class="dp-timeline-title">
-                    <i class="fas fa-business-time" style="color:#ff7417;"></i> PROGRAMAÇÃO (08:00 - 18:00)
-                </div>
-                <div class="dp-timeline-controls">
-                    <!-- Alternador de Visão: Régua Horária vs Agenda Preview -->
-                    <div class="dp-view-mode-toggle" id="dpViewModeToggle">
-                        <button type="button" class="dp-vmode-btn active" id="dpBtnModeTrack" title="Régua de horário diária">
-                            <i class="fas fa-clock"></i> RÉGUA DO DIA
-                        </button>
-                        <button type="button" class="dp-vmode-btn" id="dpBtnModeAgenda" title="Agenda preview da semana, 15 dias e mensal">
-                            <i class="fas fa-calendar-days"></i> AGENDA PREVIEW
-                            <span class="dp-vmode-badge">TOP</span>
-                        </button>
-                    </div>
-                    <div class="dp-days-selector" id="dpDaysSelector">
-                        <button type="button" class="dp-day-btn" data-day="1">SEG</button>
-                        <button type="button" class="dp-day-btn" data-day="2">TER</button>
-                        <button type="button" class="dp-day-btn active" data-day="3">QUA</button>
-                        <button type="button" class="dp-day-btn" data-day="4">QUI</button>
-                        <button type="button" class="dp-day-btn" data-day="5">SEX</button>
-                        <button type="button" class="dp-day-btn" data-day="6">SÁB</button>
-                        <button type="button" class="dp-day-btn" data-day="0">DOM</button>
-                    </div>
+                    <i class="fas fa-calendar-check" style="color:#10b981;"></i> AGENDA DE DISPAROS
                 </div>
             </div>
 
-            <!-- RÉGUA DO HORÁRIO COMERCIAL (08H ÀS 18H) -->
-            <div class="dp-24h-bar-container" id="dp24hBarContainer">
-                <div class="dp-24h-labels">
-                    <span>08:00 ☕</span>
-                    <span>09:00</span>
-                    <span>10:00 📈</span>
-                    <span>11:00</span>
-                    <span>12:00 🥪</span>
-                    <span>13:00</span>
-                    <span>14:00 🎯</span>
-                    <span>15:00</span>
-                    <span>16:00 💼</span>
-                    <span>17:00</span>
-                    <span>18:00 🚪</span>
-                </div>
-
-                <div class="dp-24h-track" id="dp24hTrack" title="Clique no horário desejado para agendar um disparo!">
-                    <!-- LINHAS DE GRADE DA RÉGUA -->
-                    <div class="dp-track-grid-lines">
-                        <span style="left:0%;"></span>
-                        <span style="left:10%;"></span>
-                        <span style="left:20%;"></span>
-                        <span style="left:30%;"></span>
-                        <span style="left:40%;"></span>
-                        <span style="left:50%;"></span>
-                        <span style="left:60%;"></span>
-                        <span style="left:70%;"></span>
-                        <span style="left:80%;"></span>
-                        <span style="left:90%;"></span>
-                        <span style="left:100%;"></span>
-                    </div>
-
-                    <!-- FAIXA DE AGENDAMENTOS EXISTENTES (BLOQUEIO VISUAL ANTI-BAN) -->
-                    <div id="dpScheduledBlocksContainer" class="dp-sched-blocks-wrapper"></div>
-
-                    <!-- CURSOR FLOATING TIME PIN AO PASSAR O MOUSE -->
-                    <div class="dp-hover-time-pin" id="dpHoverTimePin" style="display:none;">
-                        <div class="dp-hover-line"></div>
-                        <div class="dp-hover-badge" id="dpHoverTimeBadge">10:00</div>
-                    </div>
-
-                    <!-- INDICADOR PIN AGORA -->
-                    <div class="dp-now-pin" id="dpNowPin" style="left:40%;">
-                        <span>AGORA</span>
-                    </div>
-                </div>
-
-                <div class="dp-24h-footer">
-                    <span id="dp-24h-sub"><i class="fas fa-eye"></i> VISUALIZANDO AGENDAMENTOS DO DIA</span>
-                    <small><i class="fas fa-mouse-pointer"></i> Passe o mouse para ver o horário exato e clique para agendar!</small>
-                </div>
-            </div>
-
-            <!-- VISUALIZAÇÃO EM AGENDA PREVIEW (SEMANA, 15 DIAS, MENSAL) -->
-            <div class="dp-agenda-view-container" id="dpAgendaViewContainer" style="display:none;">
-                <div class="dp-agenda-sub-bar">
-                    <div class="dp-ag-period-group">
-                        <button type="button" class="dp-ag-period-btn active" data-period="7d">
-                            <i class="fas fa-calendar-week"></i> 7 DIAS (SEMANA)
-                        </button>
-                        <button type="button" class="dp-ag-period-btn" data-period="15d">
-                            <i class="fas fa-calendar-days"></i> 15 DIAS
-                        </button>
-                        <button type="button" class="dp-ag-period-btn" data-period="30d">
-                            <i class="fas fa-calendar"></i> MENSAL (30 DIAS)
-                        </button>
-                    </div>
-
-                    <div class="dp-ag-nav-group">
-                        <button type="button" class="dp-ag-nav-btn" id="dpAgPrev" title="Anterior"><i class="fas fa-chevron-left"></i></button>
-                        <button type="button" class="dp-ag-nav-btn today" id="dpAgToday" title="Ir para hoje">HOJE</button>
-                        <button type="button" class="dp-ag-nav-btn" id="dpAgNext" title="Próximo"><i class="fas fa-chevron-right"></i></button>
-                        <span class="dp-ag-range-text" id="dpAgRangeText">07 SET — 13 SET 2026</span>
-                    </div>
+            <!-- NOVA VISUALIZAÇÃO: AGENDA COM PREVIEW DE DATA/HORA -->
+            <div class="dp-agenda-container" id="dpAgendaContainer">
+                <div class="dp-agenda-filter-bar">
+                    <button type="button" class="dp-filter-btn active" data-filter="all">
+                        <i class="fas fa-list"></i> Todos
+                    </button>
+                    <button type="button" class="dp-filter-btn" data-filter="scheduled">
+                        <i class="fas fa-clock"></i> Agendados
+                    </button>
+                    <button type="button" class="dp-filter-btn" data-filter="sent">
+                        <i class="fas fa-check"></i> Enviados
+                    </button>
                 </div>
 
                 <div class="dp-agenda-grid" id="dpAgendaGrid">
-                    <div style="padding:20px; text-align:center; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Carregando agenda preview...</div>
+                    <div style="padding:60px 20px; text-align:center; color:var(--text-muted);">
+                        <i class="fas fa-calendar-check" style="font-size:48px; margin-bottom:16px; opacity:0.4;"></i>
+                        <p style="font-size:16px; margin:12px 0;">Nenhum disparo agendado</p>
+                        <small>Clique em "NOVO DISPARO" para começar a agendar suas campanhas!</small>
+                    </div>
                 </div>
             </div>
         </section>
@@ -247,35 +168,69 @@
                             </div>
                         </div>
 
-                        <!-- QUANDO DISPARAR (AGORA OU AGENDAR) -->
+                        <!-- MOMENTO DO ENVIO - NOVO SISTEMA INTERATIVO -->
                         <div class="dp-field-box">
                             <label class="dp-field-lbl">Momento do Envio:</label>
-                            <div class="dp-timing-mode-switch">
-                                <button type="button" class="dp-time-mode-btn active" id="dpBtnModeNow">
-                                    <i class="fas fa-bolt"></i> DISPARAR AGORA
-                                </button>
-                                <button type="button" class="dp-time-mode-btn" id="dpBtnModeSchedule">
-                                    <i class="far fa-clock"></i> AGENDAR HORÁRIO
-                                </button>
-                            </div>
 
-                            <div class="dp-schedule-time-box" id="dpScheduleTimeBox" style="display:none;">
-                                <div class="dp-time-input-row">
-                                    <input type="time" class="ps-input dp-time-input" id="dpSchedTime" min="08:00" max="19:00" value="10:00">
-                                    <div class="dp-quick-hours">
-                                        <button type="button" class="dp-hour-chip" data-h="10:00">10:00</button>
-                                        <button type="button" class="dp-hour-chip" data-h="14:30">14:30</button>
-                                        <button type="button" class="dp-hour-chip" data-h="16:00">16:00</button>
+                            <!-- Card com dois estados: Timing ou Scheduling -->
+                            <div class="dp-timing-card" id="dpTimingCard">
+                                <!-- Estado 1: Mostrar Tempo Estimado -->
+                                <div class="dp-timing-state" id="dpTimingState">
+                                    <div class="dp-timing-row">
+                                        <div class="dp-timing-info">
+                                            <span class="dp-timing-label">Tempo estimado:</span>
+                                            <div class="dp-timing-value">
+                                                <i class="fas fa-hourglass-half"></i>
+                                                <span id="dpEstimatedTime">~5 min</span>
+                                            </div>
+                                        </div>
+                                        <div class="dp-timing-actions">
+                                            <button type="button" class="dp-timing-btn primary" id="dpBtnSendNow" onclick="document.getElementById('dpSchedTime').value='now'">
+                                                <i class="fas fa-bolt"></i> AGORA
+                                            </button>
+                                            <button type="button" class="dp-timing-btn secondary" id="dpBtnOpenScheduler" onclick="document.getElementById('dpTimingState').style.display='none'; document.getElementById('dpSchedulingState').style.display='block'">
+                                                <i class="fas fa-calendar-plus"></i> AGENDAR
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Estado 2: Agendamento -->
+                                <div class="dp-scheduling-state" id="dpSchedulingState" style="display:none;">
+                                    <div class="dp-schedule-header">
+                                        <span>Escolha o horário</span>
+                                        <button type="button" class="dp-schedule-back" id="dpBackToTiming" onclick="document.getElementById('dpTimingState').style.display='block'; document.getElementById('dpSchedulingState').style.display='none'">
+                                            <i class="fas fa-arrow-left"></i>
+                                        </button>
+                                    </div>
+                                    <div class="dp-schedule-content">
+                                        <div class="dp-schedule-input-group">
+                                            <label>Hora de início:</label>
+                                            <input type="time" class="ps-input dp-schedule-input" id="dpScheduleTime" min="08:00" max="18:00" value="10:00">
+                                        </div>
+                                        <div class="dp-schedule-preview">
+                                            <div class="dp-preview-item">
+                                                <span>Duração:</span>
+                                                <strong id="dpDurationText">~5 min</strong>
+                                            </div>
+                                            <div class="dp-preview-item">
+                                                <span>Término:</span>
+                                                <strong id="dpEndTimeText">~10:05</strong>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="dp-schedule-confirm" id="dpConfirmSchedule" onclick="const st=document.getElementById('dpScheduleTime').value; if(st) document.getElementById('dpSchedTime').value=st; document.getElementById('dpTimingState').style.display='block'; document.getElementById('dpSchedulingState').style.display='none'">
+                                            <i class="fas fa-check"></i> Confirmar
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Cadência mantida para o backend / algoritmo de cálculo -->
+
+                            <!-- Cadência mantida para backend -->
                             <select class="dp-cadence-select-hidden" id="dpSchedCadence" style="display:none;">
-                                <option value="15">15s</option>
-                                <option value="30" selected>30s</option>
-                                <option value="45">45s</option>
+                                <option value="30" selected>30</option>
                             </select>
+                            <input type="hidden" id="dpSchedTime" value="now">
                         </div>
                     </div>
                 </div>
@@ -481,3 +436,4 @@
         </div>
     </div>
 </div>
+
