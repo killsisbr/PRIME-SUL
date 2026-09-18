@@ -2219,6 +2219,61 @@
     display: block;
 }
 
+/* ========== AGENDA GRID - CARDS DE 7 DIAS ========== */
+.dp-agenda-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)) !important;
+    gap: 10px !important;
+    padding: 20px 0 !important;
+}
+
+.dp-day-card {
+    background: linear-gradient(135deg, #1a3a52, #0f1e2e);
+    border: 1.5px solid rgba(14, 165, 233, 0.4);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+}
+
+.dp-day-card:hover {
+    border-color: var(--holo-primary, #0ea5e9);
+    background: linear-gradient(135deg, #1e4d63, #122536);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.2);
+}
+
+.dp-day-card-label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.dp-day-card-date {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.dp-day-card-action {
+    font-size: 10px;
+    color: var(--holo-primary, #0ea5e9);
+    margin-top: 4px;
+}
+
+@media (min-width: 768px) {
+    .dp-agenda-grid {
+        grid-template-columns: repeat(7, 1fr) !important;
+    }
+}
+
 @media (max-width: 860px) {
     #dynamicModalOverlay:has(.dp-saas-root) #dynamicModalBody,
     #dynamicModalOverlay.is-disparo #dynamicModalBody,
