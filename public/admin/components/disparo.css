@@ -1616,37 +1616,13 @@
     overflow: hidden;
 }
 
-.dp-agenda-filter-bar {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-    border-bottom: 1px solid var(--holo-border, #27364d);
-    flex-wrap: wrap;
-}
+/* Filtros removidos - agenda simplificada */
 
-.dp-filter-btn {
-    padding: 6px 14px;
-    border: 1px solid var(--holo-border, #27364d);
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 12px;
-    color: #cbd5e1;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-.dp-filter-btn:hover {
-    border-color: var(--holo-primary, #0ea5e9);
-    color: var(--holo-primary, #0ea5e9);
-}
-
-.dp-filter-btn.active {
-    background: var(--holo-primary, #0ea5e9);
-    border-color: var(--holo-primary, #0ea5e9);
-    color: #fff;
+.dp-agenda-subtitle {
+    padding: 12px 0 8px 0;
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
 }
 
 .dp-agenda-grid {

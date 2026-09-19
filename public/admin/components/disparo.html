@@ -49,26 +49,14 @@
                 </div>
             </div>
 
-            <!-- NOVA VISUALIZAÇÃO: AGENDA COM PREVIEW DE DATA/HORA -->
+            <!-- AGENDA DE PRÓXIMOS 7 DIAS -->
             <div class="dp-agenda-container" id="dpAgendaContainer">
-                <div class="dp-agenda-filter-bar">
-                    <button type="button" class="dp-filter-btn active" data-filter="all">
-                        <i class="fas fa-list"></i> Todos
-                    </button>
-                    <button type="button" class="dp-filter-btn" data-filter="scheduled">
-                        <i class="fas fa-clock"></i> Agendados
-                    </button>
-                    <button type="button" class="dp-filter-btn" data-filter="sent">
-                        <i class="fas fa-check"></i> Enviados
-                    </button>
+                <div class="dp-agenda-subtitle">
+                    <p>Selecione um dia para agendar seu próximo disparo</p>
                 </div>
 
                 <div class="dp-agenda-grid" id="dpAgendaGrid">
-                    <div style="padding:60px 20px; text-align:center; color:var(--text-muted);">
-                        <i class="fas fa-calendar-check" style="font-size:48px; margin-bottom:16px; opacity:0.4;"></i>
-                        <p style="font-size:16px; margin:12px 0;">Nenhum disparo agendado</p>
-                        <small>Clique em "NOVO DISPARO" para começar a agendar suas campanhas!</small>
-                    </div>
+                    <!-- Cards gerados dinamicamente via JavaScript -->
                 </div>
             </div>
         </section>
