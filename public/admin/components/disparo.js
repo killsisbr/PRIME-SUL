@@ -766,6 +766,9 @@ export async function init() {
         const modal = document.getElementById('dpScheduleModal');
         if (!modal) return;
 
+        // Gerar cards de agenda quando o modal abre
+        setTimeout(() => generateAgendaDays(), 50);
+
         const idInput = document.getElementById('dpSchedCampaignId');
         const timeInput = document.getElementById('dpSchedTime');
         const titleEl = document.getElementById('dpSchedModalTitle');
