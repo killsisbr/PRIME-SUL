@@ -268,9 +268,9 @@
 
 /* ============ SUBMODAL DISPARO COMERCIAL (NOVO DESIGN ENRIQUECIDO NEO-BRUTALIST) ============ */
 .dp-sched-modal-pro {
-    width: min(1060px, 96vw) !important;
-    max-width: min(1060px, 96vw) !important;
-    max-height: min(720px, 94vh) !important;
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 95vh !important;
     background: var(--paper, #faf6f0) !important;
     border: 3px solid var(--dark, #181716) !important;
     border-radius: 20px !important;
