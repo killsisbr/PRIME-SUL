@@ -1,25 +1,31 @@
 {
   "name": "prime-sul",
   "version": "0.1.0",
-  "description": "CRM multi-tenant de crédito com disparo em massa e bot anti-ban (parceira Banco do Brasil)",
+  "description": "CRM + IA Assistente com Gemini Vision",
   "main": "server/server.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node server/server.js",
     "dev": "node --watch server/server.js",
-    "seed": "node server/database/seed.js",
-    "test": "node --test --test-concurrency=1 test/*.test.js",
-    "check": "node scripts/check.js"
+    "test": "node --test tests/*.test.js",
+    "lint": "echo 'Linting configured for next phase'",
+    "db:init": "node server/database/init.js",
+    "db:seed": "node server/database/seed.js"
   },
+  "keywords": [
+    "crm",
+    "ai",
+    "gemini",
+    "assistant",
+    "chatbot"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.20",
-    "bcryptjs": "^3.0.3",
-    "dotenv": "^17.4.2",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.2.0",
-    "qrcode": "^1.5.4",
+    "bcryptjs": "^3.0.3",
     "sqlite3": "^6.0.1",
-    "ssh2": "^1.17.0",
-    "ws": "^8.21.3"
+    "dotenv": "^17.4.2"
   }
 }
