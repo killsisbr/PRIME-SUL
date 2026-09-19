@@ -1637,25 +1637,9 @@ export async function init() {
             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
             const handleCardClick = () => {
-                console.log(`📅 Card clicado: ${dateStr}`);
-                const [year, month, day] = dateStr.split('-');
-                const brDate = `${day}/${month}/${year}`;
-
                 const dateInput = document.getElementById('dpScheduleDate');
                 if (dateInput) dateInput.value = dateStr;
-
-                const modal = document.getElementById('dpModalOverlay');
-                const modalDate = document.getElementById('dpModalDate');
-                const schedulingState = document.getElementById('dpSchedulingState');
-
-                if (modal && modalDate && schedulingState) {
-                    modalDate.textContent = `📅 ${brDate}`;
-                    schedulingState.style.display = 'block';
-                    modal.style.display = 'flex';
-                    console.log(`✅ Modal aberto para ${brDate}`);
-                } else {
-                    console.warn('❌ Modal não encontrado');
-                }
+                openScheduleModal('10:00', 'novos', null);
             };
 
             card.addEventListener('click', handleCardClick);
