@@ -1,203 +1,219 @@
-const express = require('express');
-const leadService = require('../services/lead-service');
-const messageService = require('../services/message-service');
-const { auth, adminOnly } = require('../middleware/auth');
-const router = express.Router();
+/**
+ * PRIME SUL — Leads Routes
+ * Ferramenta #1: HTTP endpoints para gerenciar leads
+ * 
+ * Endpoints:
+ * - GET /api/leads — Listar leads com filtros
+ * - GET /api/leads/counts — Contar leads por status
+ * - GET /api/leads/:id — Obter lead específico
+ * - POST /api/leads — Criar novo lead
+ * - PATCH /api/leads/:id — Atualizar lead
+ * - DELETE /api/leads/:id — Deletar lead
+ */
 
-router.use(auth);
+import { Router } from 'express';
+import { authMiddleware } from '../middleware/auth.js';
+import { createCarteiraService } from '../services/carteira-service.js';
 
-// Lista leads do vendedor (com filtros avançados)
-router.get('/', async (req, res, next) => {
+export function setupLeadsRoutes(app, db) {
+  const router = Router();
+  const carteira = createCarteiraService(db);
+
+  // ============================================
+  // GET /api/leads — Listar leads com filtros
+  // ============================================
+  router.get('/', authMiddleware, async (req, res) => {
     try {
-        const { status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max } = req.query;
-        const leads = await leadService.listLeads({
-            seller_id: req.user.id,
-            status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max
+      const sellerId = req.user.seller_id;
+
+      // Query parameters
+      const {
+        status = 'todos',
+        prioridade = 'todos',
+        page = '1',
+        sort = 'created_at',
+        search = ''
+      } = req.query;
+
+      // Validar página
+      const pageNum = Math.max(1, parseInt(page) || 1);
+
+      const result = await carteira.listLeads(sellerId, {
+        status: status === 'todos' ? undefined : status,
+        prioridade: prioridade === 'todos' ? undefined : prioridade,
+        page: pageNum,
+        sort,
+        search,
+        limit: 20
+      });
+
+      res.json({
+        success: true,
+        data: result.leads,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          pages: result.pages,
+          limit: result.limit
+        }
+      });
+
+    } catch (error) {
+      console.error('GET /api/leads:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Erro ao listar leads'
+      });
+    }
+  });
+
+  // ============================================
+  // GET /api/leads/counts — Contar por status
+  // ============================================
+  router.get('/counts', authMiddleware, async (req, res) => {
+    try {
+      const sellerId = req.user.seller_id;
+      const counts = await carteira.countsBySeller(sellerId);
+
+      res.json({
+        success: true,
+        data: counts
+      });
+
+    } catch (error) {
+      console.error('GET /api/leads/counts:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Erro ao contar leads'
+      });
+    }
+  });
+
+  // ============================================
+  // GET /api/leads/:id — Obter lead específico
+  // ============================================
+  router.get('/:id', authMiddleware, async (req, res) => {
+    try {
+      const sellerId = req.user.seller_id;
+      const { id } = req.params;
+
+      const lead = await carteira.getLead(sellerId, id);
+
+      res.json({
+        success: true,
+        data: lead
+      });
+
+    } catch (error) {
+      console.error('GET /api/leads/:id:', error);
+      const status = error.message === 'Lead não encontrado' ? 404 : 500;
+      res.status(status).json({
+        success: false,
+        error: error.message || 'Erro ao obter lead'
+      });
+    }
+  });
+
+  // ============================================
+  // POST /api/leads — Criar novo lead
+  // ============================================
+  router.post('/', authMiddleware, async (req, res) => {
+    try {
+      const sellerId = req.user.seller_id;
+      const { name, phone, email, prioridade, score, status, notas } = req.body;
+
+      // Validação básica
+      if (!name || !phone) {
+        return res.status(400).json({
+          success: false,
+          error: 'Nome e telefone são obrigatórios'
         });
-        // Resumo de conversas (tag de WhatsApp / não lidas / bots participantes) por lead
-        try {
-            const orgId = req.user.organization_id || 1;
-            const summary = await messageService.summaryForLeads(leads.map(l => l.id), orgId);
-            for (const l of leads) {
-                const s = summary[l.id];
-                const phones = [l.phone, l.phone2, l.phone3].filter(Boolean).length;
-                l.wa = {
-                    has_chat: !!s && s.total > 0,
-                    unread: s ? s.unread : 0,
-                    threads: s ? s.threads : 0,
-                    phones,
-                    last_at: s ? s.last_at : null,
-                    bots: s ? (s.bots || []) : [],
-                    bot_numbers: s ? (s.bot_numbers || []) : [],
-                    last_bot: s ? s.last_bot : null
-                };
-            }
-        } catch (e) { /* resumo é acessório */ }
-        res.json(leads);
-    } catch (e) { next(e); }
-});
+      }
 
-// Lista leads de um vendedor específico por estágio (admin)
-router.get('/by-seller/:sellerId', adminOnly, async (req, res, next) => {
+      const newLead = await carteira.createLead(sellerId, {
+        name,
+        phone,
+        email: email || '',
+        prioridade: prioridade || 'media',
+        score: parseInt(score) || 0,
+        status: status || 'novo',
+        notas: notas || ''
+      });
+
+      res.status(201).json({
+        success: true,
+        data: newLead,
+        message: 'Lead criado com sucesso'
+      });
+
+    } catch (error) {
+      console.error('POST /api/leads:', error);
+      res.status(400).json({
+        success: false,
+        error: error.message || 'Erro ao criar lead'
+      });
+    }
+  });
+
+  // ============================================
+  // PATCH /api/leads/:id — Atualizar lead
+  // ============================================
+  router.patch('/:id', authMiddleware, async (req, res) => {
     try {
-        const { status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max } = req.query;
-        const leads = await leadService.listLeads({
-            seller_id: Number(req.params.sellerId),
-            status, search, origem, prioridade, tag, cidade, data_de, data_ate, score_min, score_max
-        });
-        res.json(leads);
-    } catch (e) { next(e); }
-});
+      const sellerId = req.user.seller_id;
+      const { id } = req.params;
+      const updates = req.body;
 
-// Contadores do painel
-router.get('/counts', async (req, res, next) => {
+      // Não permitir atualizar seller_id
+      delete updates.seller_id;
+      delete updates.id;
+      delete updates.created_at;
+
+      const updatedLead = await carteira.updateLead(sellerId, id, updates);
+
+      res.json({
+        success: true,
+        data: updatedLead,
+        message: 'Lead atualizado com sucesso'
+      });
+
+    } catch (error) {
+      console.error('PATCH /api/leads/:id:', error);
+      const status = error.message === 'Lead não encontrado' ? 404 : 400;
+      res.status(status).json({
+        success: false,
+        error: error.message || 'Erro ao atualizar lead'
+      });
+    }
+  });
+
+  // ============================================
+  // DELETE /api/leads/:id — Deletar lead
+  // ============================================
+  router.delete('/:id', authMiddleware, async (req, res) => {
     try {
-        res.json(await leadService.countsBySeller(req.user.id));
-    } catch (e) { next(e); }
-});
+      const sellerId = req.user.seller_id;
+      const { id } = req.params;
 
-// Funil de conversão do vendedor
-router.get('/funnel', async (req, res, next) => {
-    try {
-        res.json(await leadService.funnelBySeller(req.user.id));
-    } catch (e) { next(e); }
-});
+      await carteira.deleteLead(sellerId, id);
 
-// Cria lead (com regra de duplicidade)
-router.post('/', async (req, res, next) => {
-    try {
-        const { name, phone, cpf, agencia, conta, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade } = req.body;
-        if (!name || !phone) return res.status(400).json({ error: 'Nome e telefone obrigatórios' });
-        const result = await leadService.createLead({
-            seller_id: req.user.id,
-            organization_id: req.user.organization_id,
-            name, phone, cpf, agencia, conta, tags, city, origem, limite_est, renda, valor_desejado, obs, prioridade
-        });
-        res.status(201).json(result.lead);
-    } catch (e) { next(e); }
-});
+      res.json({
+        success: true,
+        message: 'Lead deletado com sucesso'
+      });
 
-// Detalhe do lead
-router.get('/:id', async (req, res, next) => {
-    try {
-        const lead = await leadService.getLead(req.params.id, req.user.id);
-        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
-        res.json(lead);
-    } catch (e) { next(e); }
-});
+    } catch (error) {
+      console.error('DELETE /api/leads/:id:', error);
+      const status = error.message === 'Lead não encontrado' ? 404 : 500;
+      res.status(status).json({
+        success: false,
+        error: error.message || 'Erro ao deletar lead'
+      });
+    }
+  });
 
-// Histórico de status do lead (timeline)
-router.get('/:id/history', async (req, res, next) => {
-    try {
-        const lead = await leadService.getLead(req.params.id, req.user.id);
-        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
-        res.json(await leadService.getHistory(req.params.id, req.user.id));
-    } catch (e) { next(e); }
-});
-
-// Caixa de entrada do lead: conversas agrupadas por thread (número do cliente + bot)
-router.get('/:id/conversations', async (req, res, next) => {
-    try {
-        const lead = await leadService.getLead(req.params.id, req.user.id);
-        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
-        const data = await messageService.conversationsForLead(lead.id);
-        // Números do lead que ainda não têm thread — pra UI oferecer "iniciar conversa"
-        const { phoneKey } = require('../utils/phone');
-        const known = new Set(data.threads.map(t => t.lead_phone));
-        const defaultBot = (data.available_bots && data.available_bots.find(b => b.connected && b.status === 'ativo'))
-            || (data.available_bots && data.available_bots.find(b => b.status === 'ativo'))
-            || (data.available_bots && data.available_bots[0])
-            || null;
-
-        const extra = [
-            { phone: lead.phone, label: 'Telefone 1' },
-            { phone: lead.phone2, label: 'Telefone 2' },
-            { phone: lead.phone3, label: 'Telefone 3' }
-        ].filter(p => p.phone && !known.has(phoneKey(p.phone)))
-         .map(p => ({
-             lead_phone: phoneKey(p.phone),
-             phone_label: p.label,
-             bot_number: defaultBot ? defaultBot.number : null,
-             bot_label: defaultBot ? defaultBot.label : null,
-             bot_short_name: defaultBot ? defaultBot.short_name : null,
-             bot_slot_index: defaultBot ? defaultBot.slot_index : null,
-             bot_real_number: defaultBot ? defaultBot.real_number : null,
-             bot_push_name: defaultBot ? defaultBot.push_name : null,
-             bot_status: defaultBot ? defaultBot.status : 'offline',
-             bot_connection: defaultBot ? defaultBot.connection : 'offline',
-             bot_connected: defaultBot ? defaultBot.connected : false,
-             messages: [],
-             unread: 0,
-             last_at: null
-         }));
-        res.json({ ...data, threads: [...data.threads, ...extra] });
-    } catch (e) { next(e); }
-});
-
-// Marca mensagens de entrada como lidas (thread específico ou lead inteiro)
-router.post('/:id/conversations/read', async (req, res, next) => {
-    try {
-        const lead = await leadService.getLead(req.params.id, req.user.id);
-        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
-        const changed = await messageService.markRead(lead.id, {
-            leadPhone: req.body.lead_phone || null,
-            botNumber: req.body.bot_number || null
-        });
-        res.json({ ok: true, marked: changed });
-    } catch (e) { next(e); }
-});
-
-// Atualiza dados do lead (edição)
-router.patch('/:id', async (req, res, next) => {
-    try {
-        const lead = await leadService.updateLead(req.params.id, req.user.id, req.body);
-        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
-        res.json(lead);
-    } catch (e) { next(e); }
-});
-
-// Adiciona/atualiza anotação rápida do lead
-router.post('/:id/notes', async (req, res, next) => {
-    try {
-        const rawNote = (req.body.note ?? req.body.obs ?? req.body.text ?? '').trim();
-        if (!rawNote) return res.status(400).json({ error: 'Anotação não pode estar vazia' });
-
-        const existingLead = await leadService.getLead(req.params.id, req.user.id);
-        if (!existingLead) return res.status(404).json({ error: 'Lead não encontrado' });
-
-        const timestamp = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-        const newEntry = `[${timestamp}] ${rawNote}`;
-
-        const updatedObs = existingLead.obs ? `${newEntry}\n${existingLead.obs}` : newEntry;
-
-        const lead = await leadService.updateLead(req.params.id, req.user.id, { obs: updatedObs });
-        res.json(lead);
-    } catch (e) { next(e); }
-});
-
-// Transferência de lead para outro vendedor (somente admin)
-router.post('/:id/transfer', adminOnly, async (req, res, next) => {
-    try {
-        const { to_seller_id } = req.body;
-        if (!to_seller_id) return res.status(400).json({ error: 'Vendedor de destino obrigatório' });
-        const result = await leadService.transferLead(req.params.id, {
-            to_seller_id,
-            admin_id: req.user.id,
-            organization_id: req.user.organization_id
-        });
-        if (!result) return res.status(404).json({ error: 'Lead não encontrado' });
-        res.json(result);
-    } catch (e) { next(e); }
-});
-
-// Atualiza status (kanban / ações rápidas)
-router.patch('/:id/status', async (req, res, next) => {
-    try {
-        const { status } = req.body;
-        const lead = await leadService.updateStatus(req.params.id, req.user.id, status);
-        if (!lead) return res.status(404).json({ error: 'Lead não encontrado' });
-        res.json(lead);
-    } catch (e) { next(e); }
-});
-
-module.exports = router;
+  // ============================================
+  // Registrar rotas
+  // ============================================
+  app.use('/api/leads', router);
+}
