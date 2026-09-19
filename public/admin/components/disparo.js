@@ -1618,14 +1618,40 @@ export async function init() {
             const card = document.createElement('div');
             card.className = 'dp-day-card';
             card.style.cursor = 'pointer';
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
 
             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            card.onclick = () => {
+
+            const handleCardClick = () => {
+                console.log(`📅 Card clicado: ${dateStr}`);
                 const dateInput = document.getElementById('dpScheduleDate');
-                if (dateInput) dateInput.value = dateStr;
-                document.getElementById('dpTimingState').style.display = 'none';
-                document.getElementById('dpSchedulingState').style.display = 'block';
+                const timingState = document.getElementById('dpTimingState');
+                const schedulingState = document.getElementById('dpSchedulingState');
+
+                if (dateInput) {
+                    dateInput.value = dateStr;
+                    console.log(`✅ Data preenchida: ${dateStr}`);
+                } else {
+                    console.warn('❌ dpScheduleDate não encontrado');
+                }
+
+                if (timingState && schedulingState) {
+                    timingState.style.display = 'none';
+                    schedulingState.style.display = 'block';
+                    console.log('✅ Estados alterados');
+                } else {
+                    console.warn('❌ States não encontrados:', { timingState: !!timingState, schedulingState: !!schedulingState });
+                }
             };
+
+            card.addEventListener('click', handleCardClick);
+            card.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCardClick();
+                }
+            });
 
             card.innerHTML = `
                 <div class="dp-day-card-label">${dayLabels[date.getDay()]}</div>
