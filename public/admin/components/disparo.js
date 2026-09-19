@@ -1638,7 +1638,11 @@ export async function init() {
     updateNowPin();
     await loadData();
     await loadTemplates();
-    generateAgendaDays();
+
+    setTimeout(() => {
+        generateAgendaDays();
+        console.log('✅ Cards de agenda gerados');
+    }, 100);
 
     return {};
 }
