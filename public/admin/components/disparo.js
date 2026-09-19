@@ -1485,17 +1485,6 @@ export async function init() {
         }
     });
 
-    // Modal flutuante listeners
-    document.getElementById('dpModalClose')?.addEventListener('click', () => {
-        document.getElementById('dpModalOverlay').style.display = 'none';
-    });
-
-    document.getElementById('dpModalOverlay')?.addEventListener('click', (e) => {
-        if (e.target.id === 'dpModalOverlay') {
-            document.getElementById('dpModalOverlay').style.display = 'none';
-        }
-    });
-
     // Submodal listeners
     document.getElementById('dp-btn-manage-templates')?.addEventListener('click', () => openTemplateManagerModal(false));
     document.getElementById('dp-btn-new-dispatch')?.addEventListener('click', () => openScheduleModal('10:00', 'novos', null));
