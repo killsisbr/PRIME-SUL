@@ -1,82 +1,125 @@
 #!/usr/bin/env node
 
 /**
- * PRIME SUL — Deploy Now (SSH password authentication)
+ * PRIME SUL — Deploy Agora (via sshpass)
+ * 
+ * Usa sshpass para autenticação por senha
+ * Simples, rápido, sem depender de SSH keys
  * 
  * Usage:
- *   node scripts/deploy-now.mjs
+ *   node deploy-now.mjs
  * 
- * Requirements:
- *   - VPS_HOST environment variable
- *   - VPS_PASSWORD environment variable (ou usar .env)
- * 
- * This is a temporary script until SSH key auth is configured.
- * After configuring SSH key, use: scripts/deploy-secure.mjs
+ * Requer:
+ *   - sshpass instalado (choco install sshpass)
+ *   - VPS_HOST, VPS_USER, VPS_PASSWORD em .env
  */
 
 import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 
+// Load .env
 dotenv.config();
 
-const host = process.env.VPS_HOST || '82.29.58.126';
-const user = process.env.VPS_USER || 'root';
-const password = process.env.VPS_PASSWORD;
-const appDir = process.env.VPS_APP_DIR || '/root/killsis/PRIME-SUL';
-const pm2App = process.env.VPS_PM2_APP || 'prime-sul';
+const VPS_HOST = process.env.VPS_HOST || '82.29.58.126';
+const VPS_USER = process.env.VPS_USER || 'root';
+const VPS_PASSWORD = process.env.VPS_PASSWORD;
+const VPS_APP_DIR = process.env.VPS_APP_DIR || '/root/killsis/PRIME-SUL';
+const VPS_PM2_APP = process.env.VPS_PM2_APP || 'prime-sul';
 
-if (!password) {
-    console.error('\n❌ VPS_PASSWORD not set in .env\n');
-    process.exit(1);
+console.log('');
+console.log('╔════════════════════════════════════════════════════════════════╗');
+console.log('║                                                                ║');
+console.log('║           🚀 DEPLOY AGORA (via sshpass) 🚀                    ║');
+console.log('║                                                                ║');
+console.log('╚════════════════════════════════════════════════════════════════╝');
+console.log('');
+
+// Validate
+if (!VPS_PASSWORD) {
+  console.error('❌ VPS_PASSWORD não está definida em .env');
+  console.error('   Adicione: VPS_PASSWORD=sua_senha');
+  process.exit(1);
 }
 
+console.log(`📍 VPS: ${VPS_HOST}`);
+console.log(`👤 User: ${VPS_USER}`);
+console.log(`📂 App Dir: ${VPS_APP_DIR}`);
+console.log(`🔄 PM2 App: ${VPS_PM2_APP}`);
+console.log('');
+
+// Deploy commands
 const commands = [
-    `echo "📂 Entering directory..."`,
-    `cd ${appDir}`,
-    `echo "📥 Fetching latest code..."`,
-    `git fetch origin`,
-    `git switch staging`,
-    `git pull --ff-only origin staging`,
-    `echo "📦 Installing dependencies..."`,
-    `npm install --production`,
-    `echo "🔄 Restarting PM2..."`,
-    `pm2 restart ${pm2App} || pm2 start server/server.js --name ${pm2App}`,
-    `echo "✅ Waiting for app to start..."`,
-    `sleep 2`,
-    `pm2 show ${pm2App}`,
-    `echo "✅ Deploy completed successfully!"`
+  'cd ' + VPS_APP_DIR,
+  'echo "📥 Atualizando código..."',
+  'git fetch origin',
+  'git checkout staging',
+  'git pull --ff-only origin staging',
+  'echo "✅ Código atualizado!"',
+  'echo ""',
+  'echo "📦 Instalando dependências..."',
+  'npm install --production 2>&1 | tail -20',
+  'echo "✅ Dependências instaladas!"',
+  'echo ""',
+  'echo "🔄 Reiniciando PM2..."',
+  'pm2 restart ' + VPS_PM2_APP + ' || pm2 start server/server.js --name ' + VPS_PM2_APP,
+  'sleep 2',
+  'echo "✅ App reiniciado!"',
+  'echo ""',
+  'echo "📊 Status do PM2:"',
+  'pm2 status',
+  'echo ""',
+  'echo "🌐 URL:"',
+  'echo "https://82.29.58.126"',
+  'echo ""',
+  'echo "✅ DEPLOY COMPLETO!"'
 ];
 
 const fullCommand = commands.join(' && ');
 
-console.log('\n╔════════════════════════════════════════╗');
-console.log('║   PRIME SUL — Deploy Now              ║');
-console.log('╚════════════════════════════════════════╝\n');
-
-console.log(`📍 Host: ${host}`);
-console.log(`👤 User: ${user}`);
-console.log(`📂 App Dir: ${appDir}`);
-console.log(`⚙️  PM2 App: ${pm2App}\n`);
-
-console.log('🚀 Deploying...\n');
+// Execute SSH
+console.log('🔐 Executando deploy via SSH...');
+console.log('');
 
 try {
-    // Using sshpass to provide password
-    const sshCommand = `sshpass -p "${password}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${user}@${host} '${fullCommand}'`;
-    
-    execSync(sshCommand, {
-        stdio: 'inherit',
-        timeout: 60000
-    });
+  // Usar sshpass se disponível
+  try {
+    execSync('sshpass -V', { stdio: 'ignore' });
+  } catch {
+    console.warn('⚠️  sshpass não instalado. Tentando SSH direto...');
+  }
 
-    console.log('\n✅ Deploy completed successfully!\n');
-    
-} catch (err) {
-    console.error('\n❌ Deploy failed!\n');
-    console.error('Error:', err.message);
-    console.error('\nTroubleshooting:');
-    console.error('1. Check VPS_PASSWORD is correct in .env');
-    console.error('2. Check VPS_HOST is correct');
-    console.error('3. Check sshpass is installed: apt-get install sshpass\n');
-    process.exit(1);
+  const sshCmd = `sshpass -p "${VPS_PASSWORD}" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "${fullCommand}"`;
+  
+  execSync(sshCmd, { 
+    stdio: 'inherit',
+    timeout: 120000 // 2 minutos
+  });
+
+  console.log('');
+  console.log('════════════════════════════════════════════════════════════════');
+  console.log('✅ DEPLOY CONCLUÍDO COM SUCESSO!');
+  console.log('════════════════════════════════════════════════════════════════');
+  console.log('');
+  console.log('📊 Verifique em: https://82.29.58.126');
+  console.log('');
+
+} catch (error) {
+  console.log('');
+  console.log('════════════════════════════════════════════════════════════════');
+  console.log('❌ ERRO NO DEPLOY');
+  console.log('════════════════════════════════════════════════════════════════');
+  console.log('');
+  console.log('Possíveis causas:');
+  console.log('  1. VPS offline ou firewall bloqueando');
+  console.log('  2. Senha incorreta (VPS_PASSWORD em .env)');
+  console.log('  3. Timeout na conexão');
+  console.log('  4. Git pull falhou (merge conflict?)');
+  console.log('  5. npm install teve erro');
+  console.log('');
+  console.log('Próximo passo:');
+  console.log('  SSH manualmente: ssh root@82.29.58.126');
+  console.log('  Depois: cd /root/killsis/PRIME-SUL && git status');
+  console.log('');
+  
+  process.exit(1);
 }
