@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Agenda de Disparos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0f1624;
+            color: #f8fafc;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #0ea5e9;
+        }
+        .section {
+            background: #1a2332;
+            border: 1px solid #2d3e54;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        button:hover { background: #0284c7; }
+
+        /* AGENDA GRID STYLES */
+        .dp-agenda-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            padding: 20px 0;
+        }
+        .dp-day-card {
+            background: linear-gradient(135deg, #1a3a52, #0f1e2e);
+            border: 1.5px solid rgba(14, 165, 233, 0.4);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+        }
+        .dp-day-card:hover {
+            border-color: #0ea5e9;
+            background: linear-gradient(135deg, #1e4d63, #122536);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.2);
+        }
+        .dp-day-card-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+        .dp-day-card-date {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .dp-day-card-action {
+            font-size: 10px;
+            color: #0ea5e9;
+            margin-top: 4px;
+        }
+
+        .status {
+            background: #0f2946;
+            border-left: 3px solid #10b981;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .status.error {
+            border-left-color: #ef4444;
+            background: #3f0f0f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Teste de Agenda de Disparos</h1>
+
+        <div class="section">
+            <button onclick="generateAgendaDays()">📅 Gerar Cards de Agenda</button>
+            <div id="dpAgendaGrid" class="dp-agenda-grid"></div>
+            <div id="status" class="status" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h3>📝 Informações de Data Selecionada:</h3>
+            <input type="date" id="dpScheduleDate" style="padding: 8px; border-radius: 5px; border: 1px solid #2d3e54; background: #1a2332; color: #f8fafc;">
+        </div>
+    </div>
+
+    <script>
+        function generateAgendaDays() {
+            const grid = document.getElementById('dpAgendaGrid');
+            const status = document.getElementById('status');
+
+            if (!grid) {
+                showStatus('❌ dpAgendaGrid não encontrado', true);
+                return;
+            }
+
+            const dayLabels = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+            const today = new Date();
+            grid.innerHTML = '';
+            console.log('✅ Gerando 7 cards de agenda...');
+
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() + i);
+
+                const card = document.createElement('div');
+                card.className = 'dp-day-card';
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const dateLabel = `${dayLabels[date.getDay()]} ${date.getDate()}`;
+
+                card.onclick = () => {
+                    const dateInput = document.getElementById('dpScheduleDate');
+                    if (dateInput) {
+                        dateInput.value = dateStr;
+                        showStatus(`✅ Data selecionada: ${dateLabel} (${dateStr})`);
+                    }
+                };
+
+                card.innerHTML = `
+                    <div class="dp-day-card-label">${dayLabels[date.getDay()]}</div>
+                    <div class="dp-day-card-date">${date.getDate()}</div>
+                    <div class="dp-day-card-action">+ Agendar</div>
+                `;
+
+                grid.appendChild(card);
+            }
+            showStatus(`✅ 7 cards gerados com sucesso!`);
+            console.log(`✅ ${7} cards adicionados ao dpAgendaGrid`);
+        }
+
+        function showStatus(msg, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = msg;
+            status.style.display = 'block';
+            if (isError) status.classList.add('error');
+            else status.classList.remove('error');
+        }
+
+        // Gerar cards automaticamente ao carregar
+        window.addEventListener('load', () => {
+            generateAgendaDays();
+        });
+    </script>
+</body>
+</html>
