@@ -1634,7 +1634,9 @@ export async function init() {
 
                 if (dateInput) {
                     dateInput.value = dateStr;
-                    console.log(`✅ Data preenchida: ${dateStr}`);
+                    const [year, month, day] = dateStr.split('-');
+                    const brDate = `${day}/${month}/${year}`;
+                    console.log(`✅ Data preenchida: ${brDate} (formato: dd/mm/yyyy)`);
                 } else {
                     console.warn('❌ dpScheduleDate não encontrado');
                 }
