@@ -2431,6 +2431,88 @@
     font-weight: 600;
 }
 
+/* ========== MODAL FLUTUANTE ========== */
+.dp-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.dp-modal-content {
+    background: linear-gradient(135deg, #1a3a52, #0f1e2e);
+    border: 2px solid #0ea5e9;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 400px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(14, 165, 233, 0.3);
+}
+
+.dp-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #f8fafc;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dp-modal-close:hover {
+    color: #0ea5e9;
+}
+
+.dp-modal-content h2 {
+    font-size: 20px;
+    color: #f8fafc;
+    margin-bottom: 12px;
+}
+
+.dp-modal-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px solid #0ea5e9;
+    border-radius: 8px;
+    color: #f8fafc;
+    font-size: 14px;
+}
+
+.dp-modal-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: #0ea5e9;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dp-modal-btn:hover {
+    background: #0284c7;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .dp-agenda-header h2 {
@@ -2449,6 +2531,11 @@
 
     .dp-day-card-full-date {
         font-size: 22px;
+    }
+
+    .dp-modal-content {
+        max-width: 90%;
+        padding: 24px;
     }
 }
 

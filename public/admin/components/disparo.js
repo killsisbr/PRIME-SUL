@@ -1485,6 +1485,17 @@ export async function init() {
         }
     });
 
+    // Modal flutuante listeners
+    document.getElementById('dpModalClose')?.addEventListener('click', () => {
+        document.getElementById('dpModalOverlay').style.display = 'none';
+    });
+
+    document.getElementById('dpModalOverlay')?.addEventListener('click', (e) => {
+        if (e.target.id === 'dpModalOverlay') {
+            document.getElementById('dpModalOverlay').style.display = 'none';
+        }
+    });
+
     // Submodal listeners
     document.getElementById('dp-btn-manage-templates')?.addEventListener('click', () => openTemplateManagerModal(false));
     document.getElementById('dp-btn-new-dispatch')?.addEventListener('click', () => openScheduleModal('10:00', 'novos', null));
@@ -1627,25 +1638,23 @@ export async function init() {
 
             const handleCardClick = () => {
                 console.log(`📅 Card clicado: ${dateStr}`);
+                const [year, month, day] = dateStr.split('-');
+                const brDate = `${day}/${month}/${year}`;
+
                 const dateInput = document.getElementById('dpScheduleDate');
-                const timingState = document.getElementById('dpTimingState');
+                if (dateInput) dateInput.value = dateStr;
+
+                const modal = document.getElementById('dpModalOverlay');
+                const modalDate = document.getElementById('dpModalDate');
                 const schedulingState = document.getElementById('dpSchedulingState');
 
-                if (dateInput) {
-                    dateInput.value = dateStr;
-                    const [year, month, day] = dateStr.split('-');
-                    const brDate = `${day}/${month}/${year}`;
-                    console.log(`✅ Data preenchida: ${brDate} (formato: dd/mm/yyyy)`);
-                } else {
-                    console.warn('❌ dpScheduleDate não encontrado');
-                }
-
-                if (timingState && schedulingState) {
-                    timingState.style.display = 'none';
+                if (modal && modalDate && schedulingState) {
+                    modalDate.textContent = `📅 ${brDate}`;
                     schedulingState.style.display = 'block';
-                    console.log('✅ Estados alterados');
+                    modal.style.display = 'flex';
+                    console.log(`✅ Modal aberto para ${brDate}`);
                 } else {
-                    console.warn('❌ States não encontrados:', { timingState: !!timingState, schedulingState: !!schedulingState });
+                    console.warn('❌ Modal não encontrado');
                 }
             };
 

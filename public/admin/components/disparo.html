@@ -39,6 +39,27 @@
             </div>
         </div>
     </main>
+
+    <!-- ============ MODAL FLUTUANTE DE AGENDAMENTO ============ -->
+    <div class="dp-modal-overlay" id="dpModalOverlay" style="display:none;">
+        <div class="dp-modal-content">
+            <button class="dp-modal-close" id="dpModalClose">&times;</button>
+            <h2>Agendar Disparo</h2>
+            <p id="dpModalDate" style="color:#0ea5e9; margin-bottom:20px;"></p>
+
+            <div style="display:none;" id="dpTimingState">
+                <button onclick="document.getElementById('dpTimingState').style.display='none'; document.getElementById('dpSchedulingState').style.display='block';" class="dp-modal-btn primary">
+                    📅 AGENDAR PARA DATA ESPECÍFICA
+                </button>
+            </div>
+
+            <div id="dpSchedulingState" style="display:none;">
+                <input type="date" id="dpScheduleDate" class="dp-modal-input">
+                <input type="time" id="dpScheduleTime" class="dp-modal-input" value="10:00">
+                <button class="dp-modal-btn primary" onclick="document.getElementById('dpModalOverlay').style.display='none'">✓ CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ============ SUBMODAL: DISPARO COMERCIAL (NOVO DESIGN ENRIQUECIDO & SEM CONFUSÃO) ============ -->
