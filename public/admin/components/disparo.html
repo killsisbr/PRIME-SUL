@@ -26,41 +26,19 @@
         </div>
     </header>
 
-    <!-- ============ WORKSPACE EM 2 COLUNAS ============ -->
-    <div class="dp-workspace-grid">
-        <!-- COLUNA ESQUERDA: LISTA OPERACIONAL DE DISPAROS -->
-        <section class="dp-saas-single-card dp-col-dispatches">
-            <div class="dp-cat-header">
-                <span class="dp-cat-header-title">
-                    <i class="fas fa-list-check" style="color:#ffb703;"></i> DISPAROS PROGRAMADOS
-                </span>
-                <span class="dp-saas-status-badge" id="dpDispatchesCountBadge">0 AGENDADOS</span>
-            </div>
-            <div class="dp-cat-body" id="dpSingleDispatchesList">
-                <!-- Renderizado dinamicamente via disparo.js -->
-            </div>
-        </section>
-
-        <!-- COLUNA DIREITA: RÉGUA DE HORÁRIOS & AGENDA PREVIEW -->
-        <section class="dp-saas-timeline-box dp-col-timeline">
-            <div class="dp-timeline-top">
-                <div class="dp-timeline-title">
-                    <i class="fas fa-calendar-check" style="color:#10b981;"></i> AGENDA DE DISPAROS
-                </div>
+    <!-- ============ FULL SCREEN AGENDA ============ -->
+    <main class="dp-agenda-fullscreen">
+        <div class="dp-agenda-container-full" id="dpAgendaContainer">
+            <div class="dp-agenda-header">
+                <h2>Próximos 7 dias</h2>
+                <p>Selecione um dia para agendar seu disparo</p>
             </div>
 
-            <!-- AGENDA DE PRÓXIMOS 7 DIAS -->
-            <div class="dp-agenda-container" id="dpAgendaContainer">
-                <div class="dp-agenda-subtitle">
-                    <p>Selecione um dia para agendar seu próximo disparo</p>
-                </div>
-
-                <div class="dp-agenda-grid" id="dpAgendaGrid">
-                    <!-- Cards gerados dinamicamente via JavaScript -->
-                </div>
+            <div class="dp-agenda-grid-full" id="dpAgendaGrid">
+                <!-- Cards gerados dinamicamente via JavaScript -->
             </div>
-        </section>
-    </div>
+        </div>
+    </main>
 </div>
 
 <!-- ============ SUBMODAL: DISPARO COMERCIAL (NOVO DESIGN ENRIQUECIDO & SEM CONFUSÃO) ============ -->

@@ -1606,7 +1606,7 @@ export async function init() {
 
     // Gerar agenda de 7 dias na grid
     function generateAgendaDays() {
-        const grid = document.getElementById('dpAgendaGrid');
+        const grid = document.getElementById('dpAgendaGrid') || document.querySelector('.dp-agenda-grid-full');
         if (!grid) return;
 
         const dayLabels = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
@@ -1619,8 +1619,7 @@ export async function init() {
             date.setDate(date.getDate() + i);
 
             const card = document.createElement('div');
-            card.className = 'dp-day-card';
-            card.style.cursor = 'pointer';
+            card.className = 'dp-day-card-full';
             card.setAttribute('role', 'button');
             card.setAttribute('tabindex', '0');
 
@@ -1659,9 +1658,9 @@ export async function init() {
             });
 
             card.innerHTML = `
-                <div class="dp-day-card-label">${dayLabels[date.getDay()]}</div>
-                <div class="dp-day-card-date">${date.getDate()}</div>
-                <div class="dp-day-card-action">+ Agendar</div>
+                <div class="dp-day-card-full-label">${dayLabels[date.getDay()]}</div>
+                <div class="dp-day-card-full-date">${date.getDate()}</div>
+                <div class="dp-day-card-full-action">+ Agendar</div>
             `;
 
             grid.appendChild(card);
