@@ -170,16 +170,19 @@ function sanitizeExtracted(raw) {
     }
 
     if (noEvidenceOfText) {
+        console.log(`[lead-ocr] bloqueado por raw_text vazio/curto (len=${rawText.length}). raw_text recebido: ${JSON.stringify(rawText).slice(0, 300)}`);
         for (const key of FIELD_KEYS) out[key] = null;
         out.confidence = 0;
         if (!out.notes) out.notes = 'A IA não identificou texto legível nesta imagem — não é um documento reconhecível.';
     } else {
         for (const key of ['name', 'phone', 'cpf', 'city']) {
             if (out[key] && !appearsInRawText(out[key])) {
+                console.log(`[lead-ocr] campo "${key}"="${out[key]}" descartado: não corresponde ao raw_text transcrito.`);
                 out[key] = null; // campo não corresponde a nada no texto transcrito — descarta só ele
             }
         }
     }
+    console.log(`[lead-ocr] resultado final: name=${out.name ? 'OK' : 'null'} cpf=${out.cpf ? 'OK' : 'null'} phone=${out.phone ? 'OK' : 'null'} confidence=${out.confidence} raw_text_len=${rawText.length}`);
     return out;
 }
 
@@ -204,6 +207,7 @@ async function extractFromImage(imageBuffer, mimeType) {
         // Barreira determinística (não-IA): arquivo pequeno demais pra ser uma foto real de
         // documento — provavelmente imagem em branco/degenerada. Evita gastar uma chamada de
         // IA num caso onde o modelo tende a alucinar dados "de exemplo".
+        console.log(`[lead-ocr] bloqueado por tamanho mínimo: ${imageBuffer.length} bytes < ${MIN_PLAUSIBLE_IMAGE_BYTES} bytes`);
         return sanitizeExtracted({
             raw_text: '',
             notes: 'Arquivo de imagem muito simples/pequeno para ser um documento real — verifique o envio.'
@@ -274,6 +278,7 @@ async function extractFromImage(imageBuffer, mimeType) {
         e.status = 502;
         throw e;
     }
+    console.log(`[lead-ocr] resposta bruta do modelo (${imageBuffer.length} bytes de imagem):`, JSON.stringify(parsed).slice(0, 1500));
 
     return sanitizeExtracted(parsed);
 }
