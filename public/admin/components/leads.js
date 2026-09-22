@@ -446,10 +446,27 @@ export async function init() {
             setIfPresent('add-phone', extracted.phone);
             setIfPresent('add-cpf', extracted.cpf);
             setIfPresent('add-city', extracted.city);
+            setIfPresent('add-agencia', extracted.agencia);
+            setIfPresent('add-conta', extracted.conta);
             if (extracted.renda !== null && extracted.renda !== undefined) {
                 setIfPresent('add-renda', Number(extracted.renda).toFixed(2));
             }
             // Limite estimado nunca vem da IA (decisão de negócio) — permanece manual.
+
+            // Simulações de crédito lidas da tela (ex: Portal COBAN) — anexadas às
+            // Observações como texto, sem sobrescrever o que o usuário já tiver digitado.
+            if (Array.isArray(extracted.simulacoes) && extracted.simulacoes.length) {
+                const obsEl = document.getElementById('add-obs');
+                if (obsEl) {
+                    const linhas = extracted.simulacoes.map(s => {
+                        const partes = [s.produto, s.modalidade, s.valor, s.data].filter(Boolean);
+                        return '- ' + partes.join(' — ');
+                    });
+                    const bloco = `Últimas simulações (lidas via IA Vision):\n${linhas.join('\n')}`;
+                    obsEl.value = obsEl.value.trim() ? `${obsEl.value.trim()}\n\n${bloco}` : bloco;
+                    filled.push('#add-obs');
+                }
+            }
 
             const confidencePct = Math.round((extracted.confidence || 0) * 100);
             if (filled.length === 0) {
@@ -494,6 +511,8 @@ export async function init() {
                 prioridade: document.getElementById('add-prio').value,
                 origem: document.getElementById('add-origem').value,
                 city: document.getElementById('add-city').value.trim(),
+                agencia: document.getElementById('add-agencia')?.value.trim() || null,
+                conta: document.getElementById('add-conta')?.value.trim() || null,
                 renda: document.getElementById('add-renda').value ? parseFloat(document.getElementById('add-renda').value) : null,
                 limite_est: document.getElementById('add-limite').value ? parseFloat(document.getElementById('add-limite').value) : null,
                 tags: document.getElementById('add-tags').value.trim(),
