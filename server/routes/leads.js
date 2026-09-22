@@ -1,10 +1,27 @@
 const express = require('express');
 const leadService = require('../services/lead-service');
 const messageService = require('../services/message-service');
+const leadOcrService = require('../services/lead-ocr-service');
 const { auth, adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
 router.use(auth);
+
+// Leitura de documento (CNH, RG, Holerite) via IA Vision real — "Novo Lead com IA Vision".
+// Body maior só nesta rota (imagem em base64 não cabe no limite global de 256kb do app).
+const ocrBodyParser = express.json({ limit: '12mb' });
+router.post('/ocr', ocrBodyParser, async (req, res, next) => {
+    try {
+        const { image, mime_type } = req.body || {};
+        if (!image || typeof image !== 'string') {
+            return res.status(400).json({ error: 'Envie o campo "image" em base64 (sem o prefixo data:...)' });
+        }
+        const mimeType = typeof mime_type === 'string' && mime_type.startsWith('image/') ? mime_type : 'image/png';
+        const buffer = Buffer.from(image, 'base64');
+        const extracted = await leadOcrService.extractFromImage(buffer, mimeType);
+        res.json(extracted);
+    } catch (e) { next(e); }
+});
 
 // Lista leads do vendedor (com filtros avançados)
 router.get('/', async (req, res, next) => {

@@ -399,46 +399,80 @@ export async function init() {
         if (e.target.id === 'ldLightbox') closeLightbox();
     });
 
+    // Lê um File/Blob como base64 puro (sem o prefixo "data:...;base64,")
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = String(reader.result || '');
+                const comma = result.indexOf(',');
+                resolve(comma !== -1 ? result.slice(comma + 1) : result);
+            };
+            reader.onerror = () => reject(reader.error || new Error('Falha ao ler o arquivo'));
+            reader.readAsDataURL(file);
+        });
+    }
+
     async function processOcrFile(file) {
         showOcrPreview(file); // mostra a miniatura já na hora — não depende do OCR "terminar"
         if (ocrLoading) ocrLoading.style.display = 'flex';
         if (ocrTrigger) ocrTrigger.style.display = 'none';
 
+        // PDF não é suportado pelo modelo de visão usado aqui — avisa e deixa preenchimento manual.
+        if (file.type === 'application/pdf') {
+            toast('PDF ainda não é lido pela IA Vision — preencha manualmente ou envie uma foto/imagem do documento.', 'err');
+            if (ocrLoading) ocrLoading.style.display = 'none';
+            return;
+        }
+
         try {
-            // Leitura de texto via FileReader / OCR regex
-            const fileName = file.name;
-            await new Promise(r => setTimeout(r, 1200)); // Simulação de processamento de IA Vision
-
-            // Mock de inteligência extraída de documentos (CNH, RG, Holerite)
-            const extracted = {
-                name: fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase(),
-                phone: "1198" + Math.floor(1000003 + Math.random() * 8999990),
-                cpf: "34" + Math.floor(10 + Math.random() * 89) + "." + Math.floor(100 + Math.random() * 899) + "." + Math.floor(100 + Math.random() * 899) + "-00",
-                city: "Porto Alegre - RS",
-                renda: "4850.00",
-                limite: "15000.00"
-            };
-
-            document.getElementById('add-name').value = extracted.name;
-            document.getElementById('add-phone').value = extracted.phone;
-            document.getElementById('add-cpf').value = extracted.cpf;
-            document.getElementById('add-city').value = extracted.city;
-            document.getElementById('add-renda').value = extracted.renda;
-            document.getElementById('add-limite').value = extracted.limite;
-
-            toast('IA Vision: Documento lido e campos preenchidos automaticamente!');
-
-            // Animação de pulso verde nos campos preenchidos pela IA
-            runAnime({
-                targets: '#add-name, #add-phone, #add-cpf, #add-city, #add-renda, #add-limite',
-                scale: [1.03, 1],
-                backgroundColor: ['#e2fbea', '#ffffff'],
-                duration: 600,
-                easing: 'easeOutQuad'
+            const base64 = await fileToBase64(file);
+            const extracted = await api('/leads/ocr', {
+                method: 'POST',
+                body: JSON.stringify({ image: base64, mime_type: file.type || 'image/png' })
             });
 
+            // Só preenche os campos que a IA realmente conseguiu ler — nunca inventa
+            // (telefone, renda e limite ficam vazios quando não estão legíveis no documento).
+            const filled = [];
+            const setIfPresent = (id, value) => {
+                if (value === null || value === undefined || value === '') return;
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.value = value;
+                filled.push('#' + id);
+            };
+            setIfPresent('add-name', extracted.name);
+            setIfPresent('add-phone', extracted.phone);
+            setIfPresent('add-cpf', extracted.cpf);
+            setIfPresent('add-city', extracted.city);
+            if (extracted.renda !== null && extracted.renda !== undefined) {
+                setIfPresent('add-renda', Number(extracted.renda).toFixed(2));
+            }
+            // Limite estimado nunca vem da IA (decisão de negócio) — permanece manual.
+
+            const confidencePct = Math.round((extracted.confidence || 0) * 100);
+            if (filled.length === 0) {
+                toast('IA Vision não conseguiu ler dados neste documento — preencha manualmente.', 'err');
+            } else if (confidencePct < 50) {
+                toast(`IA Vision: leitura de baixa confiança (${confidencePct}%) — revise os campos preenchidos antes de salvar.`, 'err');
+            } else {
+                toast(`IA Vision: documento lido (confiança ${confidencePct}%) — revise antes de salvar.`);
+            }
+            if (extracted.notes) toast(extracted.notes);
+
+            if (filled.length) {
+                runAnime({
+                    targets: filled.join(', '),
+                    scale: [1.03, 1],
+                    backgroundColor: ['#e2fbea', '#ffffff'],
+                    duration: 600,
+                    easing: 'easeOutQuad'
+                });
+            }
+
         } catch (e) {
-            toast('Erro ao ler documento via IA', 'err');
+            toast(e?.message || 'Erro ao ler documento via IA', 'err');
         } finally {
             if (ocrLoading) ocrLoading.style.display = 'none';
             // Mantém a prévia do documento visível (não volta a mostrar o prompt de

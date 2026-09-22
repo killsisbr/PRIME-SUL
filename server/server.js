@@ -1,4 +1,7 @@
 require('dotenv').config();
+// .env.local é git-ignored e serve pra credenciais locais (ver .gitignore: .env.*);
+// carregado por cima sem sobrescrever o que já veio de .env / do ambiente do sistema.
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.local') });
 
 const path = require('path');
 const express = require('express');
