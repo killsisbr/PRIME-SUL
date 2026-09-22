@@ -10,6 +10,28 @@ function canonicalStatus(status) {
 
 let _ctpTimer = null;
 
+// A "Ficha do Cliente" (modal completa: edição inline, stepper de estágio, histórico)
+// vive dentro do módulo Funil (public/admin/components/funil.js + funil.html), não em
+// Leads. Quando já está carregado (ex: usuário veio do Funil) usamos window.openClientModal
+// diretamente; caso contrário abrimos o módulo Funil via openToolV2 e chamamos a função que
+// ele expõe no retorno do seu init(), garantindo que o HTML/overlay da ficha exista no DOM
+// antes de tentar abri-la.
+function openClientFicha(leadId) {
+    if (typeof window.openClientModal === 'function') {
+        window.openClientModal(leadId);
+        return;
+    }
+    if (typeof window.openToolV2 === 'function') {
+        window.openToolV2('funil', 'Funil de Vendas', (funilApi) => {
+            if (funilApi && typeof funilApi.openClientModal === 'function') {
+                funilApi.openClientModal(leadId);
+            }
+        });
+        return;
+    }
+    console.error('[leads] Não foi possível abrir a Ficha do Cliente: nem openClientModal nem openToolV2 disponíveis.');
+}
+
 export async function init() {
     const api = window.api;
     const toast = window.toast;
@@ -162,12 +184,7 @@ export async function init() {
         board.querySelectorAll('.ld-client-card').forEach(card => {
             card.onclick = (e) => {
                 const leadId = card.dataset.id;
-                if (window.openClientModal) {
-                    window.openClientModal(leadId);
-                } else if (window.openWaFloatingWidget) {
-                    const lead = LEADS.find(x => String(x.id) === String(leadId));
-                    if (lead) window.openWaFloatingWidget(lead);
-                }
+                openClientFicha(leadId);
             };
         });
 
@@ -186,7 +203,7 @@ export async function init() {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const leadId = btn.dataset.id;
-                if (window.openClientModal) window.openClientModal(leadId);
+                openClientFicha(leadId);
             };
         });
 

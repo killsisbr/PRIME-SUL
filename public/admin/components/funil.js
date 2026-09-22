@@ -1779,7 +1779,7 @@ export async function init() {
     if (crmPrioSelect) crmPrioSelect.addEventListener('change', loadCrmKanban);
 
     await loadData();
-    return {};
+    return { openClientModal };
 }
 
 export async function destroy() {
