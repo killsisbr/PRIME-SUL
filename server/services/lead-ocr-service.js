@@ -47,11 +47,20 @@ const PERSONAL_PROMPT = [
     'raw_text = texto com nome, CPF, telefone, filial e conta visíveis na imagem.',
     'name = só o nome completo, sem rótulo do campo.',
     'cpf = só os números/máscara do CPF, sem rótulo.',
-    'phone = telefone/WhatsApp SOMENTE se rotulado como tal (nunca conta ou CPF).',
-    'agencia = número rotulado "Código da filial", "Agência" ou "Filial".',
-    'conta = número rotulado "Número da conta", "Conta Corrente" ou "Conta".',
+    'phone = telefone/WhatsApp. Pode estar rotulado "Telefone", "WhatsApp", "Celular",',
+    '"Contato" ou "Pontos de Contato" (comum em telas de CRM — extraia o número de telefone',
+    'de dentro dessa seção mesmo que o rótulo exato seja "Pontos de Contato"). Nunca confunda',
+    'com número de conta bancária, código de filial ou CPF (esses são números sem o formato',
+    'de telefone — DDD + número).',
+    'agencia = número que aparece EXATAMENTE ao lado do rótulo "Código da filial", "Agência"',
+    'ou "Filial" — se esse rótulo não aparecer literalmente na imagem, agencia = null. NUNCA',
+    'use MCI, CPF ou qualquer outro número que não esteja sob esse rótulo específico.',
+    'conta = número que aparece EXATAMENTE ao lado do rótulo "Número da conta", "Conta',
+    'Corrente" ou "Conta" — se esse rótulo não aparecer literalmente na imagem, conta = null.',
+    'NUNCA use CPF, MCI ou qualquer outro número que não esteja sob esse rótulo específico.',
     'Campo sem valor visível na imagem = null. Nunca invente nome, CPF, telefone, cidade,',
-    'filial ou conta. Campo com valor visível deve ser preenchido com esse valor real.',
+    'filial ou conta. Campo com valor visível deve ser preenchido com esse valor real. É',
+    'MELHOR deixar agencia/conta null do que preencher com um número errado de outro campo.',
     'confidence = 0 a 1 (0 se não achar nada legível; 0.8+ se nome/CPF nítidos).',
     'doc_type = um de: cnh, rg, holerite, comprovante_residencia, tela_sistema, outro.'
 ].join('\n');
@@ -208,6 +217,24 @@ function sanitizePersonalData(raw) {
     // Modelo às vezes devolve null/ausente apesar da instrução; usamos confiança neutra
     // nesse caso (nem alta nem baixa) em vez de 0, que forçaria "sem confiança" indevido.
     out.confidence = Number.isFinite(conf) ? Math.max(0, Math.min(1, conf)) : 0.5;
+
+    // Defesa determinística contra confusão de campo: agência/conta nunca devem ser
+    // exatamente iguais ao CPF (só dígitos comparados) — isso já aconteceu no modelo
+    // (confundiu "Código da filial"/"Número da conta" com CPF/MCI quando não viu os
+    // rótulos certos no raw_text truncado). Zeramos o campo errado em vez de mostrar um
+    // número de filial/conta que na verdade é outra coisa.
+    const cpfDigits = out.cpf ? String(out.cpf).replace(/\D/g, '') : '';
+    for (const key of ['agencia', 'conta']) {
+        if (out[key] && cpfDigits && String(out[key]).replace(/\D/g, '') === cpfDigits) {
+            console.log(`[lead-ocr] campo "${key}" descartado: idêntico ao CPF (provável confusão de campo).`);
+            out[key] = null;
+        }
+    }
+    if (out.agencia && out.conta && String(out.agencia) === String(out.conta)) {
+        console.log('[lead-ocr] agencia e conta idênticos entre si — descartando ambos (provável confusão de campo).');
+        out.agencia = null;
+        out.conta = null;
+    }
 
     // Defesa contra alucinação: exigimos que o NOME extraído apareça (mesmo que
     // parcialmente) dentro do raw_text que a própria IA transcreveu. É a checagem mínima
