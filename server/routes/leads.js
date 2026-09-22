@@ -11,20 +11,20 @@
  * - DELETE /api/leads/:id — Deletar lead
  */
 
-import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth.js';
-import { createCarteiraService } from '../services/carteira-service.js';
+const { Router } = require('express');
+const { auth: authMiddleware } = require('../middleware/auth');
+const { createCarteiraService } = require('../services/carteira-service');
+const db = require('../database/db');
 
-export function setupLeadsRoutes(app, db) {
-  const router = Router();
-  const carteira = createCarteiraService(db);
+const router = Router();
+const carteira = createCarteiraService(db);
 
   // ============================================
   // GET /api/leads — Listar leads com filtros
   // ============================================
   router.get('/', authMiddleware, async (req, res) => {
     try {
-      const sellerId = req.user.seller_id;
+      const sellerId = req.user.id;
 
       // Query parameters
       const {
@@ -72,7 +72,7 @@ export function setupLeadsRoutes(app, db) {
   // ============================================
   router.get('/counts', authMiddleware, async (req, res) => {
     try {
-      const sellerId = req.user.seller_id;
+      const sellerId = req.user.id;
       const counts = await carteira.countsBySeller(sellerId);
 
       res.json({
@@ -94,7 +94,7 @@ export function setupLeadsRoutes(app, db) {
   // ============================================
   router.get('/:id', authMiddleware, async (req, res) => {
     try {
-      const sellerId = req.user.seller_id;
+      const sellerId = req.user.id;
       const { id } = req.params;
 
       const lead = await carteira.getLead(sellerId, id);
@@ -119,8 +119,8 @@ export function setupLeadsRoutes(app, db) {
   // ============================================
   router.post('/', authMiddleware, async (req, res) => {
     try {
-      const sellerId = req.user.seller_id;
-      const { name, phone, email, prioridade, score, status, notas } = req.body;
+      const sellerId = req.user.id;
+      const { name, phone, cpf, city, prioridade, score, status, obs, renda, limite_est } = req.body;
 
       // Validação básica
       if (!name || !phone) {
@@ -133,11 +133,14 @@ export function setupLeadsRoutes(app, db) {
       const newLead = await carteira.createLead(sellerId, {
         name,
         phone,
-        email: email || '',
+        cpf: cpf || null,
+        city: city || null,
         prioridade: prioridade || 'media',
         score: parseInt(score) || 0,
-        status: status || 'novo',
-        notas: notas || ''
+        status: status || 'novos',
+        obs: obs || null,
+        renda: renda || null,
+        limite_est: limite_est || null
       });
 
       res.status(201).json({
@@ -160,7 +163,7 @@ export function setupLeadsRoutes(app, db) {
   // ============================================
   router.patch('/:id', authMiddleware, async (req, res) => {
     try {
-      const sellerId = req.user.seller_id;
+      const sellerId = req.user.id;
       const { id } = req.params;
       const updates = req.body;
 
@@ -192,7 +195,7 @@ export function setupLeadsRoutes(app, db) {
   // ============================================
   router.delete('/:id', authMiddleware, async (req, res) => {
     try {
-      const sellerId = req.user.seller_id;
+      const sellerId = req.user.id;
       const { id } = req.params;
 
       await carteira.deleteLead(sellerId, id);
@@ -212,8 +215,4 @@ export function setupLeadsRoutes(app, db) {
     }
   });
 
-  // ============================================
-  // Registrar rotas
-  // ============================================
-  app.use('/api/leads', router);
-}
+module.exports = router;
