@@ -24,7 +24,7 @@ const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || process.env.OPENAI_API_KEY;
 // (meta/llama-3.1-8b-instruct) NÃO enxerga imagem, por isso um modelo dedicado aqui.
 const OCR_MODEL = process.env.LEADS_OCR_MODEL || 'meta/llama-3.2-11b-vision-instruct';
 
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB — documento fotografado cabe tranquilo
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024; // 25MB — suporta imagens de alta resolução e PDFs
 // Imagens degeneradas (em branco, cor sólida, 1x1px de teste) comprimem para poucas
 // centenas de bytes. Uma foto real de documento — mesmo pequena — tem textura, ruído de
 // câmera e texto, e nunca fica tão pequena. Isso barra o caso mais grave de alucinação
@@ -32,7 +32,8 @@ const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB — documento fotografado cabe t
 // IA, sem risco de falso positivo em documentos reais.
 const MIN_PLAUSIBLE_IMAGE_BYTES = 2 * 1024; // 2KB
 
-const FIELD_KEYS = ['name', 'phone', 'cpf', 'city', 'renda', 'limite', 'agencia', 'conta'];
+const FIELD_KEYS = ['name', 'phone', 'cpf', 'city', 'renda', 'limite'];
+const BANK_FIELD_KEYS = ['agencia', 'conta'];
 
 // -------- Prompt 1: dados pessoais (chamada pequena e focada) --------
 // Mantido deliberadamente curto e direto: testes mostraram que prompts mais longos/
@@ -41,10 +42,10 @@ const FIELD_KEYS = ['name', 'phone', 'cpf', 'city', 'renda', 'limite', 'agencia'
 const PERSONAL_PROMPT = [
     'Extraia dados pessoais desta imagem (documento brasileiro ou tela de sistema/CRM).',
     'Responda SÓ um objeto JSON, sem explicação, sem markdown, com exatamente estas chaves:',
-    '{"raw_text":"","name":null,"cpf":null,"phone":null,"city":null,"agencia":null,',
-    '"conta":null,"renda":null,"confidence":0,"doc_type":null,"notes":null}',
+    '{"raw_text":"","name":null,"cpf":null,"phone":null,"city":null,"renda":null,',
+    '"confidence":0,"doc_type":null,"notes":null}',
     '',
-    'raw_text = texto com nome, CPF, telefone, filial e conta visíveis na imagem.',
+    'raw_text = texto com nome, CPF e telefone visíveis na imagem.',
     'name = só o nome completo, sem rótulo do campo.',
     'cpf = só os números/máscara do CPF, sem rótulo.',
     'phone = telefone/WhatsApp. Pode estar rotulado "Telefone", "WhatsApp", "Celular",',
@@ -52,15 +53,8 @@ const PERSONAL_PROMPT = [
     'de dentro dessa seção mesmo que o rótulo exato seja "Pontos de Contato"). Nunca confunda',
     'com número de conta bancária, código de filial ou CPF (esses são números sem o formato',
     'de telefone — DDD + número).',
-    'agencia = número que aparece EXATAMENTE ao lado do rótulo "Código da filial", "Agência"',
-    'ou "Filial" — se esse rótulo não aparecer literalmente na imagem, agencia = null. NUNCA',
-    'use MCI, CPF ou qualquer outro número que não esteja sob esse rótulo específico.',
-    'conta = número que aparece EXATAMENTE ao lado do rótulo "Número da conta", "Conta',
-    'Corrente" ou "Conta" — se esse rótulo não aparecer literalmente na imagem, conta = null.',
-    'NUNCA use CPF, MCI ou qualquer outro número que não esteja sob esse rótulo específico.',
-    'Campo sem valor visível na imagem = null. Nunca invente nome, CPF, telefone, cidade,',
-    'filial ou conta. Campo com valor visível deve ser preenchido com esse valor real. É',
-    'MELHOR deixar agencia/conta null do que preencher com um número errado de outro campo.',
+    'Campo sem valor visível na imagem = null. Nunca invente nome, CPF, telefone ou cidade.',
+    'Campo com valor visível deve ser preenchido com esse valor real.',
     'confidence = 0 a 1 (0 se não achar nada legível; 0.8+ se nome/CPF nítidos).',
     'doc_type = um de: cnh, rg, holerite, comprovante_residencia, tela_sistema, outro.'
 ].join('\n');
@@ -78,6 +72,30 @@ const SIMULACOES_PROMPT = [
     '{"produto":"","modalidade":"","valor":"","data":""} cada. Se a tabela tiver menos de 5',
     'linhas, copie todas. NUNCA invente uma linha que não está na imagem. Se tem_tabela é',
     'false, simulacoes deve ser [].'
+].join('\n');
+
+// -------- Prompt 3: código da filial e número da conta (chamada dedicada) --------
+// Separado do prompt pessoal porque testes mostraram taxa de acerto muito menor quando
+// esses dois campos competiam por atenção com nome/CPF/telefone na mesma chamada — uma
+// pergunta pequena e sozinha sobre "só isso" tem taxa de acerto bem maior.
+const BANK_INFO_PROMPT = [
+    'Esta imagem pode ser uma tela de sistema/CRM bancário com informações de conta de um',
+    'cliente (ex: Portal COBAN, Salesforce).',
+    '',
+    'Procure por dois rótulos específicos na imagem:',
+    '1) Um rótulo parecido com "Código da filial", "Código do filial", "Agência" ou',
+    '   "Filial", seguido de um número.',
+    '2) Um rótulo parecido com "Número da conta", "Numero da conta" ou "Conta Corrente"',
+    '   (NÃO o campo "Nome da conta", que é o nome da pessoa, não um número), seguido de',
+    '   um número.',
+    '',
+    'Responda APENAS um objeto JSON válido, uma linha, sem markdown, sem texto fora do JSON:',
+    '{"agencia":null,"conta":null}',
+    '',
+    'agencia = o número do rótulo (1) se você o encontrou claramente na imagem; senão null.',
+    'conta = o número do rótulo (2) se você o encontrou claramente na imagem; senão null.',
+    'Nunca use CPF, MCI ou qualquer outro número que não esteja sob esses rótulos',
+    'específicos. Se não encontrar o rótulo exato, retorne null — não adivinhe.'
 ].join('\n');
 
 function stripCodeFence(text) {
@@ -218,24 +236,6 @@ function sanitizePersonalData(raw) {
     // nesse caso (nem alta nem baixa) em vez de 0, que forçaria "sem confiança" indevido.
     out.confidence = Number.isFinite(conf) ? Math.max(0, Math.min(1, conf)) : 0.5;
 
-    // Defesa determinística contra confusão de campo: agência/conta nunca devem ser
-    // exatamente iguais ao CPF (só dígitos comparados) — isso já aconteceu no modelo
-    // (confundiu "Código da filial"/"Número da conta" com CPF/MCI quando não viu os
-    // rótulos certos no raw_text truncado). Zeramos o campo errado em vez de mostrar um
-    // número de filial/conta que na verdade é outra coisa.
-    const cpfDigits = out.cpf ? String(out.cpf).replace(/\D/g, '') : '';
-    for (const key of ['agencia', 'conta']) {
-        if (out[key] && cpfDigits && String(out[key]).replace(/\D/g, '') === cpfDigits) {
-            console.log(`[lead-ocr] campo "${key}" descartado: idêntico ao CPF (provável confusão de campo).`);
-            out[key] = null;
-        }
-    }
-    if (out.agencia && out.conta && String(out.agencia) === String(out.conta)) {
-        console.log('[lead-ocr] agencia e conta idênticos entre si — descartando ambos (provável confusão de campo).');
-        out.agencia = null;
-        out.conta = null;
-    }
-
     // Defesa contra alucinação: exigimos que o NOME extraído apareça (mesmo que
     // parcialmente) dentro do raw_text que a própria IA transcreveu. É a checagem mínima
     // que ainda pega o padrão clássico de alucinação ("Fulano de Tal" / "João Silva"
@@ -272,6 +272,31 @@ function sanitizePersonalData(raw) {
         // ajustamos pra um valor neutro-alto em vez de 0, já que 0 sinalizaria "sem
         // leitura" quando na verdade os dados vieram.
         out.confidence = 0.6;
+    }
+    return out;
+}
+
+// cpfDigits: dígitos do CPF já extraído na chamada de dados pessoais, usado aqui só pra
+// checagem cruzada de segurança (agência/conta nunca podem ser o mesmo número que o CPF).
+function sanitizeBankInfo(raw, cpfDigits) {
+    const out = { agencia: null, conta: null };
+    if (!raw || typeof raw !== 'object') return out;
+    for (const key of BANK_FIELD_KEYS) out[key] = normalizeField(raw[key]);
+
+    // Defesa determinística contra confusão de campo: agência/conta nunca devem ser
+    // exatamente iguais ao CPF (só dígitos comparados) — o modelo já confundiu "Código da
+    // filial"/"Número da conta" com CPF/MCI em testes anteriores. Zeramos o campo errado
+    // em vez de mostrar um número de filial/conta que na verdade é outra coisa.
+    for (const key of BANK_FIELD_KEYS) {
+        if (out[key] && cpfDigits && String(out[key]).replace(/\D/g, '') === cpfDigits) {
+            console.log(`[lead-ocr] campo "${key}" descartado: idêntico ao CPF (provável confusão de campo).`);
+            out[key] = null;
+        }
+    }
+    if (out.agencia && out.conta && String(out.agencia) === String(out.conta)) {
+        console.log('[lead-ocr] agencia e conta idênticos entre si — descartando ambos (provável confusão de campo).');
+        out.agencia = null;
+        out.conta = null;
     }
     return out;
 }
@@ -319,6 +344,8 @@ async function extractFromImage(imageBuffer, mimeType) {
             raw_text: '',
             notes: 'Arquivo de imagem muito simples/pequeno para ser um documento real — verifique o envio.'
         });
+        out.agencia = null;
+        out.conta = null;
         out.simulacoes = [];
         return out;
     }
@@ -331,12 +358,14 @@ async function extractFromImage(imageBuffer, mimeType) {
     const base64 = imageBuffer.toString('base64');
     const dataUrl = `data:${mimeType || 'image/png'};base64,${base64}`;
 
-    // Duas chamadas independentes e mais simples, em paralelo, em vez de uma chamada
-    // complexa só — reduz muito a chance do modelo quebrar o formato JSON em imagens
-    // densas (telas de CRM com bastante texto).
-    let [personalRaw, simsRaw] = await Promise.all([
+    // Três chamadas independentes e pequenas, em paralelo, em vez de uma chamada complexa
+    // só — reduz muito a chance do modelo quebrar o formato JSON em imagens densas (telas
+    // de CRM com bastante texto), e cada uma foca num grupo pequeno de campos, o que
+    // aumenta bastante a taxa de acerto de cada campo individualmente.
+    let [personalRaw, simsRaw, bankRaw] = await Promise.all([
         callVisionModel(dataUrl, PERSONAL_PROMPT, 'Extraia os dados pessoais desta imagem em JSON.', 500),
-        callVisionModel(dataUrl, SIMULACOES_PROMPT, 'Extraia a tabela de simulações desta imagem em JSON, se houver.', 600)
+        callVisionModel(dataUrl, SIMULACOES_PROMPT, 'Extraia a tabela de simulações desta imagem em JSON, se houver.', 600),
+        callVisionModel(dataUrl, BANK_INFO_PROMPT, 'Extraia código da filial e número da conta desta imagem em JSON, se houver.', 200)
     ]);
 
     // Retry único: a chamada de dados pessoais é a que mais importa (nome/CPF), então
@@ -345,11 +374,15 @@ async function extractFromImage(imageBuffer, mimeType) {
         console.log('[lead-ocr] retry da chamada de dados pessoais (primeira tentativa falhou)');
         personalRaw = await callVisionModel(dataUrl, PERSONAL_PROMPT, 'Extraia os dados pessoais desta imagem em JSON.', 500);
     }
-    // Simulações são um extra opcional — uma tentativa a mais só se a primeira falhou,
-    // sem bloquear a resposta principal se não der certo de novo.
+    // Simulações e dados bancários são extras — uma tentativa a mais só se a primeira
+    // falhou, sem bloquear a resposta principal se não der certo de novo.
     if (!simsRaw) {
         console.log('[lead-ocr] retry da chamada de simulações (primeira tentativa falhou)');
         simsRaw = await callVisionModel(dataUrl, SIMULACOES_PROMPT, 'Extraia a tabela de simulações desta imagem em JSON, se houver.', 600);
+    }
+    if (!bankRaw) {
+        console.log('[lead-ocr] retry da chamada de filial/conta (primeira tentativa falhou)');
+        bankRaw = await callVisionModel(dataUrl, BANK_INFO_PROMPT, 'Extraia código da filial e número da conta desta imagem em JSON, se houver.', 200);
     }
 
     if (!personalRaw) {
@@ -359,8 +392,13 @@ async function extractFromImage(imageBuffer, mimeType) {
     }
     console.log(`[lead-ocr] resposta pessoal (${imageBuffer.length} bytes de imagem):`, JSON.stringify(personalRaw).slice(0, 800));
     if (simsRaw) console.log('[lead-ocr] resposta simulações:', JSON.stringify(simsRaw).slice(0, 800));
+    if (bankRaw) console.log('[lead-ocr] resposta filial/conta:', JSON.stringify(bankRaw).slice(0, 300));
 
     const personal = sanitizePersonalData(personalRaw);
+    const cpfDigits = personal.cpf ? String(personal.cpf).replace(/\D/g, '') : '';
+    const bank = sanitizeBankInfo(bankRaw, cpfDigits);
+    personal.agencia = bank.agencia;
+    personal.conta = bank.conta;
     personal.simulacoes = sanitizeSimulacoes(simsRaw);
 
     console.log(`[lead-ocr] resultado final: name=${personal.name ? 'OK' : 'null'} cpf=${personal.cpf ? 'OK' : 'null'} agencia=${personal.agencia ? 'OK' : 'null'} conta=${personal.conta ? 'OK' : 'null'} confidence=${personal.confidence} simulacoes=${personal.simulacoes.length}`);

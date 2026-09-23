@@ -9,7 +9,7 @@ router.use(auth);
 
 // Leitura de documento (CNH, RG, Holerite) via IA Vision real — "Novo Lead com IA Vision".
 // Body maior só nesta rota (imagem em base64 não cabe no limite global de 256kb do app).
-const ocrBodyParser = express.json({ limit: '12mb' });
+const ocrBodyParser = express.json({ limit: '30mb' }); // Permitir até 30MB para suportar imagens de alta resolução
 router.post('/ocr', ocrBodyParser, async (req, res, next) => {
     try {
         const { image, mime_type } = req.body || {};
