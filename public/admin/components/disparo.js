@@ -810,7 +810,14 @@ export async function init() {
             if (idInput) idInput.value = '';
             if (titleEl) titleEl.textContent = 'DISPARAR MENSAGENS NO WHATSAPP';
             if (timeInput) timeInput.value = initialTimeStr;
-            if (msgArea) msgArea.value = '';
+            if (msgArea) {
+                try {
+                    const botMsgs = await api('/sellers/me/bot-messages').catch(() => null);
+                    msgArea.value = (botMsgs?.bot_campaign_msg || botMsgs?.default_campaign_msg || 'Olá {primeiro-nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.').trim();
+                } catch (e) {
+                    msgArea.value = 'Olá {primeiro-nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.';
+                }
+            }
             
             selectedQuantity = 10;
             if (rangeInput) rangeInput.value = 10;

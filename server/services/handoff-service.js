@@ -55,12 +55,15 @@ async function pickSellerNumber(handoff, preferredId = null) {
 }
 
 async function buildWelcomeMessage(lead, sellerId) {
-    const seller = await db.get('SELECT name FROM sellers WHERE id = ?', [sellerId]);
+    const seller = await db.get('SELECT name, bot_attendance_msg FROM sellers WHERE id = ?', [sellerId]);
     const sellerName = seller ? seller.name.split(' ')[0] : 'nossa equipe';
-    const tmpl = process.env.BOT_SELLER_WELCOME || DEFAULT_MESSAGE;
+    const tmpl = (seller && seller.bot_attendance_msg && seller.bot_attendance_msg.trim())
+        ? seller.bot_attendance_msg.trim()
+        : (process.env.BOT_SELLER_WELCOME || DEFAULT_MESSAGE);
     return tmpl
         .replace(/\{nome\}/g, (lead.name || 'Cliente').split(' ')[0])
-        .replace(/\{vendedor\}/g, sellerName);
+        .replace(/\{vendedor\}/g, sellerName)
+        .replace(/\{cidade\}/g, lead.city || lead.cidade || '');
 }
 
 // Disparo manual/sob demanda realizado pelo vendedor a partir do card do lead

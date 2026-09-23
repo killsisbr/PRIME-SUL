@@ -6,6 +6,7 @@
         <div class="bt-tabs">
             <button type="button" class="bt-tab-btn active" data-tab="conversas"><i class="fas fa-comments"></i> CONVERSAS</button>
             <button type="button" class="bt-tab-btn" data-tab="config"><i class="fas fa-qrcode"></i> SCANNER DE QR</button>
+            <button type="button" class="bt-tab-btn" data-tab="mensagens"><i class="fas fa-robot"></i> MENSAGENS DOS BOTS</button>
             <button type="button" class="bt-tab-btn" data-tab="pipeline"><i class="fas fa-wand-magic-sparkles"></i> FUNIL BOT</button>
         </div>
         <div class="bt-tab-status">
@@ -349,6 +350,147 @@
                 <div class="bt-grid" id="bt-grid">
                     <div class="ps-loading" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAINEL: MENSAGENS DOS BOTS (Campanha vs Atendimento) -->
+    <div class="bt-tab-panel" id="bt-panel-mensagens">
+        <div class="bt-shell" style="max-width: 1200px; margin: 0 auto; padding: 24px 16px;">
+            <!-- HERO DA SEÇÃO -->
+            <div class="bt-hero" style="margin-bottom: 24px;">
+                <div class="bt-hero-top">
+                    <div class="bt-hero-title-wrap">
+                        <div class="bt-hero-icon" style="background: rgba(37,99,235,0.15); color: #2563eb;"><i class="fas fa-robot"></i></div>
+                        <div class="bt-hero-copy">
+                            <span class="bt-hero-kicker"><i class="fas fa-sliders"></i> Personalização da Operação</span>
+                            <h1 class="bt-hero-headline" style="font-size: 1.5rem;">MENSAGENS DOS BOTS</h1>
+                            <p class="bt-hero-desc">Configure de forma independente a mensagem que o seu <b>Bot de Campanha</b> envia no primeiro contato e a mensagem que o seu <b>Bot de Atendimento</b> envia após o cliente responder SIM.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRID COM OS 2 BOTS LADO A LADO -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 24px;">
+                
+                <!-- CARD 1: BOT DE CAMPANHA -->
+                <div class="ps-card" style="background: var(--bg-card, #ffffff); border: 1.5px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(255,116,23,0.12); color: #ff7417; font-size: 1.2rem;">
+                                <i class="fas fa-bullhorn"></i>
+                            </span>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-main, #0f172a);">BOT DE CAMPANHA</h3>
+                                <small style="color: var(--text-muted, #64748b);">Triagem inicial & captação (primeiro disparo)</small>
+                            </div>
+                        </div>
+                        <span style="font-size: 0.7rem; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 3px 8px; border-radius: 6px;">DISPARO EM MASSA</span>
+                    </div>
+
+                    <p style="font-size: 0.82rem; color: var(--text-muted, #64748b); line-height: 1.4; margin: 0;">
+                        Essa mensagem é enviada pelo número de disparo para perguntar se o cliente tem interesse em prosseguir. Se o cliente responder <b>SIM</b>, ele é transferido imediatamente para você.
+                    </p>
+
+                    <!-- VARIAVEIS CLICAVEIS -->
+                    <div>
+                        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted, #64748b); text-transform: uppercase; margin-bottom: 6px;">Tags dinâmicas (clique para inserir):</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="botCampTags">
+                            <button type="button" class="ps-btn-tag" data-tag="{primeiro-nome}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{primeiro-nome}</button>
+                            <button type="button" class="ps-btn-tag" data-tag="{nome}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{nome}</button>
+                            <button type="button" class="ps-btn-tag" data-tag="{cpf}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{cpf}</button>
+                            <button type="button" class="ps-btn-tag" data-tag="{cidade}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{cidade}</button>
+                            <button type="button" class="ps-btn-tag" data-tag="{renda}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{renda}</button>
+                            <button type="button" class="ps-btn-tag" data-tag="{limite}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{limite}</button>
+                        </div>
+                    </div>
+
+                    <!-- TEXTAREA -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <textarea id="cfgBotCampaignMsg" rows="5" class="ps-textarea" style="width: 100%; border-radius: 8px; padding: 10px; font-family: inherit; font-size: 0.88rem; line-height: 1.45; border: 1.5px solid var(--border-color, #cbd5e1); resize: vertical;" placeholder="Carregando mensagem configurada..."></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-muted, #94a3b8);">
+                            <span id="cfgBotCampaignStatus">Salvo no banco de dados</span>
+                            <span id="cfgBotCampaignCount">0 caracteres</span>
+                        </div>
+                    </div>
+
+                    <!-- PREVIEW WHATSAPP -->
+                    <div style="background: #e5ddd5; border-radius: 8px; padding: 12px; background-image: radial-gradient(#d1c7bc 1px, transparent 1px); background-size: 16px 16px;">
+                        <div style="font-size: 0.68rem; font-weight: 800; color: #667781; text-transform: uppercase; margin-bottom: 6px;"><i class="fab fa-whatsapp"></i> Simulação no WhatsApp do Cliente:</div>
+                        <div style="background: #ffffff; padding: 10px 14px; border-radius: 8px 8px 8px 0; max-width: 90%; font-size: 0.84rem; color: #111b21; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.1); position: relative;" id="cfgBotCampaignPreview">
+                            ...
+                        </div>
+                    </div>
+
+                    <!-- AÇÕES -->
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: auto;">
+                        <button type="button" class="btn-retro" id="btnResetBotCampaign" style="background: #f1f5f9; color: #475569; font-size: 0.76rem; padding: 8px 14px; border: 1px solid #cbd5e1;">
+                            <i class="fas fa-rotate-left"></i> RESTAURAR PADRÃO
+                        </button>
+                        <button type="button" class="btn-retro" id="btnSaveBotCampaign" style="background: #ff7417; color: #fff; font-size: 0.78rem; font-weight: 800; padding: 8px 18px;">
+                            <i class="fas fa-floppy-disk"></i> SALVAR CAMPANHA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CARD 2: BOT DE ATENDIMENTO -->
+                <div class="ps-card" style="background: var(--bg-card, #ffffff); border: 1.5px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(16,185,129,0.12); color: #10b981; font-size: 1.2rem;">
+                                <i class="fas fa-headset"></i>
+                            </span>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-main, #0f172a);">WHATSAPP DE ATENDIMENTO</h3>
+                                <small style="color: var(--text-muted, #64748b);">Primeira resposta automática do vendedor (pós-SIM)</small>
+                            </div>
+                        </div>
+                        <span style="font-size: 0.7rem; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 6px;">SEU WHATSAPP REAL</span>
+                    </div>
+
+                    <p style="font-size: 0.82rem; color: var(--text-muted, #64748b); line-height: 1.4; margin: 0;">
+                        Essa mensagem é enviada pelo seu <b>número pessoal de atendimento</b> assim que o lead responde "SIM" na campanha, dando início formal à sua conversa com ele.
+                    </p>
+
+                    <!-- VARIAVEIS CLICAVEIS -->
+                    <div>
+                        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted, #64748b); text-transform: uppercase; margin-bottom: 6px;">Tags dinâmicas (clique para inserir):</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="botAttTags">
+                            <button type="button" class="ps-btn-tag" data-tag="{nome}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{nome}</button>
+                            <button type="button" class="ps-btn-tag" data-tag="{vendedor}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{vendedor}</button>
+                            <button type="button" class="ps-btn-tag" data-tag="{cidade}" style="font-size: 0.75rem; padding: 2px 8px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; color: #334155;">{cidade}</button>
+                        </div>
+                    </div>
+
+                    <!-- TEXTAREA -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <textarea id="cfgBotAttendanceMsg" rows="5" class="ps-textarea" style="width: 100%; border-radius: 8px; padding: 10px; font-family: inherit; font-size: 0.88rem; line-height: 1.45; border: 1.5px solid var(--border-color, #cbd5e1); resize: vertical;" placeholder="Carregando mensagem configurada..."></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-muted, #94a3b8);">
+                            <span id="cfgBotAttendanceStatus">Salvo no banco de dados</span>
+                            <span id="cfgBotAttendanceCount">0 caracteres</span>
+                        </div>
+                    </div>
+
+                    <!-- PREVIEW WHATSAPP -->
+                    <div style="background: #e5ddd5; border-radius: 8px; padding: 12px; background-image: radial-gradient(#d1c7bc 1px, transparent 1px); background-size: 16px 16px;">
+                        <div style="font-size: 0.68rem; font-weight: 800; color: #667781; text-transform: uppercase; margin-bottom: 6px;"><i class="fab fa-whatsapp"></i> Simulação no WhatsApp do Cliente:</div>
+                        <div style="background: #ffffff; padding: 10px 14px; border-radius: 8px 8px 8px 0; max-width: 90%; font-size: 0.84rem; color: #111b21; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.1); position: relative;" id="cfgBotAttendancePreview">
+                            ...
+                        </div>
+                    </div>
+
+                    <!-- AÇÕES -->
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: auto;">
+                        <button type="button" class="btn-retro" id="btnResetBotAttendance" style="background: #f1f5f9; color: #475569; font-size: 0.76rem; padding: 8px 14px; border: 1px solid #cbd5e1;">
+                            <i class="fas fa-rotate-left"></i> RESTAURAR PADRÃO
+                        </button>
+                        <button type="button" class="btn-retro" id="btnSaveBotAttendance" style="background: #10b981; color: #fff; font-size: 0.78rem; font-weight: 800; padding: 8px 18px;">
+                            <i class="fas fa-floppy-disk"></i> SALVAR ATENDIMENTO
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

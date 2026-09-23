@@ -48,8 +48,15 @@ function formatLeadMessage(tmpl, lead = {}) {
 }
 
 // Message de entrada do bot principal (anti-ban): pergunta se pode encaminhar a simulação
-function buildMainMessage(lead) {
-    const tmpl = process.env.BOT_MAIN_WELCOME ||
+async function getSellerCampaignMessage(sellerId) {
+    if (!sellerId) return null;
+    const seller = await db.get('SELECT bot_campaign_msg FROM sellers WHERE id = ?', [sellerId]);
+    return (seller && seller.bot_campaign_msg && seller.bot_campaign_msg.trim()) ? seller.bot_campaign_msg.trim() : null;
+}
+
+async function buildMainMessage(lead, sellerId = null) {
+    const customTmpl = await getSellerCampaignMessage(sellerId || lead.seller_id);
+    const tmpl = customTmpl || process.env.BOT_MAIN_WELCOME ||
         'Olá {primeiro-nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.';
     return formatLeadMessage(tmpl, lead);
 }
@@ -215,10 +222,11 @@ async function createCampaign({ seller_id, organization_id = 1, name, message, n
 
     const finalTotalTarget = Math.max(targets.length, Array.isArray(lead_ids) ? lead_ids.length : 0, Number(filters.limit) || 0);
 
+    const defaultCampaignMsg = await buildMainMessage({ name: 'Cliente' }, seller_id);
     const result = await db.run(
         `INSERT INTO campaigns (organization_id, seller_id, number_id, name, message, status, total_target, filters, scheduled_at, template_id)
          VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`,
-        [organization_id, seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), finalTotalTarget, JSON.stringify(filters || {}), scheduled_at || null, template_id || null]
+        [organization_id, seller_id, numbers[0].id, name, message || defaultCampaignMsg, finalTotalTarget, JSON.stringify(filters || {}), scheduled_at || null, template_id || null]
     );
 
     for (const lead of targets) {
@@ -286,10 +294,11 @@ async function createDirectCampaign({ seller_id, organization_id = 1, name, mess
     const numbers = await pickNumbers(number_ids, organization_id, seller_id);
     if (!numbers.length) throw new Error('Nenhum número ativo disponível');
 
+    const defaultDirectMsg = await buildMainMessage({ name: 'Cliente' }, seller_id);
     const result = await db.run(
         `INSERT INTO campaigns (organization_id, seller_id, number_id, name, message, status, total_target, filters)
          VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)`,
-        [organization_id, seller_id, numbers[0].id, name, message || buildMainMessage({ name: 'Cliente' }), ids.length, JSON.stringify({ direct: ids })]
+        [organization_id, seller_id, numbers[0].id, name, message || defaultDirectMsg, ids.length, JSON.stringify({ direct: ids })]
     );
 
     for (const lid of ids) {
@@ -306,11 +315,12 @@ async function sendToLead(lead, message, sellerId, numberIds = []) {
     const active = await db.get("SELECT id FROM sends WHERE lead_id = ? AND status IN ('pending','sent') LIMIT 1", [lead.id]);
     if (active) return { sent: false, reason: 'já em contato' };
     if (!antiBan.shouldSend(lead)) return { sent: false, reason: 'estágio não elegível' };
+    const defaultAutoMsg = await buildMainMessage(lead, sellerId);
     const campaign = await createDirectCampaign({
         seller_id: sellerId,
         organization_id: lead.organization_id || 1,
         name: '[AUTO] Disparo automático',
-        message: message || buildMainMessage(lead),
+        message: message || defaultAutoMsg,
         number_ids: numberIds,
         lead_ids: [lead.id]
     });
@@ -566,7 +576,7 @@ async function processCampaign(campaign, job) {
                 continue;
             }
 
-            let msg = campaign.message ? personalize(campaign.message, lead) : buildMainMessage(lead);
+            let msg = campaign.message ? personalize(campaign.message, lead) : await buildMainMessage(lead, campaign.seller_id);
 
             // Lista em cascata de telefones cadastrados para o lead (Tel 1 -> Tel 2 -> Tel 3)
             const phoneList = [lead.phone, lead.phone2, lead.phone3].filter(p => p && String(p).trim().length >= 8);

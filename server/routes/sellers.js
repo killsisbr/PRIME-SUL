@@ -74,9 +74,60 @@ router.post('/', adminOnly, async (req, res, next) => {
 // Meus dados / perfil
 router.get('/me', async (req, res, next) => {
     try {
-        const user = await db.get('SELECT id, name, email, phone, role, max_leads FROM sellers WHERE id = ?', [req.user.id]);
+        const user = await db.get('SELECT id, name, email, phone, role, max_leads, bot_campaign_msg, bot_attendance_msg FROM sellers WHERE id = ?', [req.user.id]);
         if (!user) return res.status(404).json({ error: 'Vendedor não encontrado' });
         res.json(user);
+    } catch (e) { next(e); }
+});
+
+// Mensagens configuradas do bot de campanha e do bot de atendimento do operador/vendedor
+router.get('/me/bot-messages', async (req, res, next) => {
+    try {
+        const seller = await db.get('SELECT id, name, bot_campaign_msg, bot_attendance_msg FROM sellers WHERE id = ?', [req.user.id]);
+        if (!seller) return res.status(404).json({ error: 'Vendedor não encontrado' });
+
+        const defaultCampaignMsg = process.env.BOT_MAIN_WELCOME ||
+            'Olá {primeiro-nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.';
+        const defaultAttendanceMsg = process.env.BOT_SELLER_WELCOME ||
+            'Olá {nome}! Sou {vendedor} da equipe Prime Sul. Recebemos sua confirmação e vou continuar sua simulação de crédito por aqui.';
+
+        res.json({
+            bot_campaign_msg: seller.bot_campaign_msg ?? '',
+            bot_attendance_msg: seller.bot_attendance_msg ?? '',
+            default_campaign_msg: defaultCampaignMsg,
+            default_attendance_msg: defaultAttendanceMsg
+        });
+    } catch (e) { next(e); }
+});
+
+router.patch('/me/bot-messages', async (req, res, next) => {
+    try {
+        const { bot_campaign_msg, bot_attendance_msg } = req.body;
+        const updates = [];
+        const params = [];
+
+        if (bot_campaign_msg !== undefined) {
+            updates.push('bot_campaign_msg = ?');
+            params.push(bot_campaign_msg === null ? null : String(bot_campaign_msg).trim());
+        }
+        if (bot_attendance_msg !== undefined) {
+            updates.push('bot_attendance_msg = ?');
+            params.push(bot_attendance_msg === null ? null : String(bot_attendance_msg).trim());
+        }
+
+        if (!updates.length) {
+            return res.status(400).json({ error: 'Nenhum campo fornecido para atualização.' });
+        }
+
+        params.push(req.user.id);
+        await db.run(`UPDATE sellers SET ${updates.join(', ')} WHERE id = ?`, params);
+
+        const updated = await db.get('SELECT id, name, bot_campaign_msg, bot_attendance_msg FROM sellers WHERE id = ?', [req.user.id]);
+        res.json({
+            ok: true,
+            bot_campaign_msg: updated.bot_campaign_msg ?? '',
+            bot_attendance_msg: updated.bot_attendance_msg ?? ''
+        });
     } catch (e) { next(e); }
 });
 

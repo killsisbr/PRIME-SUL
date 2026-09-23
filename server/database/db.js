@@ -68,7 +68,11 @@ const CAMPAIGN_MIGRATIONS = {
     template_id: 'INTEGER' // qual message_templates gerou a mensagem (nulo = escrita livre) — habilita relatório de resposta/conversão por template
 };
 
-const SELLER_MIGRATIONS = { organization_id: 'INTEGER NOT NULL DEFAULT 1' };
+const SELLER_MIGRATIONS = {
+    organization_id: 'INTEGER NOT NULL DEFAULT 1',
+    bot_campaign_msg: 'TEXT',
+    bot_attendance_msg: 'TEXT'
+};
 const LEAD_ORG_MIGRATIONS = { organization_id: 'INTEGER NOT NULL DEFAULT 1' };
 const BOT_ORG_MIGRATIONS = { organization_id: 'INTEGER NOT NULL DEFAULT 1' };
 

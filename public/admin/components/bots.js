@@ -68,6 +68,7 @@ export async function init() {
             tabPanels.forEach(p => p.classList.toggle('active', p.id === `bt-panel-${targetTab}`));
             if (targetTab === 'config') refresh();
             if (targetTab === 'pipeline') loadBotPipeline();
+            if (targetTab === 'mensagens') loadBotMessagesConfig();
         });
     });
 
@@ -1918,6 +1919,214 @@ export async function init() {
         refresh();
     };
     window.realtime?.on('whatsapp:connected', _onWaConnected);
+
+    // ================= CONFIGURAÇÃO DE MENSAGENS DOS BOTS =================
+    let _defaultCampaignMsg = '';
+    let _defaultAttendanceMsg = '';
+
+    function simulatePreview(text, type = 'camp') {
+        const raw = String(text || '');
+        if (type === 'camp') {
+            return raw
+                .replace(/\{primeiro-nome\}/gi, 'Carlos')
+                .replace(/\{nome\}/gi, 'Carlos Silva')
+                .replace(/\{cpf\}/gi, '123.456.789-00')
+                .replace(/\{cidade\}/gi, 'Curitiba - PR')
+                .replace(/\{renda\}/gi, 'R$ 4.500,00')
+                .replace(/\{limite\}/gi, 'R$ 15.000,00')
+                .replace(/\{valor-desejado\}/gi, 'R$ 10.000,00')
+                .replace(/\{agencia\}|\{agência\}/gi, '1234')
+                .replace(/\{conta\}/gi, '56789-0');
+        } else {
+            return raw
+                .replace(/\{nome\}/gi, 'Carlos')
+                .replace(/\{vendedor\}/gi, (window.me?.name || 'Vendedor').split(' ')[0])
+                .replace(/\{cidade\}/gi, 'Curitiba - PR');
+        }
+    }
+
+    function updateCampLiveUI() {
+        const txt = document.getElementById('cfgBotCampaignMsg')?.value || '';
+        const countEl = document.getElementById('cfgBotCampaignCount');
+        const prevEl = document.getElementById('cfgBotCampaignPreview');
+        if (countEl) countEl.textContent = `${txt.length} caracteres`;
+        if (prevEl) {
+            prevEl.textContent = simulatePreview(txt, 'camp') || '(Mensagem vazia)';
+        }
+    }
+
+    function updateAttLiveUI() {
+        const txt = document.getElementById('cfgBotAttendanceMsg')?.value || '';
+        const countEl = document.getElementById('cfgBotAttendanceCount');
+        const prevEl = document.getElementById('cfgBotAttendancePreview');
+        if (countEl) countEl.textContent = `${txt.length} caracteres`;
+        if (prevEl) {
+            prevEl.textContent = simulatePreview(txt, 'att') || '(Mensagem vazia)';
+        }
+    }
+
+    async function loadBotMessagesConfig() {
+        try {
+            const data = await api('/sellers/me/bot-messages');
+            _defaultCampaignMsg = data.default_campaign_msg || '';
+            _defaultAttendanceMsg = data.default_attendance_msg || '';
+
+            const campInput = document.getElementById('cfgBotCampaignMsg');
+            const attInput = document.getElementById('cfgBotAttendanceMsg');
+
+            if (campInput) {
+                campInput.value = data.bot_campaign_msg || _defaultCampaignMsg;
+                updateCampLiveUI();
+            }
+            if (attInput) {
+                attInput.value = data.bot_attendance_msg || _defaultAttendanceMsg;
+                updateAttLiveUI();
+            }
+
+            const statusCamp = document.getElementById('cfgBotCampaignStatus');
+            if (statusCamp) {
+                statusCamp.textContent = data.bot_campaign_msg ? 'Mensagem personalizada ativa' : 'Usando padrão do sistema';
+            }
+            const statusAtt = document.getElementById('cfgBotAttendanceStatus');
+            if (statusAtt) {
+                statusAtt.textContent = data.bot_attendance_msg ? 'Mensagem personalizada ativa' : 'Usando padrão do sistema';
+            }
+        } catch (e) {
+            console.error('Erro ao carregar mensagens dos bots:', e);
+            toast('Erro ao carregar mensagens dos bots: ' + e.message, 'err');
+        }
+    }
+
+    // Eventos de digitação
+    document.getElementById('cfgBotCampaignMsg')?.addEventListener('input', () => {
+        updateCampLiveUI();
+        const st = document.getElementById('cfgBotCampaignStatus');
+        if (st) st.textContent = 'Alterações não salvas';
+    });
+    document.getElementById('cfgBotAttendanceMsg')?.addEventListener('input', () => {
+        updateAttLiveUI();
+        const st = document.getElementById('cfgBotAttendanceStatus');
+        if (st) st.textContent = 'Alterações não salvas';
+    });
+
+    // Inserção de tags clicáveis
+    document.getElementById('botCampTags')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.ps-btn-tag');
+        if (!btn) return;
+        const tag = btn.dataset.tag;
+        const area = document.getElementById('cfgBotCampaignMsg');
+        if (area && tag) {
+            const start = area.selectionStart || area.value.length;
+            const end = area.selectionEnd || area.value.length;
+            area.value = area.value.substring(0, start) + tag + area.value.substring(end);
+            area.focus();
+            area.selectionStart = area.selectionEnd = start + tag.length;
+            updateCampLiveUI();
+        }
+    });
+
+    document.getElementById('botAttTags')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.ps-btn-tag');
+        if (!btn) return;
+        const tag = btn.dataset.tag;
+        const area = document.getElementById('cfgBotAttendanceMsg');
+        if (area && tag) {
+            const start = area.selectionStart || area.value.length;
+            const end = area.selectionEnd || area.value.length;
+            area.value = area.value.substring(0, start) + tag + area.value.substring(end);
+            area.focus();
+            area.selectionStart = area.selectionEnd = start + tag.length;
+            updateAttLiveUI();
+        }
+    });
+
+    // Salvar Bot de Campanha
+    document.getElementById('btnSaveBotCampaign')?.addEventListener('click', async () => {
+        const txt = document.getElementById('cfgBotCampaignMsg')?.value?.trim();
+        const btn = document.getElementById('btnSaveBotCampaign');
+        const orig = btn.innerHTML;
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SALVANDO...';
+            await api('/sellers/me/bot-messages', {
+                method: 'PATCH',
+                body: JSON.stringify({ bot_campaign_msg: txt })
+            });
+            toast('Mensagem do Bot de Campanha salva com sucesso!', 'ok');
+            const st = document.getElementById('cfgBotCampaignStatus');
+            if (st) st.textContent = 'Salvo no banco de dados';
+        } catch (e) {
+            toast('Erro ao salvar mensagem: ' + e.message, 'err');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+    });
+
+    // Restaurar Padrão Bot de Campanha
+    document.getElementById('btnResetBotCampaign')?.addEventListener('click', async () => {
+        if (!confirm('Deseja restaurar a mensagem padrão do sistema para o Bot de Campanha?')) return;
+        const area = document.getElementById('cfgBotCampaignMsg');
+        if (area) {
+            area.value = _defaultCampaignMsg || 'Olá {primeiro-nome}! Aqui é a Prime Sul. Você pediu uma simulação de crédito. Posso pedir para um vendedor encaminhar a simulação? Responda SIM para continuar.';
+            updateCampLiveUI();
+        }
+        try {
+            await api('/sellers/me/bot-messages', {
+                method: 'PATCH',
+                body: JSON.stringify({ bot_campaign_msg: null })
+            });
+            toast('Mensagem restaurada para o padrão do sistema!', 'ok');
+            const st = document.getElementById('cfgBotCampaignStatus');
+            if (st) st.textContent = 'Usando padrão do sistema';
+        } catch (e) {
+            toast('Erro ao restaurar padrão: ' + e.message, 'err');
+        }
+    });
+
+    // Salvar Bot de Atendimento
+    document.getElementById('btnSaveBotAttendance')?.addEventListener('click', async () => {
+        const txt = document.getElementById('cfgBotAttendanceMsg')?.value?.trim();
+        const btn = document.getElementById('btnSaveBotAttendance');
+        const orig = btn.innerHTML;
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SALVANDO...';
+            await api('/sellers/me/bot-messages', {
+                method: 'PATCH',
+                body: JSON.stringify({ bot_attendance_msg: txt })
+            });
+            toast('Mensagem do Bot de Atendimento salva com sucesso!', 'ok');
+            const st = document.getElementById('cfgBotAttendanceStatus');
+            if (st) st.textContent = 'Salvo no banco de dados';
+        } catch (e) {
+            toast('Erro ao salvar mensagem: ' + e.message, 'err');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+    });
+
+    // Restaurar Padrão Bot de Atendimento
+    document.getElementById('btnResetBotAttendance')?.addEventListener('click', async () => {
+        if (!confirm('Deseja restaurar a mensagem padrão do sistema para o Bot de Atendimento?')) return;
+        const area = document.getElementById('cfgBotAttendanceMsg');
+        if (area) {
+            area.value = _defaultAttendanceMsg || 'Olá {nome}! Sou {vendedor} da equipe Prime Sul. Recebemos sua confirmação e vou continuar sua simulação de crédito por aqui.';
+            updateAttLiveUI();
+        }
+        try {
+            await api('/sellers/me/bot-messages', {
+                method: 'PATCH',
+                body: JSON.stringify({ bot_attendance_msg: null })
+            });
+            toast('Mensagem restaurada para o padrão do sistema!', 'ok');
+            const st = document.getElementById('cfgBotAttendanceStatus');
+            if (st) st.textContent = 'Usando padrão do sistema';
+        } catch (e) {
+            toast('Erro ao restaurar padrão: ' + e.message, 'err');
+        }
+    });
 
     // Initial load
     await loadLeads();
