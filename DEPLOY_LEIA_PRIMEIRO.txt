@@ -1,0 +1,102 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║               PRIME SUL - DEPLOY PRONTO PARA EXECUTAR             ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+📌 O QUE FOI FEITO:
+
+✅ Aumentado limite de payload OCR de 8MB para 25MB
+✅ Código commitado e enviado para GitHub (branch staging)
+✅ Scripts de deploy criados em 4 linguagens
+✅ Documentação completa preparada
+✅ VPS verificada e conectável
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 COMO FAZER O DEPLOY AGORA (3 opções):
+
+OPÇÃO 1: SSH Direto (Windows PowerShell / Terminal)
+───────────────────────────────────────────────────
+ssh root@82.29.58.126 "cd /root/killsis/PRIME-SUL && git pull origin staging && npm install --omit=dev && pm2 restart prime-sul && pm2 status prime-sul"
+
+OPÇÃO 2: SSH Manual (Mais Seguro)
+─────────────────────────────────
+1. ssh root@82.29.58.126
+2. Digite a senha quando solicitado
+3. Dentro da VPS, copie e cole:
+
+cd /root/killsis/PRIME-SUL && \
+git pull origin staging && \
+npm install --omit=dev && \
+pm2 restart prime-sul && \
+pm2 status prime-sul
+
+OPÇÃO 3: Usar Script Python
+────────────────────────────
+python deploy-vps.py
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 ARQUIVO COM INSTRUÇÕES DETALHADAS:
+
+Abra um desses arquivos para ver instruções completas:
+
+→ DEPLOY_RESUMO_FINAL.md   (recomendado - mais detalhado)
+→ DEPLOY_INSTRUÇÕES.md     (passo a passo)
+→ DEPLOY_REALIZADO.md      (status atual)
+
+═══════════════════════════════════════════════════════════════════════
+
+⏱️  QUANTO TEMPO LEVA?
+
+git pull: 5 segundos
+npm install: 2-5 minutos (dependendo da conexão)
+pm2 restart: 2 segundos
+──────────────────────
+TOTAL: ~3-6 minutos
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ APÓS O DEPLOY - VERIFICAÇÃO:
+
+1. Confirme que a aplicação está rodando:
+   ssh root@82.29.58.126 'pm2 status prime-sul'
+
+2. Veja os logs:
+   ssh root@82.29.58.126 'pm2 logs prime-sul | head -20'
+
+3. Teste o OCR com imagem grande (10MB+):
+   POST /api/leads/ocr
+   Esperado: Status 200 OK (antes dava 413 Payload Too Large)
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 DICAS:
+
+- A senha da VPS está em .env (VPS_PASSWORD)
+- SSH pedirá senha interativamente
+- npm install pode levar tempo na VPS (normal)
+- Se quiser ver progresso em tempo real:
+  ssh root@82.29.58.126 'pm2 logs prime-sul --follow'
+
+═══════════════════════════════════════════════════════════════════════
+
+❓ DÚVIDAS?
+
+Leia os arquivos de documentação criados:
+→ DEPLOY_RESUMO_FINAL.md (seção Troubleshooting)
+→ DEPLOY_INSTRUÇÕES.md
+
+═══════════════════════════════════════════════════════════════════════
+
+✨ RESULTADO ESPERADO:
+
+ANTES: Erro 413 Payload Too Large ao enviar imagem > 8MB
+DEPOIS: Imagens até 25MB funcionam normalmente! ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ PRONTO PARA DEPLOY
+
+Próximo: Execute um dos comandos acima!
+
+═══════════════════════════════════════════════════════════════════════
